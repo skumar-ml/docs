@@ -24,7 +24,9 @@
             "group": "Members",
             "icon": "people-line",
             "pages": [
-              "bdc/members/overview"
+              "bdc/members/overview",
+              "bdc/members/creating-an-account",
+              "bdc/members/edit-account-info"
             ]
           }
         ]

@@ -2,10 +2,42 @@
 title: "Introduction"
 ---
 
-## Account Flow
+# Signing up or Logging in
 
-### Creating an Account
+Users can create fresh accounts on our [sign-up page](https://www.bergendebate.com/sign-up); users with existing accounts can log-in on our [log-in page](https://www.bergendebate.com/log-in). Accounts are uniquely associated with an email address. 
 
-TODO:
+Users that have forgotten their password can do a password reset on the log-in page.
 
-- Explain how to do this in plain text
+<Warning>
+  We do not have an email confirmation process. This has historically led to typos. Adding this functionality is future work, as well as Google OAuth.
+</Warning>
+
+# Account Types
+
+The most important distinction between accounts is the `accountType`, which can be `parent`,  `student`, or `coach`. These distinctions control the following:
+
+- Only `parent` accounts can register for BDC classes. A `student` or `coach` account will be asked to log out and sign-in to a `parent` account.
+- Only `coach` accounts can access the BDC Coach Portal, which allows them to access functionality like class & trial class attendance and the millions.
+- `student` and `parent` accounts see the same portal.
+
+There currently does not exist any mechanism for the admin or user to change the `accountType`. If a need arises, please inform the tech team, and we'll do it manually.
+
+<Note>
+  TODO: Can we confirm 
+
+  - what happens to coach accounts trying to register for an account?
+  - Can students or coach's register via the portal? It doesn't matter as much here, since we have the parent info, but want to confirm if we've handled this case or not...
+</Note>
+
+
+# Technical Details
+
+## Memberstack
+
+Memberstack handles all of the member logic. This includes things like sign-in auth, password encryption, log-in redirects, gated content, member-specific pages, etc. We are currently on Memberstack V1, which can be accessed via https://app.memberstack.io/login.
+
+## Family Architecture
+
+TODO: Fill out
+
+Explain how parent account and student accounts are connected. Does every member (parent or student) have a familyId?
