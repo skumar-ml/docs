@@ -30,16 +30,38 @@
             ]
           },
           {
-            "group": "Class Checkout",
+            "group": "Checkout Systems",
             "icon": "sack-dollar",
             "pages": [
               {
                 "group": "Semester",
                 "pages": [
+                  "bdc/checkout-systems/semester/overview",
                   "bdc/class-checkout/semester/semester-overview-page",
                   "bdc/class-checkout/semester/pre-reg-system",
+                  "bdc/class-checkout/semester/waitlist-system",
                   "bdc/class-checkout/semester/retool",
-                  "bdc/class-checkout/semester/waitlist-system"
+                  "bdc/checkout-systems/semester/mongo-db"
+                ]
+              },
+              {
+                "group": "Summer",
+                "pages": [
+                  "bdc/checkout-systems/summer/overview",
+                  "bdc/class-checkout/summer/web-checkout",
+                  "bdc/checkout-systems/summer/retool",
+                  "bdc/checkout-systems/summer/mongo-db"
+                ]
+              },
+              {
+                "group": "Briefs",
+                "pages": []
+              },
+              {
+                "group": "Upsells",
+                "pages": [
+                  "bdc/checkout-systems/upsells/semester-summer",
+                  "bdc/checkout-systems/upsells/briefs"
                 ]
               }
             ]
