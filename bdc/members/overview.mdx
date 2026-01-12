@@ -2,9 +2,9 @@
 title: "Introduction"
 ---
 
-# Signing up or Logging in
+## Signing up or Logging in
 
-Users can create fresh accounts on our [sign-up page](https://www.bergendebate.com/sign-up); users with existing accounts can log-in on our [log-in page](https://www.bergendebate.com/log-in). Accounts are uniquely associated with an email address. 
+Users can create fresh accounts on our [sign-up page](https://www.bergendebate.com/sign-up); users with existing accounts can log-in on our [log-in page](https://www.bergendebate.com/log-in). Accounts are uniquely associated with an email address.
 
 Users that have forgotten their password can do a password reset on the log-in page.
 
@@ -12,7 +12,7 @@ Users that have forgotten their password can do a password reset on the log-in p
   We do not have an email confirmation process. This has historically led to typos. Adding this functionality is future work, as well as Google OAuth.
 </Warning>
 
-# Account Types
+## Account Types
 
 The most important distinction between accounts is the `accountType`, which can be `parent`,  `student`, or `coach`. These distinctions control the following:
 
@@ -23,20 +23,19 @@ The most important distinction between accounts is the `accountType`, which can 
 There currently does not exist any mechanism for the admin or user to change the `accountType`. If a need arises, please inform the tech team, and we'll do it manually.
 
 <Note>
-  TODO: Can we confirm 
+  TODO: Can we confirm
 
   - what happens to coach accounts trying to register for an account?
   - Can students or coach's register via the portal? It doesn't matter as much here, since we have the parent info, but want to confirm if we've handled this case or not...
 </Note>
 
+## Technical Details
 
-# Technical Details
-
-## Memberstack
+### Memberstack
 
 Memberstack handles all of the member logic. This includes things like sign-in auth, password encryption, log-in redirects, gated content, member-specific pages, etc. We are currently on Memberstack V1, which can be accessed via https://app.memberstack.io/login.
 
-## Family Architecture
+### Family Architecture
 
 TODO: Fill out
 
