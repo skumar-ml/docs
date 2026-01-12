@@ -19,6 +19,13 @@
             "pages": [
               "bdc/generic/software-stack"
             ]
+          },
+          {
+            "group": "Members",
+            "icon": "people-line",
+            "pages": [
+              "bdc/members/overview"
+            ]
           }
         ]
       }
@@ -29,12 +36,7 @@
     "dark": "/logo/dark.svg"
   },
   "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
+    "links": [],
     "primary": {
       "type": "button",
       "label": "Dashboard",
@@ -53,11 +55,7 @@
      "vscode"
    ]
   },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+  "styling": {
+    "eyebrows": "breadcrumbs"
   }
 }
