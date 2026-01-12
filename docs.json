@@ -12,9 +12,10 @@
     "tabs": [
       {
         "tab": "BDC",
-        "anchors": [
+        "groups": [
           {
-            "anchor": "Generic",
+            "group": "Introduction",
+            "icon": "rocket-launch",
             "pages": [
               "bdc/generic/software-stack"
             ]
