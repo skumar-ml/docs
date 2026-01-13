@@ -4,8 +4,8 @@
   "name": "DCA Internal Docs",
   "colors": {
     "primary": "#73353f",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "light": "#73353f",
+    "dark": "#73353f"
   },
   "favicon": "/favicon.svg",
   "navigation": {
