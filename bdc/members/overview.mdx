@@ -16,8 +16,8 @@ Users that have forgotten their password can do a password reset on the log-in p
 
 The most important distinction between accounts is the `accountType`, which can be `parent`,  `student`, or `coach`. These distinctions control the following:
 
-- Only `parent` accounts can register for BDC classes. A `student` or `coach` account will be asked to log out and sign-in to a `parent` account.
-- Only `coach` accounts can access the BDC Coach Portal, which allows them to access functionality like class & trial class attendance and the millions.
+- Only `parent` accounts can register for BDC classes. A `student` or `coach` account will be asked to log out and sign-in to a `parent` account during the checkout process.
+- Only `coach` accounts can access the BDC Coach Portal, which (upon verification) allows them to access functionality like class & trial class attendance and the millions.
 - `student` and `parent` accounts see the same portal.
 
 There currently does not exist any mechanism for the admin or user to change the `accountType`. If a need arises, please inform the tech team, and we'll do it manually.
@@ -33,7 +33,7 @@ There currently does not exist any mechanism for the admin or user to change the
 
 ### Memberstack
 
-Memberstack handles all of the member logic. This includes things like sign-in auth, password encryption, log-in redirects, gated content, member-specific pages, etc. We are currently on Memberstack V1, which can be accessed via https://app.memberstack.io/login.
+Memberstack handles all of the member logic. This includes things like sign-in auth, password encryption, log-in redirects, gated content, member-specific pages, etc. We are currently on Memberstack V1; our account can be accessed via https://app.memberstack.io/login.
 
 ### Family Architecture
 
