@@ -38,4 +38,186 @@ TODO: Explain the payment options, how the checkout links are created, what happ
 
 ### After Payment
 
-TODO: Explain everything that happens after payment. What APIs get triggered, what writes happen in the DB, where user gets directed after, any automated emails.
+TODO: Explain everything that happens after payment. What APIs get triggered, what writes happen in the DB, where user gets directed after, any automated emails
+
+## 1. API Triggered After Payment
+
+### `stripePaymentListener` (Stripe Webhook)
+
+**Triggered by:**
+
+- Stripe events such as:
+  - `checkout.session.completed`
+  - `payment_intent.succeeded`
+  - Async updates for **Bank Transfer**
+
+**Responsibility:**
+
+- Acts as the single orchestrator for all post-payment logic.
+- Calls `updateSummerPayment()` with:
+  - `stripeCheckout`
+  - `status` (`Complete`, `Processing`, `Failed`)
+  - `chargeObj`
+  - `sessionId`
+
+---
+
+## 2. High-Level Logic Flow
+
+1. Stripe confirms payment → webhook fires
+2. `stripePaymentListener` is invoked
+3. `updateSummerPayment()` executes
+4. Payment record is inserted or updated
+5. Inventory caps are updated
+6. Referral & coupon logic runs
+7. Emails are triggered
+8. User is redirected based on payment type
+
+---
+
+## 3. Database Writes & Updates
+
+### 3.1 `summer_payment_details`
+
+**Insert (first successful payment):**
+
+- payment_intent
+- programId
+- studentId
+- memberId
+- yearId
+- summerSessionId
+- locationId
+- amount
+- couponCode (if any)
+- UTM source
+- createdOn
+
+**Update (subsequent webhook calls):**
+
+- status
+- receipt_url
+
+**Delete (on Failed payment):**
+
+- Existing `summer_payment_details` record is removed
+
+---
+
+### 3.2 `stripe_checkout_customer`
+
+Updated on **every webhook event**:
+
+- payment_intent
+- status (`Complete`, `Processing`, `Failed`)
+
+---
+
+### 3.3 Inventory Management (`updateSummerInventoryCaps`)
+
+- **On Failed payment**
+  - Inventory is **released** (`eventType = add`)
+- **On Complete / Processing**
+  - Inventory is **consumed** (`eventType = minus`)
+
+This ensures real-time seat availability for summer programs.
+
+---
+
+### 3.4 Referral & Coupon Handling
+
+**If coupon was used:**
+
+- Referral marked as `Purchased`
+- `purchased_date` updated
+
+**If no existing coupon for family:**
+
+- New coupon code is generated
+- Coupon created in **Stripe**
+- Coupon stored in `coupon_details` with:
+  - coupon_code
+  - familyId
+  - createdOn
+
+---
+
+### 3.5 `coupon_details`
+
+- New coupon inserted **only once per family**
+- Used for future referrals and discounts
+
+---
+
+### 3.6 Upsell Programs
+
+If upsell programs were purchased:
+
+- Records inserted via `addUpsellToPaymentDetails()`
+
+---
+
+### 3.7 Credit Balance Updates
+
+If discount / credit was applied:
+
+- `updateCreditBalance()` updates remaining credits
+- Linked to:
+  - yearId
+  - currentSessionId
+
+---
+
+## 4. Automated Emails
+
+### Admin Emails
+
+- **Sent on:**
+  - Card payment → `Complete`
+  - Bank transfer → `Processing`
+- Triggered via:
+
+  ```
+  sendSuccessEmailToAdmin(stripeCheckout, yearId)
+  
+  ```
+
+### User Emails
+
+- Stripe receipt generated automatically
+- `receipt_url` stored in MongoDB
+
+---
+
+## 5. User Redirection After Payment
+
+### Card Payments
+
+- Redirected immediately to **Success / Thank You page**
+
+### Bank Transfer Payments
+
+- Redirected to **Processing / Pending Confirmation page**
+- Final confirmation happens asynchronously via webhook
+
+---
+
+## 6. Failure Handling
+
+If payment fails:
+
+- `summer_payment_details` record deleted
+- Inventory restored
+- Checkout marked as Failed
+- No enrollment or coupon generation occurs
+
+---
+
+## 7. Key Characteristics
+
+- Fully **webhook-driven**
+- **Idempotent** via `payment_intent`
+- Supports **async bank transfers**
+- Inventory-safe
+- Referral-safe
+- Retry-safe
