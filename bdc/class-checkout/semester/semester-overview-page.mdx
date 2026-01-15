@@ -559,3 +559,138 @@ Includes:
 ### After Payment
 
 TODO: Explain everything that happens after payment. What APIs get triggered, what writes happen in the DB, where user gets directed after, any automated emails
+
+## 1. Post-Payment Flow (After Successful Checkout)
+
+This section explains **everything that happens after a payment is made**, starting from Stripe webhook to DB writes, emails, and user redirection.
+
+---
+
+## 1.1 Triggered API
+
+### `stripePaymentListener` (Stripe Webhook)
+
+**Triggered by:**
+
+- Stripe events such as `payment_intent.succeeded`, `checkout.session.completed`, or async bank transfer updates.
+
+**Purpose:**
+
+- Acts as the single entry point for all post-payment processing.
+
+---
+
+## 1.2 Core Logic Flow (High Level)
+
+1. Stripe sends webhook → `stripePaymentListener`
+2. Payment status is derived (`Complete`, `Processing`, `Failed`)
+3. `updateClassPayment()` is invoked
+4. System updates payment records
+5. Enrollment, referrals, coupons, waitlist cleanup occur
+6. Emails are triggered
+7. User is redirected to success / confirmation page
+
+---
+
+## 1.3 Database Writes & Updates
+
+### A. `payment_details`
+
+- **Insert (first successful payment)**:
+  - payment_intent
+  - amount
+  - studentId
+  - classId
+  - memberId
+  - device & UTM metadata
+  - couponCode (if applied)
+- **Update (subsequent webhook calls)**:
+  - status
+  - receipt_url
+
+### B. `stripe_checkout_customer`
+
+- Updated on every webhook event:
+  - payment_intent
+  - status (Complete / Processing / Failed)
+
+### C. Failure Handling
+
+- If payment **fails**:
+  - Delete `payment_details`
+  - Delete upsell payments
+  - Mark checkout status as Failed
+
+---
+
+## 1.4 Referral & Coupon Processing
+
+- If a coupon is used:
+  - Referral marked as `Purchased`
+  - Purchased date updated
+- If no existing coupon for family:
+  - New **referral coupon** is generated
+  - Coupon created in Stripe
+  - Coupon stored in `coupon_details`
+
+---
+
+## 1.5 Trial → Paid Conversion
+
+- If parent previously attended a trial class:
+  - `trial_class_details.status` updated to `Purchased`
+
+---
+
+## 1.6 Enrollment & Cleanup
+
+- **Waitlist cleanup**:
+  - Removes student from `waitlist_details` for the purchased class
+- **Upsell Programs** (if any):
+  - Inserted into `upsell_payment_details`
+- **Topic Purchases** (if any):
+  - Inserted into topic payment collection
+
+---
+
+## 1.7 Credit & Discounts
+
+- If discount or credit is applied:
+  - Credit balance is updated
+  - Linked to yearId & sessionId
+
+---
+
+## 1.8 Emails Triggered
+
+### Automated Emails
+
+- **Admin Notification**
+  - Sent on successful payment
+  - Includes order & enrollment details
+- **User Emails** (implicit via Stripe receipt)
+  - Stripe receipt URL stored in DB
+
+---
+
+## 1.9 User Redirection After Payment
+
+- **Card Payments**:
+  - Redirected immediately to **Success / Thank You page**
+- **Bank Transfer Payments**:
+  - Redirected to **Processing / Pending Confirmation page**
+
+Final confirmation happens asynchronously via Stripe webhook.
+
+---
+
+## 1.10 Key Characteristics
+
+- Webhook-driven (idempotent by `payment_intent`)
+- Safe for retries
+- Handles partial & async payments
+- Centralized post-payment orchestration
+
+---
+
+This flow ensures financial consistency, enrollment accuracy, referral tracking, and reliable user communication after every payment.
