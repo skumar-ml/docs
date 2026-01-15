@@ -8,6 +8,132 @@ Most checkout journeys begin from the [classes overview page](https://www.bergen
 
 TODO: Explain how data from the semester overview page is populated
 
+The **Semester Overview** page displays class offerings for a selected semester (e.g., Winter/Spring 2026, Fall). Data is populated from multiple sources and organized by grade level tabs.
+
+---
+
+## Page Structure
+
+The Semester Overview page is divided into two main tabs:
+
+- **GRADES 5–8**
+- **GRADES 9+**
+
+Each tab displays a list of class levels with expandable rows for additional details.
+
+---
+
+## Data Sources Overview
+
+| Data Type                 | Source                 |
+| :------------------------ | :--------------------- |
+| Class Level & Metadata    | Webflow CMS            |
+| Syllabus Details          | MongoDB (via API)      |
+| Class Location & Schedule | MongoDB (via API)      |
+| Registration Flow         | Cart / Checkout System |
+
+---
+
+## Class Level Listing
+
+Inside each grade tab, classes are displayed by **Level** with basic information.
+
+### Level Information
+
+**Examples:**\
+Level 1A, Level 1B, Level 2A … Level X, Customized Learning, World Schools
+
+**Source:**
+
+- Webflow collection item
+
+---
+
+### Prerequisite
+
+**Examples:**
+
+- New Student
+- Level 1A
+- New Student or Level 1B
+
+**Source:**
+
+- Webflow collection item
+
+---
+
+### Suggested Grades
+
+**Examples:**
+
+- 5–6
+- 7–8
+- 9–11
+- 1–12
+
+**Source:**
+
+- Webflow  collection item
+
+---
+
+## View Syllabus
+
+- Displayed as a **button** for each class level.
+- When clicked:
+  1. A modal window opens.
+  2. The class syllabus content is loaded dynamically.
+
+**Source:**
+
+- MongoDB database
+- Retrieved via API based on the selected class level
+
+---
+
+## Register Button
+
+- Displayed as a **Register** button for each class level.
+- When clicked:
+  - User is redirected to the **cart page** to register for the selected class.
+
+**Source:**
+
+- Registration and cart logic handled by the enrollment system
+
+---
+
+## Class Location & Schedule (Expandable Row)
+
+- When a **class level row is clicked**, it expands to show:
+  - Class locations (e.g., Fort Lee, Glen Rock, Livingston)
+  - Days and times for each location
+
+**Source:**
+
+- MongoDB database
+- Retrieved via API based on:
+  - Class level
+  - Semester
+  - Grade tab selection
+
+---
+
+## Data Flow Summary
+
+1. **Webflow CMS**
+   - Provides class level metadata (Level name, prerequisite, suggested grades).
+2. **MongoDB via API**
+   - Provides syllabus details.
+   - Provides class location and schedule information.
+3. **Frontend UI**
+   - Combines CMS and API data into a unified class catalog experience.
+4. **Registration Flow**
+   - Redirects users to the cart page for enrollment.
+
+     ![Image](/images/image.png)
+
 ## Cart Page
 
 <Steps>
