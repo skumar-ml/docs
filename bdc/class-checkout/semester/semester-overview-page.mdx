@@ -142,6 +142,152 @@ Level 1A, Level 1B, Level 2A … Level X, Customized Learning, World Schools
   </Step>
 </Steps>
 
+## Overview
+
+The checkout flow follows a **multi-step form**:
+
+1. Student Details
+2. Optional Bundle Program Selection
+3. Class Selection & Payment
+
+Each step must be completed before moving to the next.
+
+---
+
+## Step 1: Student Details
+
+Parents begin by entering or selecting student information.
+
+### Saved Student Profiles
+
+- A dropdown allows parents to select an existing student profile.
+- Selecting a saved student automatically fills in the form fields.
+
+### Student Information Fields
+
+- Student First Name
+- Student Last Name
+- Email Address
+  - If the student does not have an email, the parent’s email can be used.
+- Student Grade
+- Student School Name
+- Student Gender
+- Has your child participated in a BDC class before?
+
+### Next Button
+
+- Clicking **Next** saves the student information.
+- After saving, a popup appears to offer discounted bundle programs for future sessions.
+
+---
+
+## Step 2: Bundle Program (Optional)
+
+A popup appears allowing families to pre-register for future sessions at a discounted rate.
+
+### Bundle Options
+
+- Users can select one or more future sessions to bundle.
+- Bundling allows families to:
+  - Lock in current pricing
+  - Receive early-bird discounts
+
+### Skipping the Bundle
+
+- Users can skip this step by clicking **“No Thanks”**.
+- The checkout process continues whether or not a bundle is selected.
+
+---
+
+## Step 3: Class Selection & Payment
+
+### Select Class Location
+
+- Users must first choose a location, such as:
+  - Glen Rock
+  - Fort Lee
+  - Livingston
+  - Online
+
+### Select Class Time
+
+- Available time slots appear after selecting a location.
+- Example times:
+  - Friday 4:00 PM – 6:00 PM
+  - Sunday 9:30 AM – 11:30 AM
+  - Saturday 12:00 PM – 2:00 PM
+
+### Seat Availability Messages
+
+Users may see messages such as:
+
+- “Hurry! Register now. Seats filling up fast! Only 1 spot left.”
+- “Seats are full. You can fill out the waitlist form below.”
+- “Seats are full. Please fill out the waitlist form.”
+
+---
+
+## Payment Options
+
+Payment options become available once a class time and location are selected and seats are available.
+
+### Available Payment Methods
+
+- Bank Transfer (includes a discount)
+- Credit Card
+
+### Completing Payment
+
+1. Select a payment method.
+2. Click **Buy Now**.
+3. You are redirected to the secure Stripe checkout page.
+4. Enter payment details.
+5. Complete payment.
+
+### After Payment
+
+- Upon successful payment, the user is redirected to a confirmation (success) page.
+- The student is officially registered for the class.
+
+---
+
+## Additional Options During Checkout
+
+### Bundle Program Banner
+
+- Displays selected bundle programs.
+- Allows users to add or modify bundle selections during checkout.
+
+### Bergen Briefs
+
+- Optional learning briefs can be added alongside class registration.
+- Users can choose full or light versions with displayed pricing.
+
+### Student Info Panel
+
+- Displays the selected student’s information for confirmation.
+
+### Order Details Panel
+
+- Shows:
+  - Selected class and location
+  - Selected class time
+  - Any bundled future programs
+  - Bergen Briefs selections
+  - Pricing and totals
+
+---
+
+## Summary
+
+The checkout process ensures:
+
+- Student information is captured first
+- Families can optionally save money with future session bundles
+- Class selection is based on real-time availability
+- Payment is secure and straightforward
+- All selections are clearly summarized before completion
+
 TODO: Give a technical explanation of how checkout page works (before payment). Things to explain are the saved student profiles, the new student fee determination, the sign-up / log-in redirect, how class time and locations are added in, the number of spots calculation.
 
 ## Checkout System
