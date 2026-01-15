@@ -45,7 +45,7 @@ Parents create and manage student accounts and class registrations.
 1. Navigate to the sign-up page.
 2. Enter your first and last name.
 3. Provide a valid email address.
-4. Select **Parent** under “What Best Describes You”.
+4. Select **Parent** under "What Best Describes You".
 5. Create a password.
 6. Submit the form to create your account.
 
@@ -68,17 +68,17 @@ Student accounts must be linked to a parent account.
 **Steps**
 
 1. Navigate to the sign-up page.
-2. Enter the student’s first and last name.
-3. Provide the student’s email address.
-4. Select **Student** under “What Best Describes You”.
-5. Enter the parent’s name.
-6. Enter the parent’s email address.
+2. Enter the student's first and last name.
+3. Provide the student's email address.
+4. Select **Student** under "What Best Describes You".
+5. Enter the parent's name.
+6. Enter the parent's email address.
 7. Create a password.
 8. Submit the form to complete sign-up.
 
 **Important Notes**
 
-- Student accounts are linked using the parent’s email address.
+- Student accounts are linked using the parent's email address.
 - Students cannot independently register for classes.
 - Family association is determined by the parent account.
 
@@ -101,7 +101,7 @@ Coach accounts are used for instructional and administrative purposes.
 1. Navigate to the sign-up page.
 2. Enter your first and last name.
 3. Provide a valid email address.
-4. Select **Coach** under “What Best Describes You”.
+4. Select **Coach** under "What Best Describes You".
 5. Create a password.
 6. Submit the form to create your account.
 
@@ -141,7 +141,7 @@ To create an account, we do the following:
 
 ### 1.1 `POST /camp/createUserSignup`
 
-**Purpose:**\
+**Purpose:**  
 Entry-point API to initiate account signup and synchronize data between Webflow, Memberstack, and MongoDB.
 
 **Responsibilities:**
@@ -170,7 +170,7 @@ Entry-point API to initiate account signup and synchronize data between Webflow,
 
 ### 1.2 `POST /camp/createAccount`
 
-**Purpose:**\
+**Purpose:**  
 Creates or updates the user account record in MongoDB.
 
 **Responsibilities:**
@@ -251,111 +251,71 @@ Creates or updates the user account record in MongoDB.
 
 ### 3.1 Account Document (Common Structure)
 
+```
 {
-
-"_id": ObjectId,
-
-"name": "Full Name",
-
-"email": "[user@example.com](mailto:user@example.com)",
-
-"itemId": "webflow_item_id",
-
-"familyId": "family_identifier",
-
-"accountType": "student | parent | coach",
-
-"memberId": "memberstack_member_id",
-
-"firstName": "First",
-
-"lastName": "Last",
-
-"createdOn": ISODate,
-
-"updatedOn": ISODate,
-
-"utm_source": "",
-
-"signUpRef": ""
-
+  "_id": ObjectId,
+  "name": "Full Name",
+  "email": "user@example.com",
+  "itemId": "webflow_item_id",
+  "familyId": "family_identifier",
+  "accountType": "student | parent | coach",
+  "memberId": "memberstack_member_id",
+  "firstName": "First",
+  "lastName": "Last",
+  "createdOn": ISODate,
+  "updatedOn": ISODate,
+  "utm_source": "",
+  "signUpRef": ""
 }
+```
 
 ---
 
 ### 3.2 Student Account Example
 
+```
 {
-
-"name": "Diksha Singh",
-
-"email": "[diksha.singh@techment.com](mailto:diksha.singh@techment.com)",
-
-"itemId": "",
-
-"familyId": "r8tt097r1D58i1ti",
-
-"accountType": "student",
-
-"memberId": "",
-
-"firstName": "Diksha",
-
-"lastName": "Singh",
-
-"school": "ABC-10",
-
-"studentGrade": "6th Grade",
-
-"gender": "Female",
-
-"dob": "",
-
-"createdOn": "2026-01-14T06:51:34.477Z",
-
-"updatedOn": "2026-01-14T07:18:33.222Z",
-
-"utm_source": "",
-
-"signUpRef": ""
-
+  "name": "Diksha Singh",
+  "email": "diksha.singh@techment.com",
+  "itemId": "",
+  "familyId": "r8tt097r1D58i1ti",
+  "accountType": "student",
+  "memberId": "",
+  "firstName": "Diksha",
+  "lastName": "Singh",
+  "school": "ABC-10",
+  "studentGrade": "6th Grade",
+  "gender": "Female",
+  "dob": "",
+  "createdOn": "2026-01-14T06:51:34.477Z",
+  "updatedOn": "2026-01-14T07:18:33.222Z",
+  "utm_source": "",
+  "signUpRef": ""
 }
+```
 
 ---
 
 ### 3.3 Student Account (Signup from Cart)
 
+```
 {
-
-"name": "Rahul Student",
-
-"email": "[rahul.student@techment.com](mailto:rahul.student@techment.com)",
-
-"itemId": "",
-
-"familyId": "",
-
-"accountType": "student",
-
-"memberId": "",
-
-"firstName": "Rahul",
-
-"lastName": "Student",
-
-"school": "ABC-10",
-
-"studentGrade": "9th Grade",
-
-"gender": "Male",
-
-"createdOn": "2026-01-15T10:49:07.947Z",
-
-"utm_source": "",
-
-"signUpRef": "cart_page"
-
+  "name": "Rahul Student",
+  "email": "rahul.student@techment.com",
+  "itemId": "",
+  "familyId": "",
+  "accountType": "student",
+  "memberId": "",
+  "firstName": "Rahul",
+  "lastName": "Student",
+  "school": "ABC-10",
+  "studentGrade": "9th Grade",
+  "gender": "Male",
+  "createdOn": "2026-01-15T10:49:07.947Z",
+  "utm_source": "",
+  "signUpRef": "cart_page"
 }
+```
 
 ---
 
