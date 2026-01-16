@@ -9,3 +9,104 @@ TODO: Document schema, what controls what, and how/if they interact
 ## summer_inventory_caps
 
 ## summer_program_session
+
+### 1. `summer_payment_details`
+
+**What it is:**\
+Stores **successful payment records** for summer program registrations.
+
+**What it controls:**
+
+- Confirms that a student is officially registered
+- Acts as proof of payment (Stripe)
+
+**Key fields (plain meaning):**
+
+- `_id` → unique payment record
+- `submissionId / payment_intent` → Stripe payment ID
+- `studentId` → student being registered
+- `memberId` → parent who paid
+- `programId` → program purchased
+- `summerSessionId` → session selected
+- `yearId` → year of the program
+- `locationId` → program location
+- `myProducts` → what was purchased
+- `paymentTotalChecksum` → final amount paid
+- `couponCode` → coupon used (if any)
+- `bundleId` → link to another payment if part of a bundle
+- `createdOn` → payment date
+
+**Important rule:**\
+👉 One document = one completed payment
+
+---
+
+## 2. `summer_inventory_caps`
+
+**What it is:**\
+Controls **how many seats are available** for each program.
+
+**What it controls:**
+
+- Prevents overbooking
+- Decides if registration is allowed
+
+**Key fields:**
+
+- `programId` → program
+- `summerSessionId` → session
+- `locationId` → location
+- `yearId` → year
+- `numberOfSpots` → total seats
+- `leftSpot` → remaining seats
+
+**How it works:**
+
+- If `leftSpot > 0` → user can register
+- After payment → `leftSpot` is reduced by 1
+
+---
+
+## 3. `summer_program_session`
+
+**What it is:**\
+Defines **sessions per year** and which programs belong to each session.
+
+**What it controls:**
+
+- Which programs appear in each session
+- Session names (Session 1, Session 2, etc.)
+
+**Key fields:**
+
+- `summerSessionId` → session identifier
+- `summerSessionName` → display name
+- `yearId` → year
+- `programIds` → programs in this session
+
+---
+
+## How They Work Together (Simple Flow)
+
+1. **Session setup**
+   - `summer_program_session` decides:
+     - Session name
+     - Programs in that session
+2. **Inventory setup**
+   - `summer_inventory_caps` sets:
+     - Total seats
+     - Available seats per program, session, location, year
+3. **User registers**
+   - System checks `leftSpot`
+   - If seats available → allow payment
+4. **Payment success**
+   - Save record in `summer_payment_details`
+   - Reduce `leftSpot` in `summer_inventory_caps`
+
+---
+
+## One-Line Summary
+
+- **Sessions** decide _what can be offered_
+- **Inventory** decides _if seats are available_
+- **Payments** confirm _who is officially registered_
