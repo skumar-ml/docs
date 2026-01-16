@@ -6,6 +6,111 @@ title: "Edit Account Info"
 
 TODO: Explain how admins can edit account info on Retool. Explain the difference between editing info for accounts that do and do not exist. Also, can we update/consolidate this functionality, now that we have records for folks that don't have accounts on memberstack? We should also confirm this Retool page functionality works with the DB changes we've made
 
+Admins can edit parent, student, and coach information using Retool. The editing flow differs depending on whether the person already has a Memberstack account or exists only in the database.
+
+---
+
+## Overview
+
+Admins may encounter two types of records:
+
+- **Accounts that exist in Memberstack** (active user accounts)
+- **Records that do not exist in Memberstack** (stored only in the database)
+
+Retool routes admins to different edit flows based on this distinction.
+
+---
+
+## Case 1) Editing from the Student Registration Details Page
+
+### 1. Edit — Already a Member
+
+**Condition:**\
+The person already has an active Memberstack account.
+
+**Flow:**
+
+1. Admin clicks **Edit** on the student registration details page.
+2. Admin is redirected to the **Edit Member** Retool page.
+3. Admin updates the required fields.
+4. Retool calls a **Lambda function** to update the member in Memberstack and sync the database.
+
+**Editable Fields**
+
+**Parent / Coach**
+
+- First Name
+- Last Name
+- Email
+- Phone Number
+
+**Student**
+
+- First Name
+- Last Name
+- Email
+
+---
+
+### 2. Edit — Does Not Have an Account
+
+**Condition:**\
+The person does **not** have a Memberstack account and exists only in the database.
+
+**Flow:**
+
+1. Admin clicks **Edit** on the student registration details page.
+2. Admin is redirected to an **alternate Retool edit page**.
+3. Admin updates all required fields.
+4. Retool updates the **member collection in the database only**.
+
+**Notes:**
+
+- No Memberstack update is performed.
+- This flow is used for pre-registered students or records created before account creation.
+
+---
+
+## Case 2) Editing from the Edit Member Retool Page
+
+**Condition:**\
+Admin is already on the Edit Member page for an existing account.
+
+**Flow:**
+
+1. Admin updates the member information.
+2. Retool calls a **Lambda function** to update the member.
+3. Updates are reflected in both Memberstack and the database.
+
+**Editable Fields**
+
+**Parent / Coach**
+
+- First Name
+- Last Name
+- Email
+- Phone Number
+
+**Student**
+
+- First Name
+- Last Name
+- Email
+
+---
+
+### Key Differences: Existing vs Non-Existing Accounts
+
+| Feature               | Existing Account | No Account          |
+| :-------------------- | :--------------- | :------------------ |
+| Memberstack Record    | Yes              | No                  |
+| Retool Page           | Edit Member Page | Alternate Edit Page |
+| Lambda Function       | Yes              | No                  |
+| Database Update       | Yes              | Yes                 |
+| Account Login Enabled | Yes              | No                  |
+
 ## Users
 
 TODO: Fill this out. Can users even make account edits on BDC? Confirm yes or no...
+
+**No**

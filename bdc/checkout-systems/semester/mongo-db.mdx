@@ -11,3 +11,192 @@ TODO: Document schema, what controls what, and how/if they interact
 ## class_details
 
 ## class_location
+
+## Class Level
+
+### Purpose
+
+Defines the **academic structure and content** of a class level (e.g., Level 1A, Level 3F).
+
+This data is mainly used for **display and organization** across the website and Webflow.
+
+---
+
+### Example Schema
+
+```
+{
+  "_id": "64a52de754773eb45d414d01",
+  "classLevelId": "3F",
+  "classLevelName": "Level 3F",
+  "classLevelOrder": 15,
+  "registerLink": "https://www.bergendebate.com/programs/level-3f",
+  "accomplishments": [],
+  "description": []
+}
+```
+
+---
+
+### Field Breakdown
+
+| Field             | Description                                        |
+| :---------------- | :------------------------------------------------- |
+| `classLevelId`    | Unique identifier used to link Webflow and MongoDB |
+| `classLevelName`  | Display name shown to users                        |
+| `classLevelOrder` | Controls sorting order in lists                    |
+| `registerLink`    | Program landing page link                          |
+| `accomplishments` | Displayed in Webflow program pages                 |
+| `description`     | Displayed in Webflow program pages                 |
+
+---
+
+> 💡 **Callout**\
+> Class Level does **not** control scheduling, locations, or seats.\
+> It only defines _what the class is_.
+
+---
+
+## 2. Class Location
+
+### Purpose
+
+Defines the **physical or virtual location** where classes are offered.
+
+---
+
+### Example Schema
+
+```
+{
+  "_id": "648ac03dee8ff128b842ec8b",
+  "locationId": 1,
+  "locationName": "Glen Rock"
+}
+```
+
+---
+
+### Field Breakdown
+
+| Field          | Description                              |
+| :------------- | :--------------------------------------- |
+| `locationId`   | Unique identifier used across the system |
+| `locationName` | Display label shown to users             |
+
+---
+
+> 💡 **Callout**\
+> Locations are reused across many classes.\
+> Changing a location name updates it everywhere.
+
+---
+
+## 3. Class Details
+
+### Purpose
+
+Defines a **specific running instance of a class**, including:
+
+- Location
+- Day & time
+- Grade range
+- Available seats
+
+This is the **core operational data** for registration.
+
+---
+
+### Example Schema
+
+```
+{
+  "_id": "68cb11347f3ca481ee7a6508",
+  "classLevelId": "1A",
+  "locationId": 4,
+  "daysName": "Sunday",
+  "classSessionId": 1,
+  "currentYear": 2026,
+  "startGrade": 5,
+  "endGrade": 6,
+  "startTime": "12:00PM",
+  "numberOfSpots": 12,
+  "classUniqueId": "EPiV"
+}
+```
+
+---
+
+### Field Breakdown
+
+| Field                     | Description                               |
+| :------------------------ | :---------------------------------------- |
+| `classLevelId`            | Links to **Class Level**                  |
+| `locationId`              | Links to **Class Location**               |
+| `daysName`                | Day the class runs                        |
+| `classSessionId`          | Session identifier (Fall / Winter–Spring) |
+| `currentYear`             | Academic year                             |
+| `startGrade` / `endGrade` | Allowed grade range                       |
+| `startTime`               | Class start time                          |
+| `numberOfSpots`           | Total available seats                     |
+| `classUniqueId`           | Unique ID used during payment             |
+
+---
+
+> 💡 **Callout**\
+> **Seat availability**, **waitlist messaging**, and **time selection** all depend on this collection.
+
+---
+
+## 4. Payment Details
+
+### Purpose
+
+Records **successful registrations and payments** made by parents.
+
+This collection is the **source of truth** for:
+
+- Who registered
+- Which class was paid for
+- Which student and parent are linked
+
+---
+
+### Example Schema
+
+```
+{
+  "_id": "6968c6488da5298889d3338d",
+  "submissionId": "pi_74997T_O4_s8G3Z6",
+  "payment_intent": "pi_74997T_O4_s8G3Z6",
+  "payment_total_checksum": "1800.0",
+  "studentId": "6968c62332942edfc94ecee1",
+  "classId": "dN8D",
+  "memberId": "6968c6056c0f291e76e1651f",
+  "prevStudent": "No",
+  "yearId": 2026,
+  "device": "Desktop",
+  "createdOn": "2026-01-15T10:49:43.776Z",
+  "couponCode": "XXXXXX"
+}
+```
+
+---
+
+### Field Breakdown
+
+| Field                    | Description                 |
+| :----------------------- | :-------------------------- |
+| `_id`                    | Unique payment record ID    |
+| `submissionId`           | Stripe payment reference    |
+| `payment_intent`         | Stripe payment intent ID    |
+| `payment_total_checksum` | Total paid amount           |
+| `studentId`              | Linked student profile      |
+| `classId`                | Registered class ID         |
+| `memberId`               | Parent account ID           |
+| `prevStudent`            | Indicates returning student |
+| `yearId`                 | Academic year               |
+| `couponCode`             | Applied coupon (if any)     |
+
+💡 **Callout**\
+Payment Details are used for **reports**, **seat counts**, **student history**, and **pre-registration eligibility**.
