@@ -142,6 +142,161 @@ When a user clicks on a program row, **additional details expand**, all sourced 
   </Step>
 </Steps>
 
+## Overview
+
+The Summer Checkout flow includes:
+
+1. Entering student details
+2. Selecting a session and location
+3. Optionally choosing future bundle programs
+4. Completing payment
+
+Each step must be completed before moving forward.
+
+---
+
+## Step 1: Student Details
+
+This is the first step of the checkout process.
+
+### Information Collected
+
+The user is asked to provide:
+
+- **Student First Name**
+- **Student Last Name**
+- **Email Address**
+- **Student Grade**
+- **Student School Name**
+- **Student Gender**
+- **Has your child participated in a BDC class before?** (Yes / No)
+
+### What Happens Next
+
+- The information is saved
+- Clicking **Next** moves the user to the **Select Session** step
+
+---
+
+## Step 2: Select Session
+
+In this step, the user chooses when and where the summer program will take place.
+
+### Session Selection
+
+- The user selects a **session**
+  - Example: Session 1, Session 2, etc.
+
+### Location Selection
+
+- Based on the selected session, available **locations** are displayed
+- The user selects **one location**
+
+### What Happens Next
+
+- Clicking **Next** opens the **Bundle Program Popup**
+
+---
+
+## Step 3: Bundle Program Popup (Optional)
+
+This step allows families to add **future programs** as a discounted bundle.
+
+### What the User Sees
+
+- A popup listing available future bundle programs
+- The option to:
+  - Select one or more bundle programs
+  - Skip by clicking **No Thanks**
+
+### Behavior
+
+- Bundle selection is optional
+- Users can select multiple programs
+- Closing the popup moves the user to the **Payment Screen**
+
+---
+
+## Step 4: Payment Screen
+
+This is the final step where the user reviews details and completes payment.
+
+---
+
+### Payment Options
+
+Once the checkout details are confirmed, payment options appear.
+
+#### Available Payment Methods
+
+- **Bank Transfer**
+- **Credit Card**
+
+### Payment Flow
+
+- User selects a payment method
+- After selecting a payment option, the **Buy Now** button becomes available
+- Clicking **Buy Now** redirects the user to the **Stripe Checkout page**
+
+---
+
+## Stripe Checkout
+
+### On the Stripe Page
+
+- User enters payment details securely
+- Stripe processes the payment
+- Payment information is not stored on the website
+
+### After Successful Payment
+
+- User is redirected to a **Success / Confirmation page**
+- The student is successfully registered for the summer program
+
+---
+
+## Bundle Program Banner
+
+On the payment screen, a **Bundle Program Banner** is visible.
+
+### Purpose
+
+- Shows any selected future bundle programs
+- Allows users to:
+  - Review selected bundle programs
+  - Add or update bundle selections directly from the banner
+
+---
+
+## Order Details
+
+This section shows a full summary of the registration.
+
+### Information Displayed
+
+- Selected summer program and session
+- Selected location
+- Selected bundle future programs
+- Selected briefs (if applicable)
+- Price breakdown and total amount
+
+### Why This Matters
+
+- Helps users review their selections
+- Ensures transparency before payment
+- Reduces checkout errors
+
+---
+
+## Summer Checkout Summary
+
+1. Enter student information
+2. Select session and location
+3. Optionally choose future bundle programs
+4. Select payment method
+5. Complete payment on Stripe
+6. View confirmation page
+
 TODO: Give a technical explanation of how checkout page works (before payment). Explain things that are materially different than how we do them on the semester checkout end. Else, just reference the APIs/codes that accomplish the functionality.
 
 Things to explain are the sign-up / log-in redirect, how session & locations are added in, the number of spots calculation, the code & triggers for code for PF Labs, how Model UN & Young Entreneurship are combined.
@@ -151,7 +306,8 @@ Things to explain are the sign-up / log-in redirect, how session & locations are
 
   1. Saved student profiles (similar to semester)
   2. Order session display numerically. This can be done now itself
-  3. 
+  3. **view student details in payment screen**
+  4. **Brief upsell**
 </Warning>
 
 ## Checkout System
@@ -161,6 +317,188 @@ TODO: For all of these, reference logics that are similar to semester checkout. 
 ### Before Payment
 
 TODO: Explain the payment options, how the checkout links are created, what happens when user is directed to Stripe, what happens if user returns back from Stripe page
+
+The summer checkout supports **two payment methods**, which are shown on the payment step after all required selections are completed.
+
+### 1. ACH Payment (Bank Transfer)
+
+- Paid directly from a bank account
+- Uses Stripe’s secure ACH payment flow
+- No additional processing fees are applied
+- Displays the base program price
+- Redirects the user to a Stripe-hosted checkout page to complete payment
+
+ACH payments are often preferred when users want to avoid card processing fees.
+
+---
+
+### 2. Credit / Debit Card Payment
+
+- Paid using a credit or debit card
+- Processed securely through Stripe
+- Includes a standard card processing fee
+- Displays a slightly higher total price due to the fee
+- Redirects the user to a Stripe-hosted checkout page for card entry
+
+---
+
+## When Payment Options Appear
+
+Payment options become available only after the user has:
+
+1. Completed the student information form
+2. Selected a summer session
+3. Selected a location
+4. Reached the payment step of the checkout flow
+
+Once these steps are completed, both payment buttons are displayed and the user may choose either option.
+
+---
+
+## How Checkout Links Are Created
+
+Checkout links are created and updated in stages as the user progresses through the checkout flow. This ensures Stripe always has the most up-to-date information.
+
+---
+
+### Step 1: Initial Checkout Creation
+
+**When this happens**\
+After the user completes the student information form and clicks **Next**.
+
+**What happens**
+
+- Student details are collected (name, email, grade, school, gender, previous participation)
+- Program and pricing information is prepared
+- A checkout session is created in Stripe
+- Two Stripe checkout links are generated:
+  - One for ACH payment
+  - One for card payment
+
+This initial checkout session is saved so it can be updated later as the user makes additional selections.
+
+---
+
+### Step 2: Updating Session and Location
+
+**When this happens**\
+After the user selects a summer session and location, then clicks **Next**.
+
+**What happens**
+
+- The existing checkout session is updated with:
+  - Selected session
+  - Selected location
+- No new checkout is created — the same session is enhanced with more details
+
+This ensures Stripe reflects the exact program and location the user selected.
+
+---
+
+### Step 3: Final Update Before Redirecting to Stripe
+
+**When this happens**\
+When the user clicks either the **ACH** or **Card** payment button.
+
+**What happens**
+
+- Any selected bundle or add-on programs are attached
+- Final success and return URLs are confirmed
+- The checkout session is finalized
+- The user is redirected to Stripe using the selected payment link
+
+At this point, the checkout is fully prepared and ready for payment.
+
+---
+
+## What Happens on the Stripe Checkout Page
+
+Once redirected to Stripe:
+
+1. The user reviews the order summary
+2. The user enters payment details:
+   - Bank details for ACH
+   - Card details for card payments
+3. Stripe securely processes the payment
+4. Stripe manages the checkout session and transaction
+
+The user may either:
+
+- Complete the payment
+- Cancel and return to the site
+- Leave the page and return later (session remains active for a period)
+
+---
+
+## What Happens When the User Returns From Stripe
+
+There are multiple return scenarios that the system handles automatically.
+
+---
+
+### 1. Successful Payment
+
+**What happens**
+
+- User is redirected to the payment confirmation page
+- The payment is recorded successfully
+- The summer program registration is confirmed
+- The checkout flow is completed
+
+---
+
+### 2. Cancelled Payment or Manual Return
+
+**What happens**
+
+- User is redirected back to the checkout page
+- The system detects the return
+- All previously entered information is restored:
+  - Student details
+  - Selected session
+  - Selected location
+  - Selected bundle programs
+- Payment options are shown again so the user can continue
+
+The user does not need to start over.
+
+---
+
+### 3. Browser Back Button Return
+
+**What happens**
+
+- The system recognizes that the user came back from Stripe
+- The checkout state is restored in the same way as a cancelled payment
+- The user can resume from where they left off
+
+---
+
+## How Checkout State Is Restored
+
+When a user returns from Stripe, the system:
+
+1. Confirms that a valid checkout session exists
+2. Restores student information
+3. Restores selected session and location
+4. Restores any selected bundle programs
+5. Displays the payment step again
+6. Updates the order summary with correct pricing
+
+If no valid checkout data is found, the user starts a fresh checkout.
+
+---
+
+## Payment Flow Summary
+
+1. User fills out student details
+2. Checkout session is created
+3. User selects session and location
+4. Checkout session is updated
+5. User selects payment method
+6. User is redirected to Stripe
+7. Payment is completed or cancelled
+8. User is redirected back with state restored or confirmation shown
 
 ### After Payment
 
