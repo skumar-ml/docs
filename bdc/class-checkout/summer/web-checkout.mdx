@@ -8,6 +8,150 @@ Most checkout journeys begin from the [summer overview page](https://www.bergend
 
 TODO: Explain how data from the semester overview page is populated via Webflow CMS. Explain importance of each field.
 
+The **Summer Semester Overview page** displays a list of available summer programs.\
+All program-level information on this page is **fully driven by Webflow CMS collections**, allowing the content team to manage programs without code changes.
+
+Each row on the page represents **one Webflow collection item (one summer program)**.
+
+![Image](/images/image-2.png)
+
+---
+
+## Webflow CMS as the Data Source
+
+All summer programs are stored as **collection items in Webflow CMS**.\
+Each collection item contains structured fields that control what appears on the overview page and what expands when a program row is clicked.
+
+---
+
+## Information Displayed on the Page
+
+### 1. Program Name
+
+**Examples:**
+
+- Model UN + Young Entrepreneurship
+- Model UN
+- Young Entrepreneurship
+- Intro to Debate
+- PF Labs
+- August Intensive
+
+**Source:** Webflow CMS – Program Name field
+
+**Why It’s Important:**
+
+- Acts as the primary identifier for the program
+- Used as the main clickable row title
+- Helps parents quickly compare offerings
+
+---
+
+### 2. Program Time
+
+**Examples:**
+
+- 9:30 AM – 3:15 PM
+- 9:30 AM – 12:00 PM
+
+**Source:** Webflow CMS – Time field
+
+**Why It’s Important:**
+
+- Helps parents assess daily schedule compatibility
+- Displayed directly in the overview row for quick scanning
+- Reduces clicks by showing key timing upfront
+
+---
+
+### 3. Suggested Grades
+
+**Examples:**
+
+- 6th–8th
+- 7th–9th
+
+**Source:** Webflow CMS – Suggested Grades field
+
+**Why It’s Important:**
+
+- Ensures parents understand age and grade suitability
+- Prevents incorrect registrations
+- Helps families quickly filter relevant programs
+
+---
+
+### 4. Register Now Button
+
+**Behavior:**
+
+- Redirects users directly to the **cart / checkout page**
+
+**Source:** Webflow CMS – Register Link field
+
+**Why It’s Important:**
+
+- Primary conversion action
+- Allows marketing and admin teams to control registration links
+- Can be updated per program without developer involvement
+
+---
+
+### 5. Learn More Link
+
+**Behavior:**
+
+- Redirects users to the **detailed program page**
+
+**Source:** Webflow CMS – Program Detail Page link
+
+**Why It’s Important:**
+
+- Provides deeper program descriptions
+- Supports parents who want more information before registering
+- Keeps the overview page clean and uncluttered
+
+---
+
+## Expanded Program Information (On Row Click)
+
+When a user clicks on a program row, **additional details expand**, all sourced from the same Webflow collection item.
+
+---
+
+### 6. Location
+
+**Examples:**
+
+- Fort Lee
+- Glen Rock
+- Livingston
+
+**Source:** Webflow CMS – Location field (multi-value or reference)
+
+**Why It’s Important:**
+
+- Helps families choose based on proximity
+- Supports programs offered in multiple locations
+- Displayed only on expansion to keep the overview concise
+
+---
+
+### 7. Session Information
+
+**Examples:**
+
+- Session 2: 7/6 – 7/17
+- Session 3: 7/21 – 8/1
+
+**Source:** Webflow CMS – Session field(s)
+
+**Why It’s Important:**
+
+- Clearly communicates program duration
+- Allows multiple sessions under one program
+- Reduces confusion about start and end dates
+
 ## Cart Page
 
 <Steps>
