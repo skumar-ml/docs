@@ -26,6 +26,69 @@ Payment options are displayed using a tab-based interface, where users can switc
   Can we make a note of where (and briefly how) the dynamic pricing updates is handled?
 </Note>
 
+### Dynamic Pricing Updates
+
+**How Dynamic Pricing Works**
+
+Dynamic pricing updates are handled entirely on the **frontend**, without additional API calls. Pricing changes are driven by user interaction with payment method tabs and program selections.
+
+**Trigger Points**
+
+- **Payment Method Tab Click**
+  - Elements: `.payment-cards-tab-link`
+  - Switching between **Bank Transfer (ACH)** and **Credit Card**
+- **Program / Brief Selection Changes**
+  - Supplementary programs or briefs
+  - Handled via `updateAmount()` (around line ~1765)
+
+**Initialization**
+
+- `updatePriceForCardPayment()` is called during **class initialization**
+- This sets up all required event listeners for payment method switching
+- Ensures correct prices are displayed on initial page load
+
+**Payment Method Logic**
+
+**Credit Card (Tab 2)**
+
+When the credit card payment option is selected:
+
+- Applies Stripe card processing fee using the formula:
+
+```
+(amount + 0.30) / 0.971
+```
+
+- Updates all relevant price displays:
+  - Core product deposit\
+    `[data-stripe='totalDepositPrice']`
+  - Add-on program prices\
+    `[data-stripe='addon-price']`
+  - Add-on deposit prices\
+    `[data-stripe='addon-deposit-price']`
+  - Brief prices\
+    `[data-stripe='brief-price']`
+  - Gray summary price display\
+    `.current-price-gray`
+
+**Bank Transfer (ACH) – Tab 1**
+
+When bank transfer is selected:
+
+- Displays **base prices only**
+- No card processing fee applied
+- Prices already reflect the **3% discount**
+- All price elements are reset to their original values
+
+### Program / Brief Selection Flow
+
+- When programs or briefs are selected/deselected:
+  - `updateAmount()` recalculates totals
+  - Triggers the active payment tab click
+  - Ensures pricing updates reflect the current payment method (ACH vs Card)
+
+---
+
 ### When Payment Options Are Displayed
 
 Payment options appear when:
@@ -39,7 +102,24 @@ Payment options appear when:
 
 When the user proceeds to payment, the system creates a Stripe checkout session based on the selected payment method.
 
-### Step 1: Credit Application Check
+### Step 1: Proceed to Payment (Trigger Point)
+
+User Action
+
+- User clicks **“Pay Now”**
+
+### Code Trigger
+
+- **File:** `class_details_stripe_bundle.js`
+- A click listener invokes:
+
+```
+initializeStripePayment()
+```
+
+This method is the **entry point** for all checkout logic.
+
+### Step 2: Credit Application Check
 
 - A modal prompts the user to apply available Bergen credits
 - User selects **Apply** or **Skip**
@@ -47,24 +127,72 @@ When the user proceeds to payment, the system creates a Stripe checkout session 
 
 **TODO:** Need to give some specifics on where this happens in the code. What code gets triggered when the user proceeds to payment. Is there a clickListener? These details are important to add in the Technical Docs.
 
-### Step 2: Data Preparation
+### Code Location
+
+- **File:** `class_details_stripe_bundle.js`
+
+Inside `initializeStripePayment()`:
+
+```
+const applyCredit =
+  await Utils.waitForCreditApplicationChoice(this.webflowMemberId);
+```
+
+---
+
+### Credit Modal Logic
+
+**File:** `utils.js`\
+**Method:** `waitForCreditApplicationChoice(webflowMemberId)`
+
+Flow:
+
+1. Fetch credit balance:
+
+   ```
+   GET getCreditBalance/{webflowMemberId}
+   
+   ```
+2. If credit is `0` or invalid:
+   - Returns `false`
+   - Modal is skipped
+3. If credit exists:
+   - Displays `#bergen-credits-modal`
+   - Populates values via `updateCreditData()`
+4. User selects:
+   - Apply → `true`
+   - Skip → `false`
+
+The resolved value is stored as:
+
+```
+applyCredit
+```
+
+### Step 3: Data Preparation
 
 The following data is collected before generating the checkout link:
 
-- `checkoutId` – Existing checkout session ID (from localStorage).
-- `label` – Class description (Location | Level | Time)
-- `classUniqueId` – Selected class identifier
-- `location` – Selected location
-- `memberId` – Webflow member ID
-- `upsellProgramIds` – Selected supplementary program IDs
-- `has_fee` – Indicates if new student fee applies
-- `source` – Always set to `cart_page`
-- `amount` – Final amount in cents
-- `applyCredit` – Credit usage flag
-- `successUrl` – Redirect URL after successful payment
-- `cancelUrl` – Redirect URL if payment is cancelled
+- Before generating the checkout URL, the system assembles:
+
+  | Field            | Purpose                                                       |
+  | :--------------- | :------------------------------------------------------------ |
+  | checkoutId       | Existing checkout session ID (from localStorage, if resuming) |
+  | label            | Human-readable description (Location \| Level \| Time)        |
+  | classUniqueId    | Selected class identifier                                     |
+  | location         | Selected location                                             |
+  | memberId         | Webflow member ID                                             |
+  | upsellProgramIds | Selected supplementary programs                               |
+  | has_fee          | Indicates new student fee                                     |
+  | source           | Always `cart_page`                                            |
+  | amount           | Final amount (in cents)                                       |
+  | applyCredit      | Credit usage flag                                             |
+  | successUrl       | Redirect after payment success                                |
+  | cancelUrl        | Redirect if payment is cancelled                              |
 
 TODO: What is existing checkout session ID? there was no explanation of it earlier. I think we need to expand these tech docs to give a tech explantion of the prior steps (Log-in / Sign-Up, Student Profiles, Upsells, etc.)
+
+**checkoutId**:  We generate a checkout ID when the user submits the student details form. We then update the checkout session after the user selects a class, bundle program, or briefs, based on the checkout ID.
 
 There are additional fields for bundle purchases:
 
@@ -72,7 +200,7 @@ There are additional fields for bundle purchases:
 - `isBundleProgram` – Boolean flag
 - `topics` – Selected brief topics (if applicable)
 
-### Step 3: API Call
+### Step 4: API Call and Response
 
 Depending on the purchase type, one of two APIs is called:
 
@@ -86,7 +214,7 @@ This API endpoint is used for single class registration OR bundle purchases with
 
 This API endpoint is used for bundle purchases with supplementary programs or briefs
 
-### Step 4: API Response
+### Response
 
 The API returns:
 
@@ -104,13 +232,28 @@ The API returns:
 
 **TODO:** Explain that these links are used by frontend as the href for payment method registration buttons.
 
-**Credit Card** redirects to`cardUrl` and **Bank Transfer** redirect to `achUrl`. Before redirecting, we programatically do the following:
+### Frontend Behavior
 
-- `backbuttonstate` is set to `"1"`
+- URLs are assigned as `href` values
+- Based on selected payment method:
+  - Credit Card → `cardUrl`
+  - Bank Transfer → `achUrl`
+  - 
+
+Before redirecting:
+
+- `backbuttonstate = "1"` is set
 - Checkout data is saved to `localStorage`
-- API response is stored for restoration
+- API response is cached for restoration
 
 TODO: I think some explanation of why these steps are important or what they control will be good.
+
+**Why this matters**
+
+- Enables recovery from:
+  - Browser back button
+  - Stripe cancel action
+  - Network interruptions
 
 ## Returning from Stripe
 
