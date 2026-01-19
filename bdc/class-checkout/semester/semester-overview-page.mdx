@@ -46,4 +46,204 @@ Displayed as a **Register** button for each class level. When clicked, the user 
 
 ## Technical Details
 
-TODO: Briefly explain which APIs & JS files are used for backand / frontend. Is all content fetched on page load? What are the important onClickListeners? 
+TODO: Briefly explain which APIs & JS files are used for backand / frontend. Is all content fetched on page load? What are the important onClickListeners?
+
+**APIs & Backend Overview **
+
+**Single API Endpoint **
+
+**Base URL: **
+
+https://xkopkui840.execute-api.us-east-1.amazonaws.com/prod/camp/ 
+
+**Endpoint: **
+
+getClassDetails?levelId= 
+
+**Full URL: **
+
+https://xkopkui840.execute-api.us-east-1.amazonaws.com/prod/camp/getClassDetails?levelId= 
+
+**Method: **
+
+GET (via fetch()) 
+
+**Purpose **
+
+Fetches all class-level data in one consolidated response, including: 
+
+- Class levels 
+
+
+- Locations & timings 
+
+
+- Prerequisites 
+
+
+- Syllabus details (descriptions & accomplishments) 
+
+**Frontend JavaScript **
+
+**JS Structure **
+
+- No external JavaScript files; all JavaScript is written inline within the HTML. 
+
+**Main Controller Class: classLists **
+
+**Responsibilities **
+
+- API calls 
+
+
+- Client-side data caching 
+
+
+- DOM rendering and updates 
+
+**Key Methods **
+
+1. fetchData(endpoint) — Generic method for calling the backend API. 
+
+
+2. renderPortalData() — Triggered on page load to fetch and render all class data. 
+
+
+3. viewClassLocations(classData) — Updates the DOM with class locations and timing information. 
+
+
+4. openSyllabusModal(levelId) — Opens the syllabus modal using cached API data. 
+
+
+5. initSyllabusModal() — Attaches click handlers to syllabus trigger elements. 
+
+**Page Load Behavior **
+
+**Initial Load **
+
+- All content is fetched once on page load. 
+
+
+- Instantiating classLists triggers renderPortalData(). 
+
+
+- One API request to getClassDetails?levelId= retrieves all levels. 
+
+
+- The full response is stored in this.cachedApiData. 
+
+**Loading State **
+
+- A loading spinner (half-circle-spinner) is shown while data is being fetched. 
+
+**Post Load **
+
+- Cached data is reused for syllabus modals. 
+
+
+- No additional API calls are made after the initial load. 
+
+**Important OnClick / Event Listeners **
+
+**1. FAQ Accordion Toggle **
+
+Element: .class-detail-faq-header 
+
+**Behavior: **
+
+- Only one accordion item remains open at a time. 
+
+
+- Opening one closes the others. 
+
+**2. Syllabus Modal Trigger **
+
+Element: .syllabus-content-div (data-gtm="syllabus-trigger") 
+
+Data Source: Cached API data (no new API call). 
+
+**3. Syllabus Modal Close **
+
+Element: .close-link.syllabus 
+
+**4. Phone Number Validation **
+
+Element: #Contact-Number | Event: input | Library: libphonenumber (external) | Purpose: Real-time phone validation 
+
+**Summary **
+
+- A single API call is made on page load. 
+
+
+- All data is cached client-side. 
+
+
+- Subsequent interactions (FAQ, syllabus modal) are handled without additional backend requests. 
+
+
+- JavaScript is fully inline and driven by the classLists controller. 
+
+**Student Graphic Info Form **
+
+**Features **
+
+**Form Fields **
+
+- Student First Name 
+
+
+- Student Last Name 
+
+
+- Parent Name 
+
+
+- Parent Email 
+
+
+- Student Grade (5th–12th) 
+
+
+- Semester (Fall, Winter/Spring, Summer) 
+
+
+- Parent Phone Number (with validation) 
+
+
+- Location (Fort Lee, Glen Rock, Livingston, Online) 
+
+**Functionality **
+
+- Phone number formatting and validation (US format) 
+
+
+- Form validation (all fields required) 
+
+
+- localStorage support (saves/loads form data) 
+
+
+- API integration (submits to studentGraphicInfo endpoint) 
+
+
+- Success/error message display 
+
+
+- Loading spinner during submission 
+
+
+- Modal open/close functionality 
+
+
+- Responsive design (mobile-friendly) 
+
+**Design **
+
+- Modal popup interface 
+
+
+- Smooth animations and transitions 
+
+**API Endpoint **
+
+POST https://b4z5gqv2xj.execute-api.us-east-1.amazonaws.com/prod/camp/studentGraphicInfo 
