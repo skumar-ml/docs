@@ -36,13 +36,18 @@
               {
                 "group": "Semester",
                 "pages": [
-                  "bdc/checkout-systems/semester/overview",
+                  "bdc/checkout-systems/semester/introduction",
+                  "bdc/class-checkout/semester/semester-overview-page",
                   {
                     "group": "Web Checkout",
                     "pages": [
-                      "bdc/class-checkout/semester/semester-overview-page",
-                      "bdc/class-checkout/semester/semester-overview-page-copied-1",
-                      "bdc/class-checkout/semester/semester-overview-page-copied-2"
+                      {
+                        "group": "Technical",
+                        "pages": [
+                          "bdc/checkout-systems/semester/web-checkout/technical/payment"
+                        ]
+                      },
+                      "bdc/class-checkout/semester/semester-overview-page-copied-1"
                     ]
                   },
                   "bdc/class-checkout/semester/pre-reg-system",
