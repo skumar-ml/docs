@@ -4,11 +4,7 @@ title: "Payment System"
 
 ## Before Payment
 
-TODO: Explain the payment options, how the checkout links are created, what happens when user is directed to Stripe, what happens if user returns back from Stripe page
-
-### Overview
-
-This document explains the available payment options, how Stripe checkout links are created, what happens when users are redirected to Stripe, and how the system restores state when users return from the Stripe payment page.
+This section explains the available payment options, how Stripe checkout links are created, what happens when users are redirected to Stripe, and how the system restores state when users return from the Stripe payment page.
 
 ### Available Payment Methods
 
@@ -101,13 +97,14 @@ The API returns:
   "achUrl": "https://checkout.stripe.com/..."
 }
 ```
+
 **TODO:** I think API Call & Response can be combined as one step
 
 ### Step 5: Redirect to Stripe
 
-**TODO:** Explain that these links are used by frontend as the href for payment method registration buttons. 
+**TODO:** Explain that these links are used by frontend as the href for payment method registration buttons.
 
-**Credit Card** redirects to`cardUrl` and **Bank Transfer** redirect to `achUrl`. Before redirecting, we programatically do the following: 
+**Credit Card** redirects to`cardUrl` and **Bank Transfer** redirect to `achUrl`. Before redirecting, we programatically do the following:
 
 - `backbuttonstate` is set to `"1"`
 - Checkout data is saved to `localStorage`
@@ -130,7 +127,8 @@ User is directed to a confirmation screen
 ```
 payment-confirmation?type=Academic&programName={label}&pType={paymentType}
 ```
-TODO: It will be good to explain what these URL parameters explain, or link to a section that will do it. 
+
+TODO: It will be good to explain what these URL parameters explain, or link to a section that will do it.
 
 **System Behavior**:
 
@@ -139,7 +137,7 @@ TODO: It will be good to explain what these URL parameters explain, or link to a
 
 ### 2. Cancelled Payment
 
-TODO: What are the triggers for this? 
+TODO: What are the triggers for this?
 
 **Redirect URL Pattern**:
 
@@ -205,31 +203,11 @@ Includes:
 - Bundle selections
 - Creation timestamp
 
-## After Payment
-
-TODO: Explain everything that happens after payment. What APIs get triggered, what writes happen in the DB, where user gets directed after, any automated emails
-
-## 1. Post-Payment Flow (After Successful Checkout)
+## Post-Payment Flow (After Successful Checkout)
 
 This section explains **everything that happens after a payment is made**, starting from Stripe webhook to DB writes, emails, and user redirection.
 
----
-
-## 1.1 Triggered API
-
-### `stripePaymentListener` (Stripe Webhook)
-
-**Triggered by:**
-
-- Stripe events such as `payment_intent.succeeded`, `checkout.session.completed`, or async bank transfer updates.
-
-**Purpose:**
-
-- Acts as the single entry point for all post-payment processing.
-
----
-
-## 1.2 Core Logic Flow (High Level)
+### 1. Core Logic Flow (High Level)
 
 1. Stripe sends webhook → `stripePaymentListener`
 2. Payment status is derived (`Complete`, `Processing`, `Failed`)
@@ -238,6 +216,16 @@ This section explains **everything that happens after a payment is made**, start
 5. Enrollment, referrals, coupons, waitlist cleanup occur
 6. Emails are triggered
 7. User is redirected to success / confirmation page
+
+### 2. `stripePaymentListener` (Stripe Webhook)
+
+We have a single webhook (`stripePaymentListener`) that is triggered by Stripe events such as `payment_intent.succeeded`, `checkout.session.completed`, or async bank transfer updates. This API acts as the single entry point for all post-payment processing.
+
+TODO: Describes what this API does (e.g., how it derives the payment status), and what happens for each payment status.
+
+### 3. `updateClassPayment()`
+
+TODO: Explain what all does. Write this in a way that maintains the logic. I believe all the below content can fit underneath here.
 
 ---
 
