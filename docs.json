@@ -36,14 +36,15 @@
               {
                 "group": "Semester",
                 "pages": [
+                  "bdc/checkout-systems/semester/overview",
                   {
                     "group": "Web Checkout",
                     "pages": [
                       "bdc/class-checkout/semester/semester-overview-page",
-                      "bdc/class-checkout/semester/semester-overview-page-copied-1"
+                      "bdc/class-checkout/semester/semester-overview-page-copied-1",
+                      "bdc/class-checkout/semester/semester-overview-page-copied-2"
                     ]
                   },
-                  "bdc/checkout-systems/semester/overview",
                   "bdc/class-checkout/semester/pre-reg-system",
                   "bdc/class-checkout/semester/waitlist-system",
                   "bdc/class-checkout/semester/retool",

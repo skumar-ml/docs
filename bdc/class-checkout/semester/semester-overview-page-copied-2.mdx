@@ -1,105 +1,8 @@
 ---
-title: "Non-Technical: Checkout Flow"
+title: "Payment System"
 ---
 
-## Non-Technical: Checkout Flow
-
-The checkout flow follows a **multi-step form**:
-
-**\<TODO\>:** This misses the parent account creation or login step
-
-1. Student Details
-2. Optional Bundle Program Selection
-3. Class Selection & Payment
-
-Each step must be completed before moving to the next.
-
-### Step 1: Student Details
-
-Parents begin by entering or selecting student information.
-
-**Saved Student Profiles**: A dropdown allows parents to select an existing student profile. Selecting a saved student automatically fills in the form fields.
-
-**Student Information Fields**:
-
-- First & Last Name
-- Email Address
-  - If the student does not have an email, the parent’s email can be used.
-- Student Grade, School, & Gender
-- Has your child participated in a BDC class before?
-
-**Next Button**
-
-- Clicking **Next** saves the student information.
-- After saving, a popup appears to offer discounted bundle programs for future sessions.
-
-### Step 2: Bundle Program (Optional)
-
-A popup appears allowing families to pre-register for future sessions at a discounted rate.
-
-**Bundle Options:** Users can select one or more future sessions to bundle.
-
-**Skipping the Bundle:** Users can skip this step by clicking **“No Thanks”**. The checkout process continues whether or not a bundle is selected.
-
-### Step 3: Class Selection & Payment
-
-**Select Class Location:** Users must first choose a location (e.g., Glen Rock, Fort Lee, Livingston, Online)
-
-**Select Class Time:** Available time slots appear after selecting a location. Example times:
-
-- Friday 4:00 PM – 6:00 PM
-- Sunday 9:30 AM – 11:30 AM
-
-**Seat Availability Messages**
-
-Depending on how many spots are left in the class, users may see messages such as:
-
-- **Limited Availability:** "Hurry! Register now. Seats filling up fast! Only 1 spot left.”
-- **Sold Out:** “Seats are full. You can fill out the waitlist form below.”
-- “Seats are full. Please fill out the waitlist form.”
-
-<Warning>
-  TODO: What is the difference (in trigger conditions between the bottom two)? We should note all potential messages the user may see, as well as what the trigger is
-</Warning>
-
-## Payment Options
-
-Payment options become available once a class time and location are selected and seats are available. We support **Bank Transfer** and **Credit Card** payment methods. To pay, users:
-
-1. Select a payment method & click **Buy Now**.
-3. They are **redirected to a secure Stripe checkout page**, where they enter payment details & complete payment
-
-### After Payment
-
-Upon successful payment, the user is redirected to a confirmation (success) page. The student is officially registered for the class.
-
-TODO: Hyperlink the confimration page...
-
-## Additional UI Elements of Checkout Flow
-
-**Bundle Program Banner:** On the class level & location select screen. This displays the currently (if there are any) selected bundle programs. It allows users to add or remove their selections prior to payment.
-
-**Bergen Briefs:** On the right-hand sidebar, optional learning briefs can be added alongside class registration. Users can choose full or light versions.
-
-**Student Info Panel:** Displays the selected student’s information for confirmation.
-
-TODO: Does it allow for editing? Or just display?
-
-**Order Details Panel:** Shows:
-
-- selected class level, time and location
-- any upsells (bundle future semesters or briefs)
-- pricing and totals
-
-NOTE: This dynamically updates based on payment method (adding or removing the bank transfer discount)
-
----
-
-TODO: Give a technical explanation of how checkout page works (before payment). Things to explain are the saved student profiles, the new student fee determination, the sign-up / log-in redirect, how class time and locations are added in, the number of spots calculation.
-
-## Technical Details of the Checkout System
-
-### Before Payment
+## Before Payment
 
 TODO: Explain the payment options, how the checkout links are created, what happens when user is directed to Stripe, what happens if user returns back from Stripe page
 
@@ -107,48 +10,25 @@ TODO: Explain the payment options, how the checkout links are created, what happ
 
 This document explains the available payment options, how Stripe checkout links are created, what happens when users are redirected to Stripe, and how the system restores state when users return from the Stripe payment page.
 
----
-
-### Payment Options
-
 ### Available Payment Methods
 
 The system provides two payment options for class registration:
 
-### 1. Bank Transfer (ACH)
+**1. Bank Transfer (ACH):** This option is selected by default. The base price (no processing fees) is used. Stripe handles the payment, ensuring no bank details are stored by us.
 
-- **Label**: Bank Transfer
-- **Discount**: 3% discount applied to the total amount
-- **Default Selection**: Selected by default
-- **Processing**: Secure ACH payment handled by Stripe
-- **User Experience**:
-  - User selects Bank Transfer as the payment method
-  - Stripe securely handles bank authorization and payment
-  - No bank details are stored by the system
-- **Price Calculation**: Base price with 3% discount applied
+**2. Credit Card:** If selected, a processing fee (_approximately 2.9% + \$0.30_) is applied. Standard credit/debit card payment via Stripe
 
----
-
-### 2. Credit Card
-
-- **Label**: Credit Card
-- **Fee**: Additional processing fee applied
-- **Processing**: Standard credit/debit card payment via Stripe
-- **Price Calculation**: Base price plus processing fee\
-  _(approximately 2.9% + \$0.30)_
-
----
+<Note>
+  TODO: Why is it "approximately"???? Can we be exact
+</Note>
 
 ### Payment Option Selection
 
-- Payment options are displayed using a tab-based interface
-- Users can switch between **Bank Transfer** and **Credit Card**
-- The selected payment option determines which Stripe checkout URL is generated
-- Pricing updates dynamically:
-  - **Bank Transfer** → Discounted total
-  - **Credit Card** → Total including processing fee
+Payment options are displayed using a tab-based interface, where users can switch between **Bank Transfer** and **Credit Card**. The selected payment option determines which Stripe checkout URL is generated and updates pricing (in the order details) dynamically.
 
----
+<Note>
+  Can we make a note of where (and briefly how) the dynamic pricing updates is handled?
+</Note>
 
 ### When Payment Options Are Displayed
 
@@ -157,17 +37,11 @@ Payment options appear when:
 - A class time slot is selected
 - The class has available seats (not waitlisted)
 - The user account type is not `student`
-- For bundle purchases, payment options appear only when supplementary programs or briefs are selected
+- For pre-registrants, payment options appear only when supplementary programs or briefs are selected. Else, the registration is free.
 
----
-
-## Checkout Link Creation
-
-### Overview
+## Checkout Link System
 
 When the user proceeds to payment, the system creates a Stripe checkout session based on the selected payment method.
-
----
 
 ### Step 1: Credit Application Check
 
@@ -175,15 +49,13 @@ When the user proceeds to payment, the system creates a Stripe checkout session 
 - User selects **Apply** or **Skip**
 - The selection is saved as `applyCredit` and included in checkout data
 
----
+**TODO:** Need to give some specifics on where this happens in the code. What code gets triggered when the user proceeds to payment. Is there a clickListener? These details are important to add in the Technical Docs.
 
 ### Step 2: Data Preparation
 
 The following data is collected before generating the checkout link:
 
-#### Required Fields
-
-- `checkoutId` – Existing checkout session ID (from localStorage)
+- `checkoutId` – Existing checkout session ID (from localStorage).
 - `label` – Class description (Location | Level | Time)
 - `classUniqueId` – Selected class identifier
 - `location` – Selected location
@@ -196,42 +68,27 @@ The following data is collected before generating the checkout link:
 - `successUrl` – Redirect URL after successful payment
 - `cancelUrl` – Redirect URL if payment is cancelled
 
-#### Additional Fields for Bundle Purchases
+TODO: What is existing checkout session ID? there was no explanation of it earlier. I think we need to expand these tech docs to give a tech explantion of the prior steps (Log-in / Sign-Up, Student Profiles, Upsells, etc.)
+
+There are additional fields for bundle purchases:
 
 - `paymentId` – Bundle payment identifier
 - `isBundleProgram` – Boolean flag
 - `topics` – Selected brief topics (if applicable)
 
----
-
 ### Step 3: API Call
 
-Depending on the purchase type, one of the following APIs is called:
+Depending on the purchase type, one of two APIs is called:
 
-#### Standard Checkout
+#### Standard Checkout (`updateDataToCheckoutUrl`)
 
-- **Endpoint**: `updateDataToCheckoutUrl`
-- **URL**:\
-  `https://nqxxsp0jzd.execute-api.us-east-1.amazonaws.com/prod/camp/updateDataToCheckoutUrl`
+This API endpoint is used for single class registration OR bundle purchases without supplementary programs.
 
-Used for:
+**TODO:** What do you mean "bundle purchases without supplementary programs?"
 
-- Single class registration
-- Bundle purchases without supplementary programs
+#### Supplementary Checkout (`checkoutUrlForUpsellProgram`)
 
----
-
-#### Supplementary Checkout
-
-- **Endpoint**: `checkoutUrlForUpsellProgram`
-- **URL**:\
-  `https://nqxxsp0jzd.execute-api.us-east-1.amazonaws.com/prod/camp/checkoutUrlForUpsellProgram`
-
-Used for:
-
-- Bundle purchases with supplementary programs or briefs
-
----
+This API endpoint is used for bundle purchases with supplementary programs or briefs
 
 ### Step 4: API Response
 
@@ -244,66 +101,45 @@ The API returns:
   "achUrl": "https://checkout.stripe.com/..."
 }
 ```
-
----
+**TODO:** I think API Call & Response can be combined as one step
 
 ### Step 5: Redirect to Stripe
 
-Based on the selected payment method:
+**TODO:** Explain that these links are used by frontend as the href for payment method registration buttons. 
 
-- **Credit Card** → Redirect to `cardUrl`
-- **Bank Transfer** → Redirect to `achUrl`
-
-Before redirecting:
+**Credit Card** redirects to`cardUrl` and **Bank Transfer** redirect to `achUrl`. Before redirecting, we programatically do the following: 
 
 - `backbuttonstate` is set to `"1"`
 - Checkout data is saved to `localStorage`
 - API response is stored for restoration
 
----
-
-## Stripe Checkout Experience
-
-### On the Stripe Page
-
-Once redirected to Stripe:
-
-1. User reviews payment details
-2. Enters required payment information
-3. Confirms payment
-4. Stripe processes the transaction securely
-
-Stripe manages:
-
-- Payment authentication
-- Session lifecycle
-- Secure handling of payment details
-
----
+TODO: I think some explanation of why these steps are important or what they control will be good.
 
 ## Returning from Stripe
 
-### Possible Return Scenarios
-
----
+There are several return scenarios, each of which are detailed in the following:
 
 ### 1. Successful Payment
+
+TODO: What are the conditions on which this triggers (via the API)?
+
+User is directed to a confirmation screen
 
 **Redirect URL Pattern**:
 
 ```
 payment-confirmation?type=Academic&programName={label}&pType={paymentType}
 ```
+TODO: It will be good to explain what these URL parameters explain, or link to a section that will do it. 
 
 **System Behavior**:
 
 - Payment is confirmed
 - Registration is completed
-- User sees confirmation screen
-
----
 
 ### 2. Cancelled Payment
+
+TODO: What are the triggers for this? 
 
 **Redirect URL Pattern**:
 
@@ -320,6 +156,8 @@ payment-confirmation?type=Academic&programName={label}&pType={paymentType}
 ---
 
 ### 3. Browser Back Button
+
+TODO: What URL are they sent back to? Then, it seems like the Detection Logic triggers. If Detection Logic determines user is returning from Stripe, then the same restoration logic as caancelled payment is triggered.
 
 **Detection Logic**:
 
@@ -346,9 +184,13 @@ When restoring checkout state, the system:
 6. Restores bundle and supplementary selections
 7. Updates UI steps and validations
 
+TODO: This section needs work, but we can return to it.
+
 ---
 
 ## Data Persistence
+
+TODO: Briefly explain the purpose here. Or we fold it in to the above section (where this is actually used)
 
 ### LocalStorage Keys
 
@@ -363,7 +205,7 @@ Includes:
 - Bundle selections
 - Creation timestamp
 
-### After Payment
+## After Payment
 
 TODO: Explain everything that happens after payment. What APIs get triggered, what writes happen in the DB, where user gets directed after, any automated emails
 
