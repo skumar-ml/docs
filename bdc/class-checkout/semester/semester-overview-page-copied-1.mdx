@@ -8,13 +8,47 @@ The checkout flow follows a **multi-step form**:
 
 **\<TODO\>:** This misses the parent account creation or login step
 
+1. Login / Sign-up via cart page
 1. Student Details
 2. Optional Bundle Program Selection
 3. Class Selection & Payment
 
 Each step must be completed before moving to the next.
 
-### Step 1: Student Details
+### Step 1: Login / Sign-up via the cart page
+
+![Image](/images/image-3.png)
+
+When a user reaches the **Cart flow**, they must create or access a **Parent Account** before continuing.
+
+### Option 1: Existing Parent (Login)
+
+- At the top of the page, the user sees:\
+  **“Already have an account?”** with a **Login** button.
+- Clicking **Login** opens a **login modal**.
+- The parent enters their credentials and logs in.
+- Upon successful login:
+  - The user remains in the same flow.
+  - The system automatically advances to the **Student Details** step.
+
+---
+
+### Option 2: New Parent (Create Account)
+
+- If the user does not have an account, they complete the **Create Account** form.
+- Required fields include:
+  - Parent First Name
+  - Parent Last Name
+  - Parent Email Address
+  - Parent Phone Number
+  - How did you find out about BDC?
+  - Password
+- After filling in the details, the user clicks **Next**.
+- On successful account creation:
+  - The parent account is created and logged in automatically.
+  - The flow advances to the **Student Details** step.
+
+### Step 2: Student Details
 
 Parents begin by entering or selecting student information.
 
@@ -33,7 +67,7 @@ Parents begin by entering or selecting student information.
 - Clicking **Next** saves the student information.
 - After saving, a popup appears to offer discounted bundle programs for future sessions.
 
-### Step 2: Bundle Program (Optional)
+### Step 3: Bundle Program (Optional)
 
 A popup appears allowing families to pre-register for future sessions at a discounted rate.
 
@@ -41,7 +75,7 @@ A popup appears allowing families to pre-register for future sessions at a disco
 
 **Skipping the Bundle:** Users can skip this step by clicking **“No Thanks”**. The checkout process continues whether or not a bundle is selected.
 
-### Step 3: Class Selection & Payment
+### Step 4: Class Selection & Payment
 
 **Select Class Location:** Users must first choose a location (e.g., Glen Rock, Fort Lee, Livingston, Online)
 
@@ -56,7 +90,6 @@ Depending on how many spots are left in the class, users may see messages such a
 
 - **Limited Availability:** "Hurry! Register now. Seats filling up fast! Only 1 spot left.”
 - **Sold Out:** “Seats are full. You can fill out the waitlist form below.”
-- “Seats are full. Please fill out the waitlist form.”
 
 <Warning>
   TODO: What is the difference (in trigger conditions between the bottom two)? We should note all potential messages the user may see, as well as what the trigger is
@@ -71,9 +104,9 @@ Payment options become available once a class time and location are selected and
 
 ### After Payment
 
-Upon successful payment, the user is redirected to a confirmation (success) page. The student is officially registered for the class.
+Upon successful payment, the user is redirected to a [confirmation (success) page](https://www.bergendebate.com/payment-confirmation?type=Academic&programName=Glen%20Rock%20%7C%20Level%201A%20%7C%20Saturday%209:30AM%20-%2011:30AM&pType=card&transactionID=cs_live_b1ZBFBo5RsbbfPvJHdutwSFnk3f0oGxPQTZbsVAqgoGR5YxQJbk4zYt3IW). The student is officially registered for the class.
 
-TODO: Hyperlink the confimration page...
+TODO: Hyperlink the confimration page... **Added**
 
 ## Additional UI Elements of Checkout Flow
 
