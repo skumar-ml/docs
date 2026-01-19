@@ -4,124 +4,26 @@ title: "Creating an Account"
 
 ## How-To
 
-TODO:
-
-- Give steps on  how to do this in plain text
-- Explain the difference of account creation for student vs. other account types
+1. Navigate to the sign-up page.
+2. Fill in required fields (and provide a <u>valid email address</u>) **\<TODO\>**
+5. Create a password.
+6. Submit the form to create your account.
 
 The platform supports multiple account types to ensure proper role-based access and family linking.
 
----
+### Parent Accounts
 
-### Account Types
+**Required Fields:** First & Last Name, Email Address
 
-- **Parent**
-- **Student**
-- **Coach**
+### Student Accounts
 
----
+**Required Fields:** First & Last Name, Parent Name &  Email Address
 
-### Sign-Up & Login URLs
+**Note:** The parent email address is used to link the student account to a parent account via the `familyId`.
 
-- **Sign-Up:** https://www.bergendebate.com/sign-up
-- **Login:** https://www.bergendebate.com/log-in
+### Coach Accounts
 
----
-
-### Parent Account Sign-Up
-
-Parents create and manage student accounts and class registrations.
-
-**Required Fields**
-
-- First Name
-- Last Name
-- Email Address
-- What Best Describes You (Parent, Student, Coach)
-- Password
-
-**Steps**
-
-1. Navigate to the sign-up page.
-2. Enter your first and last name.
-3. Provide a valid email address.
-4. Select **Parent** under "What Best Describes You".
-5. Create a password.
-6. Submit the form to create your account.
-
----
-
-### Student Account Sign-Up
-
-Student accounts must be linked to a parent account.
-
-**Required Fields**
-
-- First Name
-- Last Name
-- Email Address
-- What Best Describes You (Parent, Student, Coach)
-- Parent Name
-- Parent Email Address
-- Password
-
-**Steps**
-
-1. Navigate to the sign-up page.
-2. Enter the student's first and last name.
-3. Provide the student's email address.
-4. Select **Student** under "What Best Describes You".
-5. Enter the parent's name.
-6. Enter the parent's email address.
-7. Create a password.
-8. Submit the form to complete sign-up.
-
-**Important Notes**
-
-- Student accounts are linked using the parent's email address.
-- Students cannot independently register for classes.
-- Family association is determined by the parent account.
-
----
-
-### Coach Account Sign-Up
-
-Coach accounts are used for instructional and administrative purposes.
-
-**Required Fields**
-
-- First Name
-- Last Name
-- Email Address
-- What Best Describes You (Parent, Student, Coach)
-- Password
-
-**Steps**
-
-1. Navigate to the sign-up page.
-2. Enter your first and last name.
-3. Provide a valid email address.
-4. Select **Coach** under "What Best Describes You".
-5. Create a password.
-6. Submit the form to create your account.
-
----
-
-### Login
-
-All account types use the same login process.
-
-**Login Fields**
-
-- Email Address
-- Password
-
-**Steps**
-
-1. Navigate to the login page.
-2. Enter your registered email address.
-3. Enter your password.
-4. Click **Log In** to access your account.
+**Required Fields:** First & Last Name, Email Address
 
 <Warning>
   There is no way for an admin to create an account for a user. This is contemplated future functionality. If such a need arises, let the tech team know, and we can manually do this
@@ -137,76 +39,51 @@ To create an account, we do the following:
 2. What does the MongoDB schema look like for a created account
 3. Add in any differences in the flow for parent vs student vs coach accounts
 
-## 1. APIs Involved in Account Creation
+## Technical Steps Involved in Account Creation
 
-### 1.1 `POST /camp/createUserSignup`
+**1: Memberstack**
 
-**Purpose:**  
-Entry-point API to initiate account signup and synchronize data between Webflow, Memberstack, and MongoDB.
+**TODO:** We need to add a step before this that talks about Memberstack inserting the record into their database. How do we ensure this record has been inserted before we call createUserSignup?
+
+### 1.1 `POST /camp/createUserSignup `
+
+<Note>
+  TODO: Why is it /camp/?
+</Note>
+
+Entry-point API to initiate account signup and synchronize data between Webflow & Memberstack.
 
 **Responsibilities:**
 
-- Accepts signup payload:
-  - `name`
-  - `email`
-  - `accountType` (student | parent | coach)
-  - `signUpRef`
-- Formats the payload into **Webflow CMS-compatible structure**
-- Inserts the formatted payload into the **Webflow collection**
-- Publishes the Webflow item
-- Receives `itemId` from Webflow in the response
-- Updates **Memberstack** record with `webflow-member-id = itemId` using `memberId`
-- Once Webflow ↔ Memberstack linkage is completed:
-  - Invokes `createAccount` service to persist data into MongoDB
+- Accepts signup payload: `name`, `email`, `accountType` (student | parent | coach), `signUpRef`
+  - TODO: Eventually, we'll just point to the OpenAPI reference for input payload signature...
+- **Webflow Insertion:** Formats the payload into Webflow's CMS-compatible structure. Inserts into Webflow CMS's **Member** collection and publishes the CMS item.
+- **Webflow ↔ Memberstack linkage:** Receives `itemId` from Webflow in the response. Finds member in Memberstack via the payload's `memberId`.  Updates Memberstack record with `webflow-member-id = itemId` .
+- Invokes `createAccount` service to persist data into MongoDB, with different arguments passed depending on if sign-up was from `student` or `parent`.
+- TODO: Also discuss CRM and Referral related code
 
 **Services Used:**
 
-- CreateAccount service
-- Webflow CMS
-- Memberstack
-- Email service (AWS SES)
-
----
+<Note>
+  TODO: This type of Services Used is not that useful. Should all be implicitly covered or mentioned in the "Responsiblities".
+</Note>
 
 ### 1.2 `POST /camp/createAccount`
 
-**Purpose:**  
-Creates or updates the user account record in MongoDB.
+Creates or updates the user account record in MongoDB, based on if `student` or `parent` data was passed in.
 
 **Responsibilities:**
 
-- Persists user profile in MongoDB
-- Handles logic based on `accountType`
-
-**Account-Type Specific Logic:**
-
-- **Student**:
-  - Requires additional fields such as:
-    - `school`
-    - `gender`
-    - `studentGrade`
-- **Parent**:
-  - Requires only parent phone number (minimal profile)
-- **Coach**:
-  - No additional mandatory fields
-
-**Update Logic:**
-
 - If **student or parent records already exist** without a `memberId`:
-  - Updates the existing record with:
-    - `memberId`
-    - `itemId`
-    - `name`
-    - `email`
-
-**Services Used:**
-
-- MongoDB
-- Email service (AWS SES)
-
----
+  - Updates the existing record with: `memberId`, `itemId`, `name`, `email`
+- Else, creates a new record for the student or parent.
+  - If record is a `student`, then link to the `parent` record (which is also created, if does not exist)
+  - **TODO**: Discuss `familyId` logic
+- **TODO:** Where is AWS SES triggered from?
 
 ## 2. Brief Sketch of Logic & Services Involved
+
+**TODO:** Note, this sketch is generally not that useful. It should be all encompassed above. Please delete this section after reading. The Post-Signup actions should be included above.
 
 ### End-to-End Logic (High Level)
 
@@ -229,6 +106,8 @@ Creates or updates the user account record in MongoDB.
 
 ### Services & Systems Touched
 
+**TODO:** Note, this similarly is not that useful. Please delete after reading
+
 - **API Gateway / Backend**
   - Orchestrates signup flow
 - **Webflow CMS**
@@ -248,6 +127,8 @@ Creates or updates the user account record in MongoDB.
 ---
 
 ## 3. MongoDB Account Schema
+
+TODO: For SK to review after above is finalized.
 
 ### 3.1 Account Document (Common Structure)
 

@@ -14,20 +14,28 @@ Users that have forgotten their password can do a password reset on the log-in p
 
 ## Account Types
 
-The most important distinction between accounts is the `accountType`, which can be `parent`,  `student`, or `coach`. These distinctions control the following:
+The most important distinction between accounts is the `accountType`, which can be `parent`,  `student`, or `coach`. We support multiple account types to ensure role-based access and family linking:
+
+These distinctions control the following:
 
 - Only `parent` accounts can register for BDC classes. A `student` or `coach` account will be asked to log out and sign-in to a `parent` account during the checkout process.
+- A `student` account _must_ be linked to a `parent` account (cannot exist in isolation). This link is controlled by the `familyId` (more below)
+  - `student` and `parent` accounts see the same portal.
 - Only `coach` accounts can access the BDC Coach Portal, which (upon verification) allows them to access functionality like class & trial class attendance and the millions.
-- `student` and `parent` accounts see the same portal.
 
 There currently does not exist any mechanism for the admin or user to change the `accountType`. If a need arises, please inform the tech team, and we'll do it manually.
 
 <Note>
-  TODO: Can we confirm
+  TODO: Add below to portal documentation...
 
-  - what happens to coach accounts trying to register for an account? **Coach can register for classes, but the family id will not generate as per the current implementation.**
-  - Can students or coach's register via the portal? It doesn't matter as much here, since we have the parent info, but want to confirm if we've handled this case or not... **Yes We are allowing registration from the portal **
+  - Can students or coach's register via the portal? It doesn't matter as much here, since we have the parent info, but want to confirm if we've handled this case or not... \*\*Yes We are allowing registration from the portal \*\*
 </Note>
+
+<Warning>
+  We need to implement the following:
+
+  - Restrict coach accounts from registering for classes. **Coach can register for classes, but the family id will not generate as per the current implementation**
+</Warning>
 
 ## Technical Details
 
@@ -37,19 +45,31 @@ Memberstack handles all of the member logic. This includes things like sign-in a
 
 ### Family Architecture
 
-Parent and student accounts are connected through a unique `familyId` that links family members together. This architecture supports multiple students under a single parent account and handles various sign-up scenarios.
+Parent and student accounts are connected through a unique `familyId` that links family members together. This architecture supports multiple students \<**TODO**\> <u>under a single parent account </u>and handles various sign-up scenarios.
 
 #### Sign-up flows
+
+TODO: I think these cases are a little too complex. I think really, we have the following:
+
+Associations between parent and student accounts are made _at the time of registration_. When this happens, the same `familyId` is assigned to both the parent and student. If the parent does not have a `familyId`, we generate one for them, and also assign it to the student. If the parent already has a `familyId` (e.g., from a previous purchase), then that `familyId` is assigned to the student.
+
+<Note>
+  TODO:
+
+  Are there other cases where a familyId is generated for the parent (other than during checkout)?
+</Note>
+
+<u>\<TODO\>: The remainder of these cases can be integrated into other sections...</u>
 
 **Case 1: New parent sign-up**
 
 1. Parent signs up for a new account
-2. Parent registers for classes for a student
-3. System assigns a unique `familyId` to both the parent and the student
+2. Parent registers a student for a class
+3. System **\<TODO which API\>** assigns a unique `familyId` to both the parent and the student
 
 **Case 2: Existing parent adds new student**
 
-1. Parent (already signed up) registers classes for a new student
+1. Parent **\<TODO\>** <Tooltip tip="What do you mean already signed up...? I think you mean they already have a familyId generated.">(already signed up)</Tooltip> registers classes for a new student
 2. System assigns the parent's existing `familyId` to the new student
 
 **Case 3: Student sign-up with existing parent**

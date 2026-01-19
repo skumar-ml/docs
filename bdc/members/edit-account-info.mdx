@@ -4,100 +4,45 @@ title: "Edit Account Info"
 
 ## Admins
 
-TODO: Explain how admins can edit account info on Retool. Explain the difference between editing info for accounts that do and do not exist. Also, can we update/consolidate this functionality, now that we have records for folks that don't have accounts on memberstack? We should also confirm this Retool page functionality works with the DB changes we've made
-
 Admins can edit parent, student, and coach information using Retool. The editing flow differs depending on whether the person already has a Memberstack account or exists only in the database.
 
----
+<Danger>
+  TODO: Can we consolidate this functionality, now that we have records for folks that don't have accounts on memberstack? Or do we need to
+</Danger>
 
-## Overview
+### Overview
 
-Admins may encounter two types of records:
+There are two types of accounts. Retool routes admins to different edit flows based on this distinction:
 
-- **Accounts that exist in Memberstack** (active user accounts)
-- **Records that do not exist in Memberstack** (stored only in the database)
+- **Full Accounts** that exist in Memberstack (active user accounts)
+- **Partial Accounts** that do not exist in Memberstack (stored only in the database)
+  - These are created when we obtain partial user information from any of our lead sources (e.g., trial classes)
 
-Retool routes admins to different edit flows based on this distinction.
+### Case 1: Editing from the Student Registration Details Page
 
----
-
-## Case 1) Editing from the Student Registration Details Page
-
-### 1. Edit — Already a Member
-
-**Condition:**\
-The person already has an active Memberstack account.
-
-**Flow:**
-
-1. Admin clicks **Edit** on the student registration details page.
-2. Admin is redirected to the **Edit Member** Retool page.
-3. Admin updates the required fields.
-4. Retool calls a **Lambda function** to update the member in Memberstack and sync the database.
+Admins can click **Edit** on the student registration details page. If the account to be edited is a **Full Account**, the admin is redirect to the [**Edit Member** Retool page](https://bergendebate.retool.com/apps/6cb9bfae-69e8-11ef-bb6b-d317bde55ef7/2024%20phase%202/Edit%20Member%20Info). For **Partial Accounts**, admin are redirected to [**an alternate Retool edit page**](https://bergendebate.retool.com/apps/063ef750-690f-11ef-825c-671fc9b2d80a/2024%20phase%202/Update%20Not%20Signup%20Student%20Data?paymentId=648cc5c3da7f24ff809f910b&returnPage=Academic)**.**
 
 **Editable Fields**
 
-**Parent / Coach**
+- **Parent / Coach:** First & Last Name, Email, Phone Number
+- **Student:** First & Last Name, Email
 
-- First Name
-- Last Name
-- Email
-- Phone Number
+### Case 2: Directly Editing via Retool
 
-**Student**
+If the member is not accesible via the Student Registration Details, admin can directly access the Retool pages for editing. The steps are:
 
-- First Name
-- Last Name
-- Email
+<Steps>
+  <Step title="Access the edit page for Full Accounts">
+    [On this Retool page](https://bergendebate.retool.com/apps/6cb9bfae-69e8-11ef-bb6b-d317bde55ef7/2024%20phase%202/Edit%20Member%20Info), search for the user you want to edit. If found proceed to edit as appropriate. Else, proceed to Step 2.
+  </Step>
+  <Step title="Access the edit page for Partial Accounts">
+    [On this Retool page](https://bergendebate.retool.com/apps/063ef750-690f-11ef-825c-671fc9b2d80a/2024%20phase%202/Update%20Not%20Signup%20Student%20Data?paymentId=648cc5c3da7f24ff809f910b&returnPage=Academic), search for the Partial Account via name or email. Edit as appropriate.
+  </Step>
+</Steps>
 
----
-
-### 2. Edit — Does Not Have an Account
-
-**Condition:**\
-The person does **not** have a Memberstack account and exists only in the database.
-
-**Flow:**
-
-1. Admin clicks **Edit** on the student registration details page.
-2. Admin is redirected to an **alternate Retool edit page**.
-3. Admin updates all required fields.
-4. Retool updates the **member collection in the database only**.
-
-**Notes:**
-
-- No Memberstack update is performed.
-- This flow is used for pre-registered students or records created before account creation.
-
----
-
-## Case 2) Editing from the Edit Member Retool Page
-
-**Condition:**\
-Admin is already on the Edit Member page for an existing account.
-
-**Flow:**
-
-1. Admin updates the member information.
-2. Retool calls a **Lambda function** to update the member.
-3. Updates are reflected in both Memberstack and the database.
-
-**Editable Fields**
-
-**Parent / Coach**
-
-- First Name
-- Last Name
-- Email
-- Phone Number
-
-**Student**
-
-- First Name
-- Last Name
-- Email
-
----
+<Warning>
+  TODO: We need to change the edit page for Partial Accounts to include a search functionality. Users must search for Partial Accounts existing in the Members Collection, and only edit those.
+</Warning>
 
 ### Key Differences: Existing vs Non-Existing Accounts
 
@@ -109,8 +54,22 @@ Admin is already on the Edit Member page for an existing account.
 | Database Update       | Yes              | Yes                 |
 | Account Login Enabled | Yes              | No                  |
 
+### Technical Details
+
+TODO: Give very brief technical details of which Lambda functions get called..
+
+To execute edits for **Full Accounts**, Retool calls a **Lambda function** to update the member in Memberstack and sync the database.
+
+For **Partial Accounts**, Retool directly updates the **member collection in MongoDB only**.
+
+<Note>
+  The Partial Account flow is used for pre-registered students or records created before account creation.
+
+  TODO: Not sure I understand this fully. Let's revisit when the section is fully flushed out.
+</Note>
+
 ## Users
 
-TODO: Fill this out. Can users even make account edits on BDC? Confirm yes or no...
-
-**No**
+<Note>
+  Users cannot currently make edits to their own accounts. This is contemplated future functionality. Once implemented, this section will be filled out.
+</Note>
