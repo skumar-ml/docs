@@ -20,7 +20,7 @@ There are two types of accounts. Retool routes admins to different edit flows ba
 
 ### Case 1: Editing from the Student Registration Details Page
 
-Admins can click **Edit** on the student registration details page. If the account to be edited is a **Full Account**, the admin is redirect to the [**Edit Member** Retool page](https://bergendebate.retool.com/apps/6cb9bfae-69e8-11ef-bb6b-d317bde55ef7/2024%20phase%202/Edit%20Member%20Info). For **Partial Accounts**, admin are redirected to [**an alternate Retool edit page**](https://bergendebate.retool.com/apps/063ef750-690f-11ef-825c-671fc9b2d80a/2024%20phase%202/Update%20Not%20Signup%20Student%20Data?paymentId=648cc5c3da7f24ff809f910b&returnPage=Academic)**.**
+Admins can click **Edit** on the student registration details page. If the account to be edited is a **Full Account**, the admin is redirect to the [**Edit Member Retool page**](https://bergendebate.retool.com/apps/6cb9bfae-69e8-11ef-bb6b-d317bde55ef7/2024%20phase%202/Edit%20Member%20Info). For **Partial Accounts**, admin are redirected to [**an alternate Retool edit page**](https://bergendebate.retool.com/apps/063ef750-690f-11ef-825c-671fc9b2d80a/2024%20phase%202/Update%20Not%20Signup%20Student%20Data?paymentId=648cc5c3da7f24ff809f910b&returnPage=Academic)**.**
 
 **Editable Fields**
 
@@ -58,7 +58,7 @@ If the member is not accesible via the Student Registration Details, admin can d
 
 TODO: Give very brief technical details of which Lambda functions get called..
 
-To execute edits for **Full Accounts**, Retool calls a **Lambda function** to update the member in Memberstack and sync the database.
+To execute edits for **Full Accounts**, Retool calls a **Lambda function** to update the member in Memberstack and sync the database. In Retool, we triggered the lambda function **updateMember** **API** to update the member in all three places: Memberstack, Webflow, and MongoDB.
 
 For **Partial Accounts**, Retool directly updates the **member collection in MongoDB only**.
 
