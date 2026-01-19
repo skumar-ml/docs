@@ -221,13 +221,44 @@ This section explains **everything that happens after a payment is made**, start
 
 We have a single webhook (`stripePaymentListener`) that is triggered by Stripe events such as `payment_intent.succeeded`, `checkout.session.completed`, or async bank transfer updates. This API acts as the single entry point for all post-payment processing.
 
-TODO: Describes what this API does (e.g., how it derives the payment status), and what happens for each payment status.
+### What this API does
+
+- Validates the Stripe webhook signature
+- Extracts the `payment_intent` and checkout metadata
+- Loads the corresponding record from `stripe_checkout_customer`
+- Normalizes Stripe event data into internal payment statuses:
+  - **Complete** → Payment confirmed and funds captured
+  - **Processing** → Bank transfer or async payment still pending
+  - **Failed** → Payment failed or was canceled
+- Routes the event to the appropriate handler:
+  - `updateClassPayment()` for class purchases
+- Ensures idempotency so repeated webhooks do not create duplicates
+
+### Behavior by payment status
+
+- **Complete**
+  - Triggers full post-payment processing
+  - Enrollment, referrals, credits, and emails are executed
+- **Processing**
+  - Stores payment as pending
+  - Enrollment is deferred until final confirmation
+- **Failed**
+  - Cleans up partial payment records
+  - Prevents enrollment or benefit application
 
 ### 3. `updateClassPayment()`
 
-TODO: Explain what all does. Write this in a way that maintains the logic. I believe all the below content can fit underneath here.
+`updateClassPayment()` is the **core business orchestration layer** for class purchases.\
+It executes **all database writes, enrollment logic, referral handling, and cleanup** associated with a payment.
 
----
+### Responsibilities
+
+- Determines whether the payment is new or already processed (idempotency)
+- Handles logic based on payment status (`Complete`, `Processing`, `Failed`)
+- Persists payment and checkout state
+- Applies all side effects tied to a successful purchase
+
+All sections below execute under this function unless explicitly skipped due to failure or pending status.
 
 ## 1.3 Database Writes & Updates
 
