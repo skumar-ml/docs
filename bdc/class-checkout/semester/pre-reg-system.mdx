@@ -21,7 +21,6 @@ This document explains:
 Pre-registration allows eligible students to:
 
 - Register earlier than general enrollment
-- Access discounted pricing
 - Secure class spots before regular registration opens
 
 The system automatically places each user into the correct state based on **timing** and **bundle ownership**.
@@ -32,7 +31,7 @@ The system automatically places each user into the correct state based on **timi
 
 ### 1. Normal Registration State
 
- \<Info\> This is the default experience for most users. \</Info\> 
+This is the default experience for most users.
 
 #### What This Means
 
@@ -43,30 +42,18 @@ The system automatically places each user into the correct state based on **timi
 
 - Standard registration and checkout flow
 - Regular pricing
-- No pre-registration messaging or banners
-
-#### When This Happens
-
-- Before pre-registration starts
-- After pre-registration ends
-- For users without a bundle program
-
-#### What Users Can Do
-
-- Register normally
-- Pay full price at checkout
-- Select any available class times
+- No pre-registration messaging or banner
 
 ---
 
 ### 2. Pre-Registration Information State
 
- \<Note\> This is an informational state that highlights pre-registration eligibility. \</Note\> 
+This is an informational state that highlights pre-registration eligibility. 
 
 #### What This Means
 
 - Pre-registration is currently active
-- The user is eligible (has or can purchase a year-long bundle)
+- The user is eligible (has pre-register a year-long bundle)
 - The user has **not yet completed** pre-registration
 
 #### What Users See
@@ -76,39 +63,25 @@ The system automatically places each user into the correct state based on **timi
   > “Registration is currently open only for Year-Long Bundle students”
 - Countdown timer showing when pre-registration ends
 - Information about discounts and early access
-- Call-to-action button:\
-  **“Upgrade to Year-Long Bundle & Pre-Register”**
 
 #### When This Happens
 
 - Pre-registration window is open
 - User has not completed pre-registration
 
-#### What Users Can Do
-
-- Learn about pre-registration benefits
-- Purchase or upgrade to a year-long bundle
-- Complete pre-registration to unlock the next state
-
----
-
 ### 3. Bundle Purchase State
 
- \<Success\> This state allows eligible users to complete registration at a discounted rate. \</Success\> 
+This state allows eligible users to complete pre registration  
 
 #### What This Means
 
 - Pre-registration is active
-- The user has successfully pre-registered
 - The system recognizes the student as part of a bundle program
 
 #### What Users See
 
-- Saved student profiles labeled:\
-  **“Pre-registration available”**
 - “Pre-Register” button instead of “Register”
-- Discounted pricing applied automatically
-- Option to add supplementary programs or briefs
+- Option to add Bundle programs or briefs
 
 #### When This Happens
 
@@ -119,7 +92,6 @@ The system automatically places each user into the correct state based on **timi
 
 - Select class locations and times
 - Add optional programs or briefs
-- Complete checkout at discounted pricing
 - Secure class spots early
 
 ---
@@ -138,58 +110,13 @@ The system automatically checks:
    - Does the student name match a bundle record?
    - Is the student eligible for early registration?
 
-No manual action is required by users—state selection happens automatically.
-
----
-
-## State Transitions
-
-### Normal → Pre-Registration Info
-
-- Trigger: Pre-registration window begins
-- Result: Banner and informational messaging appear
-
-### Pre-Registration Info → Bundle Purchase
-
-- Trigger: User completes pre-registration
-- Result: Discounted checkout and early access unlocked
-
-### Any State → Normal
-
-- Trigger: Pre-registration window ends
-- Result: All users return to standard registration
-
----
-
-## Visual Indicators by State
-
-### Normal State
-
-- No banners
-- Standard “Register” button
-- Regular pricing
-
-### Pre-Registration Info State
-
-- Pre-registration banner
-- Countdown timer
-- Upgrade / pre-register call-to-action
-
-### Bundle Purchase State
-
-- “Pre-registration available” labels
-- “Pre-Register” buttons
-- Discounted pricing in order summary
-
----
-
 ## Common Scenarios
 
 | Scenario                         | State                 | User Experience                       |
 | :------------------------------- | :-------------------- | :------------------------------------ |
 | New user during pre-reg          | Pre-Registration Info | Sees upgrade and discount info        |
 | Bundle owner, not pre-registered | Pre-Registration Info | Prompted to complete pre-registration |
-| Bundle owner, pre-registered     | Bundle Purchase       | Can checkout with discount            |
+| Bundle owner, pre-registered     | Bundle Purchase       | Can pre register                      |
 | After pre-reg ends               | Normal                | Standard registration                 |
 | Before pre-reg starts            | Normal                | Standard registration                 |
 
@@ -206,23 +133,10 @@ In Retool, admins can:
 - Add new bundle programs
 - Switch students between bundle programs
 - Remove students from bundle programs
-- Correct student-bundle mismatches
 
 These actions directly affect which pre-registration state a user sees.
 
- \<Note\> Changes made in Retool take effect immediately and determine whether users see pre-registration messaging or discounted checkout. \</Note\> 
-
----
-
-## Important Notes
-
-- State changes are automatic and time-based
-- Student names must match bundle records
-- Pre-registration windows are strictly enforced
-- Discounts apply only during the active pre-registration period
-- Supplementary programs can be added only in the Bundle Purchase state
-
----
+ Changes made in Retool take effect immediately and determine whether users see pre-registration messaging or discounted checkout.
 
 ## Summary
 
@@ -237,3 +151,119 @@ The pre-registration system has three clear states:
 ## Technical Details
 
 TODO: Give a technical explanation of how these states are calculated for each user. How the user can "auto-enroll" without making a payment.
+
+### Pre-Registration & Auto-Enrollment State Logic 
+
+### Overview
+
+The system determines a user’s **pre-registration and bundle state** by calling the backend API:
+
+```
+GET getYearLongBundleDetails/{webflowMemberId}
+```
+
+Based on the API response (`message` and `data`), the frontend calculates the current **user state** and decides:
+
+- What UI to show
+- Whether the user can **auto-enroll**
+- Whether payment is required or not
+
+---
+
+## API Response Structure
+
+The API returns the following fields:
+
+```
+{
+  "message": "string",
+  "data": [],
+  "preRegistrationEndDate": "YYYY-MM-DD"
+}
+```
+
+### Key Fields
+
+| Field                    | Purpose                                                     |
+| :----------------------- | :---------------------------------------------------------- |
+| `message`                | Indicates the current phase of pre-registration             |
+| `data`                   | Contains bundle details if the user is eligible to purchase |
+| `preRegistrationEndDate` | Used for countdowns                                         |
+
+---
+
+## State Determination Logic
+
+The frontend evaluates the response using the following logic:
+
+```
+var enrollmentState = "Normal"
+this.fetchData("getYearLongBundleDetails/" + this.webflowMemberId)
+  .then((data) => {
+    if (
+      data.message &&
+      data.data.length == 0 &&
+      data.message == "Either pre-registration not yet started or already ended"
+    ) {
+      enrollmentState = "Normal";
+    }
+    else if (
+      data.data &&
+      data.data.length == 0 &&
+      data.message == "Pre-registration is going on"
+    ) {
+      enrollmentState = "Pre-Registration-Info"; // Showing banner
+    }
+    else if (
+      data.data &&
+      data.data.length > 0 &&
+      data.message == "Pre-registration is going on"
+    ) {
+      enrollmentState = "Bundle-Purchase"; // Pre-registartion purchase
+    }
+  });
+```
+
+---
+
+## Defined User States
+
+### 1. **Normal**
+
+**Condition**
+
+- `message = "Either pre-registration not yet started or already ended"`
+- `data.length = 0`
+
+**Meaning**
+
+- Pre-registration is not active
+- User proceeds with standard enrollment flow
+- Payment is required if applicable
+
+### 2. **Pre-Registration-Info**
+
+**Condition**
+
+- `message = "Pre-registration is going on"`
+- `data.length = 0`
+
+**Meaning**
+
+- Pre-registration window is active
+- Only pre-registartion window will display
+- User is **not eligible for bundle purchase**
+
+### 3. **Bundle-Purchase**
+
+**Condition**
+
+- `message = "Pre-registration is going on"`
+- `data.length > 0`
+
+**Meaning**
+
+- Pre-registration is active
+- User is eligible to pre-register for a **Year-Long Bundle**
+- user just needs to select the class and click on the  pre-register button. no need for payment
+- Payment is required to complete enrollment if they added bundle programs with pre-register
