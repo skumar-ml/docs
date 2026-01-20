@@ -46,79 +46,41 @@ Displayed as a **Register** button for each class level. When clicked, the user 
 
 ## Technical Details
 
-TODO: Briefly explain which APIs & JS files are used for backand / frontend. Is all content fetched on page load? What are the important onClickListeners?
-
 ### APIs & Backend Overview 
 
-Single API Endpoint 
+Single API Endpoint: **getClassDetails?levelId= **fetches all class-level data in one consolidated response, including: 
 
-**Base URL**:  https://xkopkui840.execute-api.us-east-1.amazonaws.com/prod/camp/ 
+- Class levels, locations & timings, prerequisites, syllabus details (descriptions & accomplishments) 
 
-Endpoint: getClassDetails?levelId= 
+<Note>
+  TODO: Can you confirm what the point of levelId is? Is that optional, and if we don't pass it in, then all are retrieved?
+</Note>
 
-**Full URL:**  https://xkopkui840.execute-api.us-east-1.amazonaws.com/prod/camp/getClassDetails?levelId= 
+### Frontend
 
-**Method**: GET (via fetch()) 
+Uses inline JavaScript to call API, cache data client-side, and render the DOM. The **Key Methods** are:
 
-**Purpose** 
+1. `fetchData(endpoint)` — Generic method for calling the backend API. 
+2. `renderPortalData()` — Triggered on page load to fetch and render all class data. 
+3. `viewClassLocations(classData)` — Updates the DOM with class locations and timing information. 
+4. `openSyllabusModal(levelId)` — Opens the syllabus modal using cached API data. 
+5. `initSyllabusModal()` — Attaches click handlers to syllabus trigger elements. 
 
-Fetches all class-level data in one consolidated response, including: 
+### **Page Load Behavior**
 
-- Class levels 
-- Locations & timings 
-- Prerequisites 
-- Syllabus details (descriptions & accomplishments) 
+On the **Initial Page Load**, all content is fetched once and then rendered. Instantiating classLists triggers renderPortalData(). Then, one API request to getClassDetails?levelId= retrieves all levels. The full response is stored in this.cachedApiData. 
 
-### Frontend JavaScript 
+While content is being fetched, our **Loading State **uses a loading spinner (half-circle-spinner). 
 
-**JS Structure**
+**Post Load**, cached data is reused for syllabus modals; no additional API calls are made after the initial load. 
 
-- No external JavaScript files; all JavaScript is written inline within the HTML. 
+### **Important OnClick / Event Listeners**
 
-**Main Controller Class:** classLists
-
-**Responsibilities**
-
-- API calls 
-- Client-side data caching 
-- DOM rendering and updates 
-
-**Key Methods** 
-
-1. fetchData(endpoint) — Generic method for calling the backend API. 
-2. renderPortalData() — Triggered on page load to fetch and render all class data. 
-3. viewClassLocations(classData) — Updates the DOM with class locations and timing information. 
-4. openSyllabusModal(levelId) — Opens the syllabus modal using cached API data. 
-5. initSyllabusModal() — Attaches click handlers to syllabus trigger elements. 
-
-**Page Load Behavior**
-
-**Initial Load**
-
-- All content is fetched once on page load. 
-- Instantiating classLists triggers renderPortalData(). 
-- One API request to getClassDetails?levelId= retrieves all levels. 
-- The full response is stored in this.cachedApiData. 
-
-**Loading State**
-
-- A loading spinner (half-circle-spinner) is shown while data is being fetched. 
-
-**Post Load**
-
-- Cached data is reused for syllabus modals. 
-- No additional API calls are made after the initial load. 
-
-**Important OnClick / Event Listeners**
-
-1. **FAQ Accordion Toggle**
+**FAQ Accordion Toggle**
 
 Element: .class-detail-faq-header 
 
-**Behavior:**
-
-- Only one accordion item remains open at a time. 
-- Opening one closes the others. 
+Behavior: Only one accordion item remains open at a time. Opening one closes the others. 
 
 **2. Syllabus Modal Trigger**
 
@@ -135,6 +97,10 @@ Element: .close-link.syllabus 
 Element: #Contact-Number | Event: input | Library: libphonenumber (external) | Purpose: Real-time phone validation 
 
 ### Student Graphic Info Form
+
+<Note>
+  TODO: Let's revisit the Student Graphic Info Form at a later time. I think the whole thing (form + graphic) deserves its own page.
+</Note>
 
 **Features**
 

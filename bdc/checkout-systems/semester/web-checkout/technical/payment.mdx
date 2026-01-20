@@ -12,11 +12,7 @@ The system provides two payment options for class registration:
 
 **1. Bank Transfer (ACH):** This option is selected by default. The base price (no processing fees) is used. Stripe handles the payment, ensuring no bank details are stored by us.
 
-**2. Credit Card:** If selected, a processing fee (amount + 0.3 / 0.971) is applied. Standard credit/debit card payment via Stripe
-
-<Note>
-  TODO: Why is it "approximately"???? Can we be exact? **Updated the exact calculation**
-</Note>
+**2. Credit Card:** If selected, a processing fee `(amount + 0.3 / 0.971)` is applied. Standard credit/debit card payment via Stripe.
 
 ### Payment Option Selection
 
@@ -208,7 +204,7 @@ Depending on the purchase type, one of two APIs is called:
 
 This API endpoint is used for normal class registration OR bundle(Pre-registration) purchases.
 
-**TODO:** What do you mean "bundle purchases without supplementary programs?" 
+**TODO:** What do you mean "bundle purchases without supplementary programs?"
 
 **supplementary means( with Bundle Program or Brief PDF ).**
 
