@@ -147,6 +147,8 @@ Before redirecting:
 
 <Note>
   TODO: I'm not satisfied with this explanation of backbuttonstate and localStorage usage. We can revisit later on.
+
+  1. 
 </Note>
 
 ## Returning from Stripe
@@ -155,7 +157,7 @@ There are several return scenarios, each of which are detailed in the following:
 
 ### 1. Successful Payment
 
-TODO: What are the conditions on which this triggers (via the API)? 
+TODO: What are the conditions on which this triggers (via the API)?
 
 <Note>
   During the checkout session creation, I provide the success URL and cancel URL using JavaScript. After a successful payment, it redirects to the success URL.
@@ -174,7 +176,7 @@ TODO: It will be good to explain what these URL parameters explain, or link to a
 <Note>
   1. Type(Academic | Summer): We have the same payment confirmation for both summer and academic registration. The type indicates which registration the payment confirmation is from. We use this for tracking purposes and analytics.
   2. programName: Class or Program Name: This will be displayed on the payment confirmation page.
-  3. Type: Payment mode(Card | Bank Transfer). We use this for tracking purposes and analytics. 
+  3. Type: Payment mode(Card | Bank Transfer). We use this for tracking purposes and analytics.
 </Note>
 
 **System Behavior**:
