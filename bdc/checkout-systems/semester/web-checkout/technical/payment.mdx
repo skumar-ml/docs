@@ -155,7 +155,11 @@ There are several return scenarios, each of which are detailed in the following:
 
 ### 1. Successful Payment
 
-TODO: What are the conditions on which this triggers (via the API)?
+TODO: What are the conditions on which this triggers (via the API)? 
+
+<Note>
+  During the checkout session creation, I provide the success URL and cancel URL using JavaScript. After a successful payment, it redirects to the success URL.
+</Note>
 
 User is directed to a confirmation screen
 
@@ -167,6 +171,12 @@ payment-confirmation?type=Academic&programName={label}&pType={paymentType}
 
 TODO: It will be good to explain what these URL parameters explain, or link to a section that will do it.
 
+<Note>
+  1. Type(Academic | Summer): We have the same payment confirmation for both summer and academic registration. The type indicates which registration the payment confirmation is from. We use this for tracking purposes and analytics.
+  2. programName: Class or Program Name: This will be displayed on the payment confirmation page.
+  3. Type: Payment mode(Card | Bank Transfer). We use this for tracking purposes and analytics. 
+</Note>
+
 **System Behavior**:
 
 - Payment is confirmed
@@ -175,6 +185,10 @@ TODO: It will be good to explain what these URL parameters explain, or link to a
 ### 2. Cancelled Payment
 
 TODO: What are the triggers for this?
+
+<Note>
+  During the checkout session creation, I provide the success URL and cancel URL using JavaScript. When the user clicks on the back button on the Stripe checkout page, it will redirect to the cancel url
+</Note>
 
 **Redirect URL Pattern**:
 
@@ -216,7 +230,7 @@ When restoring checkout state, the system:
 3. Reloads selected location and class time
 4. Restores selected payment method
 5. Recalculates totals
-6. Restores bundle and supplementary selections
+6. Restores bundle and briefs selections
 7. Updates UI steps and validations
 
 TODO: This section needs work, but we can return to it.
@@ -226,6 +240,13 @@ TODO: This section needs work, but we can return to it.
 ## Data Persistence
 
 TODO: Briefly explain the purpose here. Or we fold it in to the above section (where this is actually used)
+
+<Warning>
+  We can remove it from here.
+
+  1. checkOutData: Storing all the checkout data before redirecting to the Stripe checkout page. It is also used for the abandoned cart display.
+  2. checkOutBasicData: Storing only student form data. It will help to restore student information on the page reload.
+</Warning>
 
 ### LocalStorage Keys
 
