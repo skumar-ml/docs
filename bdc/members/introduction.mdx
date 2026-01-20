@@ -28,7 +28,7 @@ There currently does not exist any mechanism for the admin or user to change the
 <Note>
   TODO: Add below to portal documentation...
 
-  - Can students or coach's register via the portal? It doesn't matter as much here, since we have the parent info, but want to confirm if we've handled this case or not... **Yes We are allowing registration from the portal** 
+  - Can students or coach's register via the portal? It doesn't matter as much here, since we have the parent info, but want to confirm if we've handled this case or not... **Yes We are allowing registration from the portal**
 </Note>
 
 <Warning>
@@ -46,6 +46,31 @@ Memberstack handles all of the member logic. This includes things like sign-in a
 ### Family Architecture
 
 Parent and student accounts are connected through a unique `familyId` that links family members together. This architecture supports multiple students \<**TODO**\> <u>under a single parent account </u>and handles various sign-up scenarios.
+
+The logic is centralized in the `createAccount` flow and behaves as follows:
+
+**1. Parent-first ownership model**
+
+- The **parent record is treated as the source of truth** for `familyId`.
+- When a signup request contains a `parentEmail`, the system first searches for an existing parent account using that email.
+
+**2. FamilyId generation**
+
+- If no existing parent is found:
+  - A new `familyId` is generated using a random, non-guessable string derived from the parent email and digits.
+  - This `familyId` is assigned at parent creation time.
+- If an existing parent is found:
+  - If the parent already has a valid `familyId`, it is reused.
+  - If the parent exists but has an empty or `"null"` familyId, a new one is generated and backfilled.
+
+**3. Student linkage**
+
+- Students are always linked to a parent via their `familyId`.
+- Student lookup follows this order:
+  - By `studentEmail` (if provided and different from parent email)
+  - Else by `(studentName + familyId)`
+- If a student record exists without a `familyId`, it is updated to inherit the parent’s `familyId`.
+- If no student record exists, a new student is created with the inherited `familyId`.
 
 #### Sign-up flows
 

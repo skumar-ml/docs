@@ -5,9 +5,8 @@ title: "Creating an Account"
 ## How-To
 
 1. Navigate to the sign-up page.
-2. Fill in required fields (and provide a <u>valid email address</u>) **\<TODO\>**
-5. Create a password.
-6. Submit the form to create your account.
+2. Fill in required fields (and provide a <u>valid email address</u>) **TODO: Explain what a valid email address is**
+5. Create a password & submit the form to create your account.
 
 The platform supports multiple account types to ensure proper role-based access and family linking.
 
@@ -29,89 +28,45 @@ The platform supports multiple account types to ensure proper role-based access 
   There is no way for an admin to create an account for a user. This is contemplated future functionality. If such a need arises, let the tech team know, and we can manually do this
 </Warning>
 
-## Technical Details
-
-TODO:
-
-To create an account, we do the following:
-
-1. What APIs get called, and what function do they serve. Brief sketch of logic, and the other services that get
-2. What does the MongoDB schema look like for a created account
-3. Add in any differences in the flow for parent vs student vs coach accounts
-
 ## Technical Steps Involved in Account Creation
 
-**1: Memberstack**
+### 1: Memberstack
 
-**TODO:** We need to add a step before this that talks about Memberstack inserting the record into their database. How do we ensure this record has been inserted before we call createUserSignup?
+The account creation flow **starts inside Memberstack**. After the user submits the **Sign Up** form (via the Webflow UI), Memberstack creates the user record in **Memberstack’s internal database**. On sign-up, Memberstack triggers Step 2.
 
-Before **any backend API is called**, the account creation flow **starts inside Memberstack**.
-
-### What happens
-
-- User submits **Sign Up** form (Webflow UI)
-- Webflow is configured to use **Memberstack for authentication**
-- Memberstack:
-  - Validates email/password
-  - Creates the user record in **Memberstack’s internal database**
-  - Generates a unique `memberId`
-  - Commits the user record **transactionally**
-
-### How do we ensure the record exists before backend APIs run?
-
- **Memberstack Webhook Guarantee**
-
-- MemberStack triggers the webhook **only after the user record is successfully created**
-- The webhook is **post-insert**, not pre-insert
-- If Memberstack fails to create the user, the webhook is **never fired**
-
-This guarantees that when our backend receives the webhook:
-
-- `memberId` already exists
-- Authentication identity is finalized
-- The record is durable in Memberstack
-
-### 1.1 `POST /camp/createUserSignup `
-
-<Note>
-  TODO: Why is it /camp/? \* The /camp prefix indicates that this API belongs to the Bergen Debate Camp platform
-</Note>
+### 2: `POST /camp/createUserSignup `
 
 Entry-point API to initiate account signup and synchronize data between Webflow & Memberstack.
 
 **Responsibilities:**
 
-- Accepts signup payload: `name`, `email`, `accountType` (student | parent | coach), `signUpRef`
+- Accepts signup payload: `name`, `email`, `accountType` (student | parent | coach), `signUpRef` **TODO Can you confirm this payload is passed by Memberstack via the webhook?**
   - TODO: Eventually, we'll just point to the OpenAPI reference for input payload signature...
 - **Webflow Insertion:** Formats the payload into Webflow's CMS-compatible structure. Inserts into Webflow CMS's **Member** collection and publishes the CMS item.
 - **Webflow ↔ Memberstack linkage:** Receives `itemId` from Webflow in the response. Finds member in Memberstack via the payload's `memberId`.  Updates Memberstack record with `webflow-member-id = itemId` .
 - Invokes `createAccount` service to persist data into MongoDB, with different arguments passed depending on if sign-up was from `student` or `parent`.
-- After the Webflow ↔ Memberstack linkage and successful MongoDB account creation, the signup flow performs **CRM lead synchronization and referral state updates**.
+- After data source sync, the signup flow performs **CRM lead synchronization, referral state updates, and automated email**.
 
   **CRM Lead Creation / Update**
   - Once `createAccount` succeeds, the API receives the created `student_id` and `parent_id`.
-  - The system invokes the internal CRM endpoint:
-
-    POST /api/v1/external/create-lead
-  - A lead is created or updated in the CRM with:
-    - `parent_id` (always present)
-    - `student_id` (only if a student account was created)
-    - `tag_name = "account created"`
-    - `ref_id = memberId` (Memberstack memberId for traceability)
-  - This ensures all signups are reflected in CRM for follow-ups, onboarding, and sales workflows.
+  - The system invokes the internal CRM endpoint: POST /api/v1/external/create-lead
+  - A lead is created or updated in the CRM with:`parent_id` (always present),`student_id` (only if a student account was created),`tag_name = "account created"`, `ref_id = memberId` (Memberstack memberId for traceability)
 - **Referral Status Update**
   - The system checks the `referral_details` collection using the created parent’s MongoDB `_id` as `guestId`.
-  - If a referral record exists:
-    - The referral stage is updated to:   referred_stage = "Signed_Up"
+  - If a referral record exists, the referral stage is updated: `referred_stage = "Signed_Up"`
     - `updated_on` timestamp is set
 - This marks the referral lifecycle transition from **invited / referred → signed up**.
 - Purchase-based referral progression is handled later during payment completion (not at signup).
-- Invitation / Account-Exists Emails
+- **Invitation / Account-Exists Emails**
   - When a signup email matches an existing invited user or a pre-existing account, SES is triggered via: `sendEmail.SendEmail.send_to_email(...)`
   - This occurs inside helper flows such as `setFamilyId()` when:
     - A user was previously invited
     - The system links the new signup to an existing family
   - Email templates are fetched from the `email_content` collection and sent via SES.
+
+<Note>
+  TODO: Shubham needs to review the Account-Exists Email more in-depth.
+</Note>
 
 ### 1.2 `POST /camp/createAccount`
 
@@ -123,31 +78,7 @@ Creates or updates the user account record in MongoDB, based on if `student` or 
   - Updates the existing record with: `memberId`, `itemId`, `name`, `email`
 - Else, creates a new record for the student or parent.
   - If record is a `student`, then link to the `parent` record (which is also created, if does not exist)
-  - FamilyId Logic
-
-    `familyId` is the **primary grouping key** used to associate parents and students belonging to the same household. The logic is centralized in the `createAccount` flow and behaves as follows:
-
-    **1. Parent-first ownership model**
-    - The **parent record is treated as the source of truth** for `familyId`.
-    - When a signup request contains a `parentEmail`, the system first searches for an existing parent account using that email.
-
-    **2. FamilyId generation**
-    - If no existing parent is found:
-      - A new `familyId` is generated using a random, non-guessable string derived from the parent email and digits.
-      - This `familyId` is assigned at parent creation time.
-    - If an existing parent is found:
-      - If the parent already has a valid `familyId`, it is reused.
-      - If the parent exists but has an empty or `"null"` familyId, a new one is generated and backfilled.
-
-    **3. Student linkage**
-    - Students are always linked to a parent **via the same **`familyId`.
-    - Student lookup follows this order:
-      - By `studentEmail` (if provided and different from parent email)
-      - Else by `(studentName + familyId)`
-    - If a student record exists without a `familyId`, it is updated to inherit the parent’s `familyId`.
-    - If no student record exists, a new student is created with the inherited `familyId`.
-
----
+  - `familyId` is updated as [described in this section](https://dca.mintlify.app/bdc/members/overview#family-architecture)
 
 ## 2. MongoDB Account Schema
 

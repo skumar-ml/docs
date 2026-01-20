@@ -7,7 +7,7 @@ title: "Edit Account Info"
 Admins can edit parent, student, and coach information using Retool. The editing flow differs depending on whether the person already has a Memberstack account or exists only in the database.
 
 <Danger>
-  TODO: Can we consolidate this functionality, now that we have records for folks that don't have accounts on memberstack? Or do we need to
+  TODO: Can we consolidate this functionality, now that we have records for folks that don't have accounts on memberstack? Or do we need to keep this Retool pages seperate
 </Danger>
 
 ### Overview
@@ -56,9 +56,7 @@ If the member is not accesible via the Student Registration Details, admin can d
 
 ### Technical Details
 
-TODO: Give very brief technical details of which Lambda functions get called..
-
-To execute edits for **Full Accounts**, Retool calls a **Lambda function** to update the member in Memberstack and sync the database. In Retool, we triggered the lambda function **updateMember** **API** to update the member in all three places: Memberstack, Webflow, and MongoDB.
+To execute edits for **Full Accounts**, Retool triggers the **updateMember** **API** to update the member in all three places: Memberstack, Webflow, and MongoDB.
 
 For **Partial Accounts**, Retool directly updates the **member collection in MongoDB only**.
 
