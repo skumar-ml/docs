@@ -60,7 +60,7 @@
                 "group": "Summer",
                 "pages": [
                   "bdc/checkout-systems/summer/overview",
-                  "bdc/class-checkout/summer/web-checkout",
+                  "bdc/checkout-systems/summer/web-checkout",
                   "bdc/checkout-systems/summer/retool",
                   "bdc/checkout-systems/summer/mongo-db"
                 ]
