@@ -41,46 +41,19 @@ To create an account, we do the following:
 
 **1: Memberstack**
 
-**TODO:** We need to add a step before this that talks about Memberstack inserting the record into their database. How do we ensure this record has been inserted before we call createUserSignup?
+Once the user submits the **Sign Up** form (via the Webflow UI), Memberstack creates the user record in **Memberstack’s internal database **(after validating email & password). Memberstack generates a unique `memberId` for the user.
 
-Before **any backend API is called**, the account creation flow **starts inside Memberstack**.
-
-### What happens
-
-- User submits **Sign Up** form (Webflow UI)
-- Webflow is configured to use **Memberstack for authentication**
-- Memberstack:
-  - Validates email/password
-  - Creates the user record in **Memberstack’s internal database**
-  - Generates a unique `memberId`
-  - Commits the user record **transactionally**
-
-### How do we ensure the record exists before backend APIs run?
-
-**Memberstack Webhook Guarantee**
-
-- MemberStack triggers the webhook **only after the user record is successfully created**
-- The webhook is **post-insert**, not pre-insert
-- If Memberstack fails to create the user, the webhook is **never fired**
-
-This guarantees that when our backend receives the webhook:
-
-- `memberId` already exists
-- Authentication identity is finalized
-- The record is durable in Memberstack
+On member cretaion, Memberstack triggers the below webhook.
 
 ### 1.1 `POST /camp/createUserSignup `
-
-<Note>
-  TODO: Why is it /camp/? \* The /camp prefix indicates that this API belongs to the Bergen Debate Camp platform
-</Note>
 
 Entry-point API to initiate account signup and synchronize data between Webflow & Memberstack.
 
 **Responsibilities:**
 
 - Accepts signup payload: `name`, `email`, `accountType` (student | parent | coach), `signUpRef`
-  - TODO: Eventually, we'll just point to the OpenAPI reference for input payload signature...
+  - **TODO: Eventually, we'll just point to the OpenAPI reference for input payload signature...**
+  - **TODO: Please note and/or confirm here that payload is structured based on payload that Memberstack sends via webhook.**
 - **Webflow Insertion:** Formats the payload into Webflow's CMS-compatible structure. Inserts into Webflow CMS's **Member** collection and publishes the CMS item.
 - **Webflow ↔ Memberstack linkage:** Receives `itemId` from Webflow in the response. Finds member in Memberstack via the payload's `memberId`.  Updates Memberstack record with `webflow-member-id = itemId` .
 - Invokes `createAccount` service to persist data into MongoDB, with different arguments passed depending on if sign-up was from `student` or `parent`.
