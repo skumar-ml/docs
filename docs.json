@@ -37,7 +37,7 @@
                 "group": "Semester",
                 "pages": [
                   "bdc/checkout-systems/semester/introduction",
-                  "bdc/class-checkout/semester/semester-overview-page",
+                  "bdc/checkout-systems/semester/semester-overview-page",
                   {
                     "group": "Web Checkout",
                     "pages": [
@@ -50,9 +50,9 @@
                       "bdc/class-checkout/semester/semester-overview-page-copied-1"
                     ]
                   },
-                  "bdc/class-checkout/semester/pre-reg-system",
-                  "bdc/class-checkout/semester/waitlist-system",
-                  "bdc/class-checkout/semester/retool",
+                  "bdc/checkout-systems/semester/pre-reg-system",
+                  "bdc/checkout-systems/semester/waitlist-system",
+                  "bdc/checkout-systems/semester/retool",
                   "bdc/checkout-systems/semester/mongo-db"
                 ]
               },
