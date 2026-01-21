@@ -1,0 +1,342 @@
+---
+title: "Pre-Payment"
+---
+
+## 1. Login / Signup / Cart Redirection
+
+### Authentication
+
+- Checkout requires **Login / Signup**
+- Managed via **MemberStack** (script added to Webflow)
+- **MemberStack Webhooks** sync data with **Webflow CMS + MongoDB**
+
+### Signup (Parent Account)
+
+- URL: `https://www.bergendebate.com/sign-up`
+- Flow:
+
+  ```
+  Webflow Form → MemberStack → Webhook → Webflow CMS + MongoDB
+  
+  ```
+
+**Webhooks**
+
+- `createUserSignup`
+  - Trigger: New MemberStack record
+  - Actions:
+    - Create Webflow CMS member (slug = memberId)
+    - Update MemberStack with `webflowItemId`
+    - Create MongoDB `members` record
+- `updateWebflowMongoDB`
+  - Trigger: MemberStack update
+  - Syncs updates to Webflow CMS + MongoDB
+
+### Login
+
+- MemberStack validates email/password
+
+### Cart Redirection Logic
+
+```
+Cart Page Visit
+→ Save cart URL in localStorage (redirect_url)
+→ MemberStack redirects to /portal/home
+→ If redirect_url exists → redirect back to cart
+→ Remove redirect_url
+```
+
+---
+
+## 2. Student Profile
+
+### Existing Students
+
+- API: `getAllPreviousStudents/{memberId}/all`
+- Shows saved students in dropdown
+- Selecting one auto-fills the form
+
+### Student Details Form
+
+- Fields: First Name, Last Name, Email, Grade, School, Gender, Previous Student
+- On **Next**:
+  - `storeBasicData()` → localStorage
+  - `AddStudentData()` → API (`checkoutUrlForClasses`)
+  - Returns `checkoutId`
+- `checkoutId` links:
+  - Class selection
+  - Bundle program
+  - Briefs
+
+---
+
+## 3. Optional Bundle Program
+
+### Data & Rendering
+
+- API: `getUpsellProgramV2`
+- Filters out `sessionId === 2` (current program)
+- Renders:
+  - Bundle modal
+  - Banner CTA
+
+### Modal Skip Logic (`checkSemesterBundleModalOpen`)
+
+- Skip if:
+  - More than 2 bundles already selected
+  - Closed within last 1 hour (cookie)
+
+### Selection Logic
+
+- Updates `$selectedProgram`
+- Syncs checkboxes by `programDetailId`
+- UI feedback: `border-brown-red`
+- Updates cart total dynamically
+
+### Core Program Handling (`updateCoreData`)
+
+- Auto-adds core program if any bundle selected
+- Core price set to **0** in bundle flow
+
+---
+
+## 4. Class Selection & Payment
+
+### Class Data
+
+- API: `getClassDetailByMemberIdAndLevelId`
+- Based on `levelId`
+- Renders:
+  - Location (`#location-select-field`)
+  - Times (`.class-times-grid-wrapper`)
+
+### Time Slot Format
+
+```
+{Day} {StartTime} - {EndTime}
+```
+
+Attributes: `classId`, `levelName`, `numberOfSpots`, `leftSpots`
+
+### Seat Availability (`getAlertMessage`)
+
+```
+leftSpotsPercentage = (leftSpots / numberOfSpots) * 100
+```
+
+- **≤ 25% spots**
+  - Class: `brown-info-text`
+  - Message: “Hurry! Only X spots left”
+- **≤ 0 spots**
+  - Class: `yellow-info-text`
+  - Message: “Seats are full”
+  - Action: Show waitlist, hide payment
+
+### Display Logic
+
+- After time selection:
+  - Seats available → Show payment
+  - Sold out → Show waitlist form
+
+### Available Payment Methods
+
+The system provides two payment options for class registration:
+
+**1. Bank Transfer (ACH):** This option is selected by default. The base price (no processing fees) is used. Stripe handles the payment, ensuring no bank details are stored by us.
+
+**2. Credit Card:** If selected, a processing fee `(amount + 0.3 / 0.971)` is applied. Standard credit/debit card payment via Stripe.
+
+### Payment Option Selection
+
+Payment options are displayed using a tab-based interface, where users can switch between **Bank Transfer** and **Credit Card**. The selected payment option determines which Stripe checkout URL is generated and updates pricing (in the order details) dynamically.
+
+**Dynamic Pricing**
+
+Dynamic pricing updates are handled entirely on the **frontend**, without additional API calls. We use `onClickListeners()` on  `.payment-cards-tab-link` UI elements. These event listeners are put in place by `updatePriceForCardPayment()` , which is called during **class initialization.**
+
+When the **credit card** payment option is selected, we apply the Stripe card processing fee using the formula: `(amount + 0.30) / 0.971` .
+
+When **bank transfer** is selected, price elements are reset to their original (base price) values.
+
+When **upsells** are added, `updateAmount()` recalculates totals and triggers the active payment tab click to ensure pricing reflect the current payment method.
+
+<Accordion title="The following price displays are updated">
+  - Core product deposit: `[data-stripe='totalDepositPrice']`
+  - Add-on program prices: `[data-stripe='addon-price']`
+  - Add-on deposit prices: `[data-stripe='addon-deposit-price']`
+  - Brief prices: `[data-stripe='brief-price']`
+  - Gray summary price display: `.current-price-gray`
+</Accordion>
+
+## Checkout Link System
+
+When the user proceeds to payment, the system creates a Stripe checkout session based on the selected payment method.
+
+The User clicking **"Pay Now"**, triggers the `initializeStripePayment()` from the `class_details_stripe_bundle.js` file. This method is the **entry point** for all checkout logic.
+
+### BDC Credit Check
+
+**First, we check if the user has BDC Credits.** If they do, a modal prompts the user to apply available Bergen credits. The selection is saved as `applyCredit` and included in checkout data. This logic is handled by `waitForCreditApplicationChoice(webflowMemberId)` in `utils.js` .
+
+<Accordion title="Logic for BDC Credits">
+  1.  Credit balance is checked via `GET getCreditBalance/{webflowMemberId}`
+  2. If credit is `0` or invalid → returns `false &` 
+
+     modal is skipped
+  3. If credit exists → displays `#bergen-credits-modal` and p
+
+     opulates values via `updateCreditData()`
+  4. User selects:
+     - Apply → `true`
+     - Skip → `false`
+
+  The resolved value is stored as:` applyCredit`
+</Accordion>
+
+<Note>
+  TODO: Eventually a different page to explain BDC Credit System
+</Note>
+
+### Data Preparation for the Checkout Link
+
+The following data is collected before generating the checkout link:
+
+| Field            | Purpose                                                       |
+| :--------------- | :------------------------------------------------------------ |
+| checkoutId       | Existing checkout session ID (from localStorage, if resuming) |
+| label            | Human-readable description (Location \| Level \| Time)        |
+| classUniqueId    | Selected class identifier                                     |
+| location         | Selected location                                             |
+| memberId         | Webflow member ID                                             |
+| upsellProgramIds | Selected supplementary programs                               |
+| has_fee          | Indicates new student fee                                     |
+| source           | Always `cart_page`                                            |
+| amount           | Final amount (in cents)                                       |
+| applyCredit      | Credit usage flag                                             |
+| successUrl       | Redirect after payment success                                |
+| cancelUrl        | Redirect if payment is cancelled                              |
+
+**checkoutId**:  We generate a checkout ID when the user submits the student details form. We then update the checkout session after the user selects a class, bundle program, or briefs, based on the checkout ID. **TODO: This info would be great for student profiles. I vote that we create a new page that documents (technically) everything pre-payment:**
+
+- **Log-in / Sign-up: How do we determine if user is or is not signed-up to skip this step? Redirect logic? Don't need details of Account Creation, since we've already handled that.**
+- **Student Profiles: Where are these coming from. What happens when we create a new one. What if we edit an existing one. Add the checkoutId logic.**
+- **Upsells: I think let's skip this for now. We likely need a different page devoted to upsells**
+
+There are additional fields for bundle purchases:
+
+- `paymentId` – Bundle payment identifier
+- `isBundleProgram` – Boolean flag
+- `topics` – Selected brief topics (if applicable)
+
+### API Call and Response
+
+Depending on the purchase type, one of two APIs is called:
+
+#### Standard Checkout (`updateDataToCheckoutUrl`)
+
+This API endpoint is used for normal class registration OR bundled (e.g., pre-registered) purchases.
+
+#### Standard Checkout with an Upsell (Semester Bundle or Briefs)(`checkoutUrlForUpsellProgram`)
+
+- This API endpoint is used for bundle purchases with supplementary programs or briefs
+- **_We are using this API on the portal purchase as well_**
+
+The APIs return:
+
+```
+{
+  "success": true,
+  "cardUrl": "https://checkout.stripe.com/...",
+  "achUrl": "https://checkout.stripe.com/..."
+}
+```
+
+### Redirect to Stripe
+
+URLs are assigned as `href` values to the **"Pay Now"** buttons. The user is directed based on the selected payment method (Credit Card → `cardUrl`, Bank Transfer → `achUrl`)
+
+Before redirecting:
+
+- `backbuttonstate = "1"` is set
+- Checkout data is saved to `localStorage`
+- API response is cached for restoration
+
+**Why this matters**
+
+- Enables recovery from:
+  - Browser back button
+  - Stripe cancel action
+  - Network interruptions
+
+<Note>
+  TODO: I'm not satisfied with this explanation of backbuttonstate and localStorage usage. We can revisit later on.
+
+  1. 
+</Note>
+
+## Returning from Stripe
+
+There are several return scenarios, each of which are detailed in the following:
+
+### 1. Successful Payment
+
+TODO: What are the conditions on which this triggers (via the API)?
+
+<Note>
+  During the checkout session creation, I provide the success URL and cancel URL using JavaScript. After a successful payment, it redirects to the success URL.
+</Note>
+
+User is directed to a payment confirmation screen with url param "payment-confirmation?type=Academic&programName={label}&pType={paymentType}"
+
+TODO: It will be good to explain what these URL parameters explain, or link to a section that will do it.
+
+<Note>
+  1. Type(Academic | Summer): We have the same payment confirmation for both summer and academic registration. The type indicates which registration the payment confirmation is from. We use this for tracking purposes and analytics.
+  2. programName: Class or Program Name: This will be displayed on the payment confirmation page.
+  3. Type: Payment mode(Card | Bank Transfer). We use this for tracking purposes and analytics.
+</Note>
+
+**System Behavior**:
+
+- Payment is confirmed
+- Registration is completed
+
+### 2. Cancelled Payment
+
+TODO: What are the triggers for this?
+
+When user click on stripe page back button then it will redirect to cancel_url with ?returnType=back url param
+
+<Note>
+  During the checkout session creation, I provide the success URL and cancel URL using JavaScript. When the user clicks on the back button on the Stripe checkout page, it will redirect to the cancel url
+</Note>
+
+### 3. Browser Back Button
+
+TODO: What URL are they sent back to? Then, it seems like the Detection Logic triggers. If Detection Logic determines user is returning from Stripe, then the same restoration logic as the cancelled payment is triggered.
+
+**Detection Logic**:
+
+- `backbuttonstate === "1"`
+- Checkout data exists and is valid
+
+**Behavior**:
+
+- Same restoration logic as cancelled payment
+- User resumes from last completed step
+
+---
+
+## State Restoration Process
+
+When restoring checkout state, the system:
+
+1. Validates checkout data (member ID & timestamp)
+2. Restores student information
+3. Reloads selected location and class time
+4. Restores selected payment method
+5. Recalculates totals
+6. Restores bundle and briefs selections
+7. Updates UI steps and validations
+
+TODO: This section needs work, but we can return to it.
