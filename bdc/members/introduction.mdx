@@ -45,7 +45,7 @@ Memberstack handles all of the member logic. This includes things like sign-in a
 
 ### Family Architecture
 
-Parent and student accounts are connected through a unique `familyId` that links family members together. This architecture supports multiple students \<**TODO**\> <u>under a single parent account </u>and handles various sign-up scenarios.
+Parent and student accounts are connected through a unique `familyId` that links family members together. This architecture supports multiple students **\<TODO: Why a single parent account?\>** <u>under a single parent account </u>and handles various sign-up scenarios.
 
 The logic is centralized in the `createAccount` flow and behaves as follows:
 
@@ -76,40 +76,10 @@ The logic is centralized in the `createAccount` flow and behaves as follows:
 
 TODO: I think these cases are a little too complex. I think really, we have the following:
 
-Associations between parent and student accounts are made _at the time of registration_. When this happens, the same `familyId` is assigned to both the parent and student. If the parent does not have a `familyId`, we generate one for them, and also assign it to the student. If the parent already has a `familyId` (e.g., from a previous purchase), then that `familyId` is assigned to the student.
+Associations between parent and student accounts are primarily made _at the time of registration_. When this happens, the same `familyId` is assigned to both the parent and student. If the parent does not have a `familyId`, we generate one for them, and also assign it to the student. If the parent already has a `familyId` (e.g., from a previous purchase), then that `familyId` is assigned to the student.
 
 <Note>
   TODO:
 
   Are there other cases where a familyId is generated for the parent (other than during checkout)?
-
-  Commnet
 </Note>
-
-<u>\<TODO\>: The remainder of these cases can be integrated into other sections...</u>
-
-**Case 1: New parent sign-up**
-
-1. Parent signs up for a new account
-2. Parent registers a student for a class
-3. createAccount API assigns a unique `familyId` to both the parent and the student
-
-**Case 2: Existing parent adds new student**
-
-1. Parent **\<TODO\>** <Tooltip tip="What do you mean already signed up...? I think you mean they already have a familyId generated.">(already signed up)</Tooltip> registers classes for a new student
-2. System assigns the parent's existing `familyId` to the new student
-
-**Case 3: Student sign-up with existing parent**
-
-1. Student signs up using their parent's email address
-2. Student is already registered for a class
-3. System assigns the parent's `familyId` to the student account
-
-**Case 4: Student sign-up before parent**
-
-1. New student signs up with parent's email
-2. Student attempts to register for a class
-3. System displays an error message instructing them to log in or sign up with a parent account
-4. Parent signs up for an account
-5. Parent registers for classes for the student
-6. System assigns a unique `familyId` to both the parent and the already signed-up student
