@@ -44,7 +44,7 @@ Entry-point API to initiate account signup and synchronize data between Webflow 
 
 **Responsibilities:**
 
-- Accepts signup payload: `name`, `email`, `accountType` (student | parent | coach), `signUpRef` **TODO Can you confirm this payload is passed by Memberstack via the webhook?**
+- Accepts signup payload: `name`, `email`, `accountType` (student | parent | coach), `signUpRef. For more details please have a look at the API reference`[link](https://developers.memberstack.com/admin-rest-api/member-actions#create-member) **TODO Can you confirm this payload is passed by Memberstack via the webhook? - YES**
   - TODO: Eventually, we'll just point to the OpenAPI reference for input payload signature...
 - **Webflow Insertion:** Formats the payload into Webflow's CMS-compatible structure. Inserts into Webflow CMS's **Member** collection and publishes the CMS item.
 - **Webflow ↔ Memberstack linkage:** Receives `itemId` from Webflow in the response. Finds member in Memberstack via the payload's `memberId`.  Updates Memberstack record with `webflow-member-id = itemId` .
