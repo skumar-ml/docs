@@ -48,7 +48,7 @@ Displayed as a **Register** button for each class level. When clicked, the user 
 
 ### APIs & Backend Overview 
 
-Single API Endpoint: **getClassDetails?levelId= **fetches all class-level data in one consolidated response, including: 
+Single API Endpoint: \*\*getClassDetails?levelId= \*\*fetches all class-level data in one consolidated response, including: 
 
 - Class levels, locations & timings, prerequisites, syllabus details (descriptions & accomplishments) 
 
@@ -70,7 +70,7 @@ Uses inline JavaScript to call API, cache data client-side, and render the DOM. 
 
 On the **Initial Page Load**, all content is fetched once and then rendered. Instantiating classLists triggers renderPortalData(). Then, one API request to getClassDetails?levelId= retrieves all levels. The full response is stored in this.cachedApiData. 
 
-While content is being fetched, our **Loading State **uses a loading spinner (half-circle-spinner). 
+While content is being fetched, our **Loading State** uses a loading spinner (half-circle-spinner). 
 
 **Post Load**, cached data is reused for syllabus modals; no additional API calls are made after the initial load. 
 
@@ -106,16 +106,13 @@ Element: #Contact-Number | Event: input | Library: libphonenumber (external) | P
 
 **Form Fields**
 
-- Student First Name 
-- Student Last Name 
-- Parent Name 
-- Parent Email 
-- Student Grade (5th–12th) 
-- Semester (Fall, Winter/Spring, Summer) 
-- Parent Phone Number (with validation) 
-- Location (Fort Lee, Glen Rock, Livingston, Online) 
+- Student Details: First & Last Name, Grade
+- Parent Details: Name, Email, Phone Number
+- Semester (Fall, Winter/Spring, Summer) & Location (Fort Lee, Glen Rock, Livingston, Online) 
 
 **Functionality**
+
+(TODO: finish this later...) On submit, we do field validation (e.g., all fields required). Data is saved to localStorage as \<\>. Then, we call API \<\> (while executing, we are displaying loading spinner)
 
 - Phone number formatting and validation (US format) 
 - Form validation (all fields required) 
@@ -123,13 +120,7 @@ Element: #Contact-Number | Event: input | Library: libphonenumber (external) | P
 - API integration (submits to studentGraphicInfo endpoint) 
 - Success/error message display 
 - Loading spinner during submission 
-- Modal open/close functionality 
-- Responsive design (mobile-friendly) 
-
-**Design**
-
-- Modal popup interface 
-- Smooth animations and transitions 
+- 
 
 **API Endpoint**
 
