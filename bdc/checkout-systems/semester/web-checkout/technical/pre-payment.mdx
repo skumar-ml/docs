@@ -71,7 +71,7 @@ Then, our onClickListener calls `AddStudentData()`, which calls the `checkoutUrl
 
 ## 3. Optional Bundle Program
 
-**TODO: Can you explain when the **`getUpsellProgramV2`**API gets triggered? ** 
+\*\*TODO: Can you explain when the \*\*`getUpsellProgramV2`\*\*API gets triggered? \*\*
 
 ### Data & Rendering
 
@@ -113,40 +113,18 @@ We skip showing the modal if more than 2 bundles are already selected, or if the
 
 ## 4. Class Selection & Payment
 
-**TODO: How does this API get triggered?**
+**TODO: How does the **`getClassDetailByMemberIdAndLevelId`**API get triggered?** 
 
-### Class Data
+Based on the selected `levelId`, the API gets class data, which populates the location options. Clicking a location shows the class time slot options in the format `{Day} {StartTime} - {EndTime}`.
 
-- API: `getClassDetailByMemberIdAndLevelId`
-- Based on `levelId`
-- Renders:
-  - Location (`#location-select-field`)
-  - Times (`.class-times-grid-wrapper`)
+Attributes: `classId`, `levelName`, `numberOfSpots`, `leftSpots` **(TODO: This can be deleted)**
 
-### Time Slot Format
-
-```
-{Day} {StartTime} - {EndTime}
-```
-
-Attributes: `classId`, `levelName`, `numberOfSpots`, `leftSpots`
+**TODO: We need to descibe what **`numberOfSpots`**and ** `leftSpots`**are, and (at a high level) how they are calculated by the API. ** 
 
 ### Seat Availability (`getAlertMessage`)
 
-```
-leftSpotsPercentage = (leftSpots / numberOfSpots) * 100
-```
+The frontend calculates `leftSpotsPercentage = (leftSpots / numberOfSpots) * 100`. If **≤ 25% spots **are remaining, show a message “Hurry! Only X spots left”. If **no spots** are left show a message that "Seats are full" and allow the user to sign-up for the waitlist (no payment allowed)
 
-- **≤ 25% spots**
-  - Class: `brown-info-text`
-  - Message: “Hurry! Only X spots left”
-- **≤ 0 spots**
-  - Class: `yellow-info-text`
-  - Message: “Seats are full”
-  - Action: Show waitlist, hide payment
-
-### Display Logic
-
-- After time selection:
-  - Seats available → Show payment
-  - Sold out → Show waitlist form
+<Note>
+  **TODO: In the future, we need a seperate page/section discussing the waitlist system**
+</Note>
