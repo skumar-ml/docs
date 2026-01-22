@@ -45,7 +45,7 @@ Memberstack handles all of the member logic. This includes things like sign-in a
 
 ### Family Architecture
 
-Parent and student accounts are connected through a unique `familyId` that links family members together. This architecture supports multiple students under (at least a single parent account and handles various sign-up scenarios.
+Parent and student accounts are connected through a unique `familyId` that links family members together. This architecture supports multiple students under (at least a single parent) account and handles various sign-up scenarios.
 
 The logic is centralized in the `createAccount` flow and behaves as follows:
 
@@ -72,10 +72,6 @@ The logic is centralized in the `createAccount` flow and behaves as follows:
 - If a student record exists without a `familyId`, it is updated to inherit the parent’s `familyId`.
 - If no student record exists, a new student is created with the inherited `familyId`.
 
-#### Sign-up flows
-
-TODO: I think these cases are a little too complex. I think really, we have the following:
-
 <Note>
-  TODO: Are there other cases where a familyId is generated for the parent (other than during checkout)? Via Retool, when we register new parents and students, we create a family id for the parent and also assigned family id to the student.
+  **TODO: Are there other cases where a familyId is generated for the parent (other than during checkout)?** Via Retool, when we register new parents and students, we create a family id for the parent and also assigned family id to the student.
 </Note>
