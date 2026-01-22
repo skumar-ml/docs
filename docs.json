@@ -45,7 +45,8 @@
                         "group": "Technical",
                         "pages": [
                           "bdc/checkout-systems/semester/web-checkout/technical/pre-payment",
-                          "bdc/checkout-systems/semester/web-checkout/technical/payment"
+                          "bdc/checkout-systems/semester/web-checkout/technical/payment",
+                          "bdc/checkout-systems/semester/web-checkout/technical/post-payment"
                         ]
                       },
                       "bdc/checkout-systems/semester/web-checkout/non-technical"
