@@ -69,7 +69,7 @@ Then, our onClickListener calls `AddStudentData()`, which calls the `checkoutUrl
 </Info>
 
 - ~~API: ~~`getUpsellProgramV2`
-- ~~~~`Filters out sessionId !== 2(current program) ~~ **`~~~~\<TODO: is this hardcoded?\>~~\*\*
+- 
 - ~~Renders:~~
   - ~~Bundle modal~~
   - ~~Banner CTA~~
@@ -78,7 +78,7 @@ Then, our onClickListener calls `AddStudentData()`, which calls the `checkoutUrl
 
 The modal opens when the user clicks **Next**, unless it is skipped. It is skipped if at least **two checkboxes (one Core and one Bundle)** are already selected, or if the modal was dismissed within the **last 1 hour**, tracked via cookies.
 
-**TODO: Is this skip logic housed within frontend function that does "Data & Rendering"? **
+\*\*TODO: Is this skip logic housed within frontend function that does "Data & Rendering"? \*\*
 
 **Updated the text**
 
@@ -96,15 +96,22 @@ The modal opens when the user clicks **Next**, unless it is skipped. It is skipp
 
 - Updates `$selectedProgram` **(TODO: What is selectedProgram? First time this is being referenced)**
 - Syncs checkboxes by `programDetailId` **(TODO: I have no clue what this means. Give more details.)**
-- UI feedback: `border-brown-red`
 - Updates cart total dynamically **(TODO: How? What gets called?)**
+
+<Info>
+  `$selectedProgram` is a frontend state array that stores all bundle programs currently selected by the user for the active checkout session. Syncing checkboxes by `programDetailId` ensures that when a program is selected or deselected in one UI location (banner or modal), all corresponding checkboxes for that same program update together. On each selection change, the checkout pricing logic is triggered, recalculating the total amount and updating the cart UI based on the programs stored in `$selectedProgram`.
+</Info>
 
 ### Core Program Handling (`updateCoreData`)
 
 - Auto-adds core program if any bundle selected
 - Core price set to **0** in bundle flow
 
-**TODO: What are we calling as a core program??**
+**TODO: What are we calling as a core program?? **
+
+<Info>
+  Current session program. Like Winter/Spring (2026)
+</Info>
 
 ---
 
@@ -114,9 +121,12 @@ The modal opens when the user clicks **Next**, unless it is skipped. It is skipp
 
 Based on the selected `levelId`, the API gets class data, which populates the location options. Clicking a location shows the class time slot options in the format `{Day} {StartTime} - {EndTime}`.
 
-Attributes: `classId`, `levelName`, `numberOfSpots`, `leftSpots` **(TODO: This can be deleted)**
+**TODO: We need to describe what \*\***`numberOfSpots`**\*\*and \*\* **`leftSpots`**\*\*are, and (at a high level) how they are calculated by the API. **
 
-\*\*TODO: We need to descibe what \*\*`numberOfSpots`\*\*and \*\* `leftSpots`\*\*are, and (at a high level) how they are calculated by the API. \*\*
+<Info>
+  The total available spots (`numberOfSpot`) are defined at the class.\
+  The remaining spots (`leftSpot`) are calculated by subtracting the total number of registrations for the class from `numberOfSpot` (`leftSpot = numberOfSpot − totalRegistrations`).
+</Info>
 
 ### Seat Availability (`getAlertMessage`)
 
