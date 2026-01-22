@@ -62,7 +62,7 @@ When the user clicks the **Next** button, our onClickListener calls `storeBasicD
 
 Then, our onClickListener calls `AddStudentData()`, which calls the `checkoutUrlForClasses` API and returns the `checkoutId`.
 
-**TODO: Are there other things that AddStudentData is going, or is it just calling the API? Also, we need to briefly explain the logic of the API. Finally, what is **`checkoutId`**? What does it control. We need to explain in more detail what it does. I think the description below is inadequate.**
+****`TODO: Are there other things that AddStudentData is going, or is it just calling the API? Also, we need to briefly explain the logic of the API. Finally, what is checkoutId? What does it control. We need to explain in more detail what it does. I think the description below is inadequate.`****
 
 - `checkoutId` links:
   - Class selection
@@ -71,11 +71,11 @@ Then, our onClickListener calls `AddStudentData()`, which calls the `checkoutUrl
 
 ## 3. Optional Bundle Program
 
-**TODO: Can you explain when the **`getUpsellProgramV2`**API gets triggered?  ** 
+**TODO: Can you explain when the **`getUpsellProgramV2`**API gets triggered? ** 
 
 ### Data & Rendering
 
-**TODO: What frontend function is calling this or handling this... **
+**TODO: What frontend function is calling this or handling this...**
 
 - API: `getUpsellProgramV2`
 - Filters out `sessionId === 2` (current program) **\<TODO: is this hardcoded?\>**
@@ -87,7 +87,7 @@ Then, our onClickListener calls `AddStudentData()`, which calls the `checkoutUrl
 
 We skip showing the modal if more than 2 bundles are already selected, or if the modal was already closed within the last 1 hour (managed via cookies)
 
-**TODO: Is this skip logic housed within frontend function that does "Data & Rendering"? **
+**TODO: Is this skip logic housed within frontend function that does "Data & Rendering"?**
 
 <Warning>
   **TODO: This logic is pretty hacky. We need to be more algorithmic than "if more than 2 bundles are already selected"**
@@ -99,7 +99,7 @@ We skip showing the modal if more than 2 bundles are already selected, or if the
 
 - Updates `$selectedProgram` **(TODO: What is selectedProgram? First time this is being referenced)**
 - Syncs checkboxes by `programDetailId` **(TODO: I have no clue what this means. Give more details.)**
-- UI feedback: `border-brown-red` 
+- UI feedback: `border-brown-red`
 - Updates cart total dynamically **(TODO: How? What gets called?)**
 
 ### Core Program Handling (`updateCoreData`)
