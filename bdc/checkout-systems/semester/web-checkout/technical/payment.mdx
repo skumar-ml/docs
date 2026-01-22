@@ -130,20 +130,7 @@ The APIs return:
 
 ### Redirect to Stripe
 
-URLs are assigned as `href` values to the **"Pay Now"** buttons. The user is directed based on the selected payment method (Credit Card → `cardUrl`, Bank Transfer → `achUrl`)
-
-Before redirecting:
-
-- `backbuttonstate = "1"` is set
-- Checkout data is saved to `localStorage`
-- API response is cached for restoration
-
-**Why this matters**
-
-- Enables recovery from:
-  - Browser back button
-  - Stripe cancel action
-  - Network interruptions
+Payment URLs are assigned as `href` values on the **Pay Now** buttons, redirecting users based on the selected method (Credit Card → `cardUrl`, Bank Transfer → `achUrl`). Before redirecting, the cart sets `backbuttonstate = "1"` and saves the current checkout data to `localStorage`. This enables checkout recovery in cases such as using the browser back button, cancelling on Stripe, or network interruptions.
 
 <Note>
   TODO: I'm not satisfied with this explanation of backbuttonstate and localStorage usage. We can revisit later on.
@@ -159,25 +146,13 @@ There are several return scenarios, each of which are detailed in the following:
 
 TODO: What are the conditions on which this triggers (via the API)?
 
-<Note>
-  During the checkout session creation, I provide the success URL and cancel URL using JavaScript. After a successful payment, it redirects to the success URL.
-</Note>
+During the checkout session creation, we provide the success URL and cancel URL using JavaScript. After a successful payment, it redirects to the success URL with urlParam (**payment-confirmation?type=Academic&programName={label}&pType={paymentType}**)
 
-User is directed to a confirmation screen
+**TODO: It will be good to explain what these URL parameters explain, or link to a section that will do it.**
 
-**Redirect URL Pattern**:
-
-```
-payment-confirmation?type=Academic&programName={label}&pType={paymentType}
-```
-
-TODO: It will be good to explain what these URL parameters explain, or link to a section that will do it.
-
-<Note>
-  1. Type(Academic | Summer): We have the same payment confirmation for both summer and academic registration. The type indicates which registration the payment confirmation is from. We use this for tracking purposes and analytics.
-  2. programName: Class or Program Name: This will be displayed on the payment confirmation page.
-  3. Type: Payment mode(Card | Bank Transfer). We use this for tracking purposes and analytics.
-</Note>
+- **Type(Academic | Summer)**: We have the same payment confirmation for both summer and academic registration. The type indicates which registration the payment confirmation is from. We use this for tracking purposes and analytics.
+- **programName**: Class or Program Name: This will be displayed on the payment confirmation page.
+- **Type**: Payment mode(Card | Bank Transfer). We use this for tracking purposes and analytics.
 
 **System Behavior**:
 
@@ -188,17 +163,13 @@ TODO: It will be good to explain what these URL parameters explain, or link to a
 
 TODO: What are the triggers for this?
 
-<Note>
-  During the checkout session creation, I provide the success URL and cancel URL using JavaScript. When the user clicks on the back button on the Stripe checkout page, it will redirect to the cancel url
-</Note>
-
----
+When the user clicks the **Back** button on the Stripe checkout page, Stripe redirects them to the **cancel URL** with the parameter `CART_PAGE_URL?returnType=back`. Using this parameter, the cart page detects a back-navigation scenario and restores the last selected class, time slot, and bundle programs so the user can continue checkout seamlessly.
 
 ### 3. Browser Back Button
 
-<Info>
-  Before redirecting the user to the Stripe page, we set the `backbuttonstate` input value from `0` to `1` via code on the **cart page URL**. After payment, Stripe redirects the user back to the same cart page URL. On page load, the checkout detects `backbuttonstate === "1"` with valid checkout data and triggers the cancelled-payment restoration logic, allowing the user to resume from the last completed step.
-</Info>
+Before redirecting the user to the Stripe page, we set the backbuttonstate input value from 0 to 1 via code on the cart page. After the user lands to stripe page and they click on  browser back button then the user will be redirected  back to the same cart page URL. On page load, the checkout page detects backbuttonstate === "1" with valid checkout data and restores the last selected class, time slot, and bundle programs so the user can continue checkout seamlessly.
+
+To handle the browser back button scenario, we have implemented logic that updates and detects the `backbuttonstate` input value.
 
 ~~TODO: What URL are they sent back to? Then, it seems like the Detection Logic triggers. If Detection Logic determines user is returning from Stripe, then the same restoration logic as caancelled payment is triggered.~~
 

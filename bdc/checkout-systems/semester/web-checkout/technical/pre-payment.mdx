@@ -76,7 +76,7 @@ Then, our onClickListener calls `AddStudentData()`, which calls the `checkoutUrl
 
 ### Logic Bundle Modal Open and Skip
 
-The modal opens when the user clicks **Next**, unless it is skipped. It is skipped if at least **two checkboxes (One Current Session Program and One Bundle Program)** are already selected, or if the modal was dismissed within the **last 1 hour**, tracked via cookies.
+The modal opens when the user clicks **Next**, unless it is skipped. It is skipped if at least **two checkboxes (**the _Current Session Program_ — selected by default — and one _Bundle Program_**)** are already selected, or if the modal was dismissed within the **last 1 hour**, tracked via cookies.
 
 \*\*TODO: Is this skip logic housed within frontend function that does "Data & Rendering"? \*\*
 
@@ -85,7 +85,7 @@ The modal opens when the user clicks **Next**, unless it is skipped. It is skipp
 <Warning>
   **TODO: This logic is pretty hacky. We need to be more algorithmic than "if more than 2 bundles are already selected"**
 
-  **Updated the description.**
+  **I have updated the description. Please have a look**
 </Warning>
 
 ![Image](/images/image-4.png)
@@ -133,5 +133,5 @@ Based on the selected `levelId`, the API gets class data, which populates the lo
 The frontend calculates `leftSpotsPercentage = (leftSpots / numberOfSpots) * 100`. If \*\*≤ 25% spots \*\*are remaining, show a message “Hurry! Only X spots left”. If **no spots** are left show a message that "Seats are full" and allow the user to sign-up for the waitlist (no payment allowed)
 
 <Note>
-  **TODO: In the future, we need a seperate page/section discussing the waitlist system**
+  **TODO: In the future, we need a separate page/section discussing the waitlist system**
 </Note>
