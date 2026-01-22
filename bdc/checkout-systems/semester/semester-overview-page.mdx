@@ -54,6 +54,8 @@ Single API Endpoint: **getClassDetails?levelId=** fetches all class-level data 
 
 <Note>
   **TODO: Can you confirm what the point of levelId is? Is that optional, and if we don't pass it in, then all are retrieved?**
+
+  **Yes, it's optional, and if we don't pass levelId then it returns all class-level data. **
 </Note>
 
 ### Frontend
@@ -91,7 +93,7 @@ While content is being fetched, our **Loading State** uses a loading spinner (ha
     **Element:** .close-link.syllabus 
   </Accordion>
   <Accordion title="Phone Number Validation">
-    **Element:** #Contact-Number  
+    **Element:** #Contact-Number
 
     **Library:** libphonenumber (external)
 
