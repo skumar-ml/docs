@@ -63,24 +63,32 @@ Then, our onClickListener calls `AddStudentData()`, which calls the `checkoutUrl
 **TODO: What frontend function is calling this or handling this...**
 
 <Info>
-  The `getUpsellProgramV2` API is triggered on page load during checkout initialization to fetch all upsell programs for the current and summer sessions. The frontend filters out `sessionId !== 2`, where `sessionId = 2` represents the summer session, to separate future bundle programs. The filtered upsell programs are then rendered in both the **banner CTA** and **bundle selection modal**.
+  The `getUpsellProgramV2` API is triggered on page load during checkout initialization when the `classDetailsStripe` instance is created to fetch all upsell programs for the current and summer sessions. The frontend filters out`sessionId !== 2`, where `sessionId = 2` represents the summer session, to separate future bundle programs. The filtered upsell programs are then rendered in both the **banner CTA** and **bundle selection modal**.
+
+  When we click on the next button, it will be displayed 
 </Info>
 
-- API: `getUpsellProgramV2`
-- Filters out `sessionId !== 2` (current program) **\<TODO: is this hardcoded?\>**
-- Renders:
-  - Bundle modal
-  - Banner CTA
+- ~~API: ~~`getUpsellProgramV2`
+- ~~Filters out ~~`sessionId !== 2`~~(current program) ~~ **~~\<TODO: is this hardcoded?\>~~**
+- ~~Renders:~~
+  - ~~Bundle modal~~
+  - ~~Banner CTA~~
 
-### Modal Skip Logic (`checkSemesterBundleModalOpen`)
+### Logic Bundle Modal Open and Skip
 
-We skip showing the modal if more than 2 bundles are already selected, or if the modal was already closed within the last 1 hour (managed via cookies)
+The modal opens when the user clicks **Next**, unless it is skipped. It is skipped if at least **two checkboxes (one Core and one Bundle)** are already selected, or if the modal was dismissed within the **last 1 hour**, tracked via cookies.
 
-**TODO: Is this skip logic housed within frontend function that does "Data & Rendering"?**
+**TODO: Is this skip logic housed within frontend function that does "Data & Rendering"?  **
+
+**Updated the text**
 
 <Warning>
   **TODO: This logic is pretty hacky. We need to be more algorithmic than "if more than 2 bundles are already selected"**
+
+  **Updated the description.**
 </Warning>
+
+![Image](/images/image-4.png)
 
 ### Selection Logic
 
