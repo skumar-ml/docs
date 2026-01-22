@@ -76,7 +76,7 @@ Then, our onClickListener calls `AddStudentData()`, which calls the `checkoutUrl
 
 ### Logic Bundle Modal Open and Skip
 
-The modal opens when the user clicks **Next**, unless it is skipped. It is skipped if at least **two checkboxes (one Core and one Bundle)** are already selected, or if the modal was dismissed within the **last 1 hour**, tracked via cookies.
+The modal opens when the user clicks **Next**, unless it is skipped. It is skipped if at least **two checkboxes (One Current Session Program and One Bundle Program)** are already selected, or if the modal was dismissed within the **last 1 hour**, tracked via cookies.
 
 \*\*TODO: Is this skip logic housed within frontend function that does "Data & Rendering"? \*\*
 
@@ -107,10 +107,10 @@ The modal opens when the user clicks **Next**, unless it is skipped. It is skipp
 - Auto-adds core program if any bundle selected
 - Core price set to **0** in bundle flow
 
-**TODO: What are we calling as a core program?? **
+\*\*TODO: What are we calling as a core program?? \*\*
 
 <Info>
-  Current session program. Like Winter/Spring (2026)
+  core program:  Current session program. Like Winter/Spring (2026)
 </Info>
 
 ---
@@ -121,7 +121,7 @@ The modal opens when the user clicks **Next**, unless it is skipped. It is skipp
 
 Based on the selected `levelId`, the API gets class data, which populates the location options. Clicking a location shows the class time slot options in the format `{Day} {StartTime} - {EndTime}`.
 
-**TODO: We need to describe what \*\***`numberOfSpots`**\*\*and \*\* **`leftSpots`**\*\*are, and (at a high level) how they are calculated by the API. **
+**TODO: We need to describe what \*\***`numberOfSpots`\*\*\*\*and \*\* **`leftSpots`**\*\*are, and (at a high level) how they are calculated by the API. \*\*
 
 <Info>
   The total available spots (`numberOfSpot`) are defined at the class.\
