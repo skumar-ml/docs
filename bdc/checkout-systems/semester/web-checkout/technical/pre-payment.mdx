@@ -65,11 +65,11 @@ Then, our onClickListener calls `AddStudentData()`, which calls the `checkoutUrl
 <Info>
   The `getUpsellProgramV2` API is triggered on page load during checkout initialization when the `classDetailsStripe` instance is created to fetch all upsell programs for the current and summer sessions. The frontend filters out`sessionId !== 2`, where `sessionId = 2` represents the summer session, to separate future bundle programs. The filtered upsell programs are then rendered in both the **banner CTA** and **bundle selection modal**.
 
-  When we click on the next button, it will be displayed 
+  When we click on the next button, it will be displayed
 </Info>
 
 - ~~API: ~~`getUpsellProgramV2`
-- ~~Filters out ~~`sessionId !== 2`~~(current program) ~~ **~~\<TODO: is this hardcoded?\>~~**
+- ~~~~`Filters out sessionId !== 2(current program) ~~ **`~~~~\<TODO: is this hardcoded?\>~~\*\*
 - ~~Renders:~~
   - ~~Bundle modal~~
   - ~~Banner CTA~~
@@ -78,7 +78,7 @@ Then, our onClickListener calls `AddStudentData()`, which calls the `checkoutUrl
 
 The modal opens when the user clicks **Next**, unless it is skipped. It is skipped if at least **two checkboxes (one Core and one Bundle)** are already selected, or if the modal was dismissed within the **last 1 hour**, tracked via cookies.
 
-**TODO: Is this skip logic housed within frontend function that does "Data & Rendering"?  **
+**TODO: Is this skip logic housed within frontend function that does "Data & Rendering"? **
 
 **Updated the text**
 
