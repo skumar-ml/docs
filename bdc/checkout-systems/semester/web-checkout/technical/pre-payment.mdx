@@ -10,9 +10,9 @@ title: "Pre-Payment"
   TODO: I don't care about any of this -- we've already covered it elsewhere. Can you explain HOW we know that the user is logged in or not? And how we use that to either hide or display this section..
 </Note>
 
-Memberstack detects whether a user is logged in by checking for an active member session on page load. UI sections are automatically shown or hidden using data-ms-content="members" (logged in) and data-ms-content="!members" (logged out). 
+Memberstack detects whether a user is logged in by checking for an active member session on page load. Before authentication, login/signup sections (signup form, login modal) are shown, while post-login sections (cart and multi-step checkout process) are hidden using `data-ms-content="!members"` and `data-ms-content="members"`.
 
-For custom logic, the same session is read from localStorage (memberstack) and the memberId is used to confirm authentication.
+For custom logic, the same session is read from `localStorage` (`memberstack`) and the `webflowMemberId` is used to confirm authentication.
 
 ```
 var memberstackData = JSON.parse(memberstack);
@@ -24,36 +24,6 @@ if(webflowMemberId != null) {
 }
 ```
 
-### Signup (Parent Account)
-
-<Note>
-  TODO: This can be deleted. Not useful, already covered in Members section.
-</Note>
-
-- URL: `https://www.bergendebate.com/sign-up`
-- Flow:
-
-  ```
-  Webflow Form → MemberStack → Webhook → Webflow CMS + MongoDB
-  
-  ```
-
-**Webhooks**
-
-<Note>
-  TODO: We don't need this section. Also, what is `updateWebflowMongoDB`? It was never mentioned in the Members \> Creating an Account section...
-</Note>
-
-- `createUserSignup`
-  - Trigger: New MemberStack record
-  - Actions:
-    - Create Webflow CMS member (slug = memberId)
-    - Update MemberStack with `webflowItemId`
-    - Create MongoDB `members` record
-- `updateWebflowMongoDB`
-  - Trigger: MemberStack update
-  - Syncs updates to Webflow CMS + MongoDB
-
 ### Cart Redirection Logic
 
 When a user visits a cart page, we save the cart URL in `localStorage.redirect_url`. After logging-in or signing-up, Memberstack (through a pre-set default) redirects users to `/portal/home`.
@@ -62,7 +32,7 @@ There is some on-page JS that checks if `redirect_url` exists. If it does, the U
 
 ## 2. Student Profile
 
-**Existing Students:** To get existing students, we call `getAllPreviousStudents/{memberId}/all`, where we use the `memberId` of the logged-in user. Our frontend logic (via **\<TODO: Which JS file or function?\>**) renders the saved students in a dropdown. Selecting a student from this dropdown auto-fills the Student Details Form.
+**Existing Students:** To get existing students, we call `getAllPreviousStudents/{memberId}/all`, where we use the `memberId` of the logged-in user. Our frontend logic via `class_details_stripe_bundle.js`, where the `updateOldStudentList()` (via **\<TODO: Which JS file or function?\>**) renders the saved students in a dropdown. Selecting a student from this dropdown auto-fills the Student Details Form.
 
 **Student Details Form:**
 
