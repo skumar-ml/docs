@@ -40,6 +40,11 @@ There is some on-page JS that checks if `redirect_url` exists. If it does, the U
 
 When the user clicks the **Next** button, our onClickListener calls `storeBasicData()` to add the form data to `localStorage`  **(TODO: Why are we saving this data? Where does it get used? Is there a step we are missing here, where on load of the Student Profile, we check for localStorage and pre-fill student data??)**
 
+<Tip>
+  **Yes, onload of the student profile, we check localStorage and pre-fill student data. We consider it as a centralized data source for the student profile. For the student details card, I am using this localStorage data.**
+</Tip>
+
+
 Then, our onClickListener calls `AddStudentData()`, which calls the `checkoutUrlForClasses` API and returns the `checkoutId`.
 
 ****`TODO: Are there other things that AddStudentData is going, or is it just calling the API? Also, we need to briefly explain the logic of the API. Finally, what is checkoutId? What does it control. We need to explain in more detail what it does. I think the description below is inadequate.`****
