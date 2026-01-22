@@ -55,7 +55,7 @@ Single API Endpoint: **getClassDetails?levelId=** fetches all class-level data 
 <Note>
   **TODO: Can you confirm what the point of levelId is? Is that optional, and if we don't pass it in, then all are retrieved?**
 
-  **Yes, it's optional, and if we don't pass levelId then it returns all class-level data. **
+  \*\*Yes, it's optional, and if we don't pass levelId then it returns all class-level data. \*\*
 </Note>
 
 ### Frontend
@@ -117,7 +117,7 @@ While content is being fetched, our **Loading State** uses a loading spinner (ha
 
 **Functionality**
 
-(TODO: finish this later...) On submit, we do field validation (e.g., all fields required). Data is saved to localStorage as \<\>. Then, we call API \<\> (while executing, we are displaying loading spinner)
+(TODO: finish this later...) On submit, we do field validation (e.g., all fields required). Data is saved to localStorage as **formData**. Then, we call API [studentGraphicInfo](https://b4z5gqv2xj.execute-api.us-east-1.amazonaws.com/prod/camp/studentGraphicInfo)  (while executing, we are displaying loading spinner)
 
 - Phone number formatting and validation (US format) 
 - Form validation (all fields required) 
@@ -125,8 +125,3 @@ While content is being fetched, our **Loading State** uses a loading spinner (ha
 - API integration (submits to studentGraphicInfo endpoint) 
 - Success/error message display 
 - Loading spinner during submission 
-- 
-
-**API Endpoint**
-
-POST https://b4z5gqv2xj.execute-api.us-east-1.amazonaws.com/prod/camp/studentGraphicInfo 
