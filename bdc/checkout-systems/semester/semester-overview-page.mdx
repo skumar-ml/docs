@@ -48,12 +48,12 @@ Displayed as a **Register** button for each class level. When clicked, the user 
 
 ### APIs & Backend Overview 
 
-Single API Endpoint: \*\*getClassDetails?levelId= \*\*fetches all class-level data in one consolidated response, including: 
+Single API Endpoint: **getClassDetails?levelId=** fetches all class-level data in one consolidated response, including: 
 
 - Class levels, locations & timings, prerequisites, syllabus details (descriptions & accomplishments) 
 
 <Note>
-  TODO: Can you confirm what the point of levelId is? Is that optional, and if we don't pass it in, then all are retrieved?
+  **TODO: Can you confirm what the point of levelId is? Is that optional, and if we don't pass it in, then all are retrieved?**
 </Note>
 
 ### Frontend
@@ -76,25 +76,28 @@ While content is being fetched, our **Loading State** uses a loading spinner (ha
 
 ### **Important OnClick / Event Listeners**
 
-**FAQ Accordion Toggle**
+<AccordionGroup>
+  <Accordion title="FAQ Accordion Toggle">
+    **Element:** .class-detail-faq-header 
 
-Element: .class-detail-faq-header 
+    **Behavior:** Only one accordion item remains open at a time. Opening one closes the others.
+  </Accordion>
+  <Accordion title="Syllabus Modal Trigger">
+    **Element:** .syllabus-content-div (data-gtm="syllabus-trigger") 
 
-Behavior: Only one accordion item remains open at a time. Opening one closes the others. 
+    **Data Source:** Cached API data (no new API call). 
+  </Accordion>
+  <Accordion title="Syllabus Modal Close">
+    **Element:** .close-link.syllabus 
+  </Accordion>
+  <Accordion title="Phone Number Validation">
+    **Element:** #Contact-Number  
 
-**2. Syllabus Modal Trigger**
+    **Library:** libphonenumber (external)
 
-Element: .syllabus-content-div (data-gtm="syllabus-trigger") 
-
-Data Source: Cached API data (no new API call). 
-
-**3. Syllabus Modal Close**
-
-Element: .close-link.syllabus 
-
-**4. Phone Number Validation**
-
-Element: #Contact-Number | Event: input | Library: libphonenumber (external) | Purpose: Real-time phone validation 
+    **Purpose:** Real-time phone validation. Triggered by input
+  </Accordion>
+</AccordionGroup>
 
 ### Student Graphic Info Form
 
