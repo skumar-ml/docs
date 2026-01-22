@@ -192,34 +192,25 @@ TODO: What are the triggers for this?
   During the checkout session creation, I provide the success URL and cancel URL using JavaScript. When the user clicks on the back button on the Stripe checkout page, it will redirect to the cancel url
 </Note>
 
-**Redirect URL Pattern**:
-
-```
-?returnType=back
-```
-
-**System Behavior**:
-
-- Checkout state is restored from localStorage
-- All user selections and form data are reloaded
-- User can resume checkout
-
 ---
 
 ### 3. Browser Back Button
 
-TODO: What URL are they sent back to? Then, it seems like the Detection Logic triggers. If Detection Logic determines user is returning from Stripe, then the same restoration logic as caancelled payment is triggered.
+<Info>
+  Before redirecting the user to the Stripe page, we set the `backbuttonstate` input value from `0` to `1` via code on the **cart page URL**. After payment, Stripe redirects the user back to the same cart page URL. On page load, the checkout detects `backbuttonstate === "1"` with valid checkout data and triggers the cancelled-payment restoration logic, allowing the user to resume from the last completed step.
+</Info>
 
-**Detection Logic**:
+~~TODO: What URL are they sent back to? Then, it seems like the Detection Logic triggers. If Detection Logic determines user is returning from Stripe, then the same restoration logic as caancelled payment is triggered.~~
+
+**~~Detection Logic~~**~~:~~
 
 - `backbuttonstate === "1"`
-- `returnType=back` exists
-- Checkout data exists and is valid
+- ~~Checkout data exists and is valid~~
 
-**Behavior**:
+**~~Behavior~~**~~:~~
 
-- Same restoration logic as cancelled payment
-- User resumes from last completed step
+- ~~Same restoration logic as cancelled payment~~
+- ~~User resumes from last completed step~~
 
 ---
 
@@ -238,27 +229,3 @@ When restoring checkout state, the system:
 TODO: This section needs work, but we can return to it.
 
 ---
-
-## Data Persistence
-
-TODO: Briefly explain the purpose here. Or we fold it in to the above section (where this is actually used)
-
-<Warning>
-  We can remove it from here.
-
-  1. checkOutData: Storing all the checkout data before redirecting to the Stripe checkout page. It is also used for the abandoned cart display.
-  2. checkOutBasicData: Storing only student form data. It will help to restore student information on the page reload.
-</Warning>
-
-### LocalStorage Keys
-
-- `checkOutData`
-- `checkOutBasicData`
-
-Includes:
-
-- Student info
-- Selected class
-- Payment method
-- Bundle selections
-- Creation timestamp
