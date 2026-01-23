@@ -4,7 +4,7 @@ title: "Post-Payment (After Successful Checkout)"
 
 This section explains **everything that happens after a payment is made**, starting from Stripe webhook to DB writes, emails, and user redirection.
 
-### Core Logic Flow (High Level)
+### Core Logic Flow
 
 After a payment is completed, Stripe sends a webhook to our system.\
 The webhook determines the payment status and routes the event to the correct handler.\
@@ -14,14 +14,14 @@ For class purchases, all post-payment logic is handled by `updateClassPayment()`
 
 We have a single webhook (`stripePaymentListener`) that is triggered by Stripe events such as `payment_intent.succeeded`, `checkout.session.completed`, or async bank transfer updates. This API acts as the single entry point for all post-payment processing.
 
-### What this API does
+### What this Webhook does
 
 Validates the Stripe webhook signature and extracts the `payment_intent` with checkout metadata.\
 Loads the related record from `stripe_checkout_customer` and normalizes the event into internal payment states (Complete, Processing, Failed).\
 Routes the event to the correct functions (e.g., `updateClassPayment()` for class purchases).\
 Ensures idempotency so repeated webhooks do not create duplicates.
 
-### Behavior by payment status
+### Behaviour by payment status
 
 - **Complete**: When a payment is marked as **Complete**, full post-payment processing is triggered.\
   This includes database updates, enrollment, referrals, credits, cleanup, and emails.
@@ -59,7 +59,7 @@ Updated on every webhook event:
 
 ### C. Failure Handling
 
-If payment fails, delete payment details and any upsell payments, and mark the checkout status as **Failed **in the `stripe_checkout_customer` collection 
+If payment fails, delete payment details and any upsell payments, and mark the checkout status as \*\*Failed \*\*in the `stripe_checkout_customer` collection
 
 ## Referral & Coupon Processing
 
