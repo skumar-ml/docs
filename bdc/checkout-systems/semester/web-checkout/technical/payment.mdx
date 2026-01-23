@@ -156,6 +156,8 @@ At this point, the payment is confirmed and the registration is completed.
   TODO: Discuss deletion logic of localStorage
 </Note>
 
+Post payment, several other operations take place, all described here **\<TODO: SK to link to doc when ready\>**.
+
 ### 2. Cancelled Payment
 
 When the user clicks the **Back** button on the Stripe checkout page, Stripe redirects them to the **cancel URL** with the parameter `CART_PAGE_URL?returnType=back`. Using this parameter, the cart page detects a back-navigation scenario and restores the last selected class, time slot, and bundle programs so the user can continue checkout seamlessly.

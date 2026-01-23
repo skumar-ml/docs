@@ -12,7 +12,6 @@ This section explains **everything that happens after a payment is made**, start
 4. System updates payment records
 5. Enrollment, referrals, coupons, waitlist cleanup occur
 6. Emails are triggered
-7. User is redirected to success / confirmation page
 
 ### 2. `stripePaymentListener` (Stripe Webhook)
 
@@ -137,15 +136,6 @@ All sections below execute under this function unless explicitly skipped due to 
   - Stripe receipt URL stored in DB
 
 ---
-
-## 1.9 User Redirection After Payment
-
-- **Card Payments**:
-  - Redirected immediately to **Success / Thank You page**
-- **Bank Transfer Payments**:
-  - Redirected to **Processing / Pending Confirmation page**
-
-Final confirmation happens asynchronously via Stripe webhook.
 
 ---
 
