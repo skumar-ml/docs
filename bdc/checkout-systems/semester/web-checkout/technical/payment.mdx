@@ -95,7 +95,7 @@ The following data is collected before generating the checkout link:
 
 When does a record inserted. When is it used (for what purposes). What information does it store. When is it updated...
 
-**Stripe Checkout – Customer Data Flow for Class Registartions**
+**Stripe Checkout – Customer Data Flow for Class Registrations**
 
 When the student form is submitted, the API `checkoutUrlForClasses` is called. This API generates a `checkoutId` and inserts two initial records into the `stripe_checkout_customer` collection. At this stage, the system stores the checkoutId, customerId, paymentType, memberId, studentId, and parentEmail.
 
