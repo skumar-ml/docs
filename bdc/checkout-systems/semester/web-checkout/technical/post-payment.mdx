@@ -23,10 +23,10 @@ Ensures idempotency so repeated webhooks do not create duplicates.
 
 ### Behavior by payment status
 
-- **Complete: **When a payment is marked as **Complete**, full post-payment processing is triggered.\
+- \*\*Complete: \*\*When a payment is marked as **Complete**, full post-payment processing is triggered.\
   This includes database updates, enrollment, referrals, credits, cleanup, and emails.
-- **Processing: **For **Processing** payments, the payment is stored as pending.
-- **Failed: **For **failed** payments, all partial or temporary records are cleaned up.\
+- \*\*Processing: \*\*For **Processing** payments, the payment is stored as pending.
+- \*\*Failed: \*\*For **failed** payments, all partial or temporary records are cleaned up.\
   No enrollment, credits, or referrals are applied.
 
 ### `updateClassPayment()`
@@ -43,7 +43,7 @@ All sections below execute under this function unless explicitly skipped due to 
 
 ### A. `payment_details`
 
-- **Insert (first successful payment)**: 
+- **Insert (first successful payment)**:
 
   We insert payment_intent, payment_intent, amount, studentId, classId, memberId, device & UTM metadata and couponCode (if applied)
 - **Update (subsequent webhook calls)**:
