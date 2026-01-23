@@ -1,0 +1,137 @@
+---
+title: "Pre-Payment"
+---
+
+## 1. Login / Signup / Cart Redirection
+
+### Authentication
+
+<Note>
+  TODO: I don't care about any of this -- we've already covered it elsewhere. Can you explain HOW we know that the user is logged in or not? And how we use that to either hide or display this section..
+</Note>
+
+Memberstack detects whether a user is logged in by checking for an active member session on page load. Before authentication, login/signup sections (signup form, login modal) are shown, while post-login sections (cart and multi-step checkout process) are hidden using `data-ms-content="!members"` and `data-ms-content="members"`.
+
+For custom logic, the same session is read from `localStorage` (`memberstack`) and the `webflowMemberId` is used to confirm authentication.
+
+```
+var memberstackData = JSON.parse(memberstack);
+var webflowMemberId = memberstackData.information.id;
+if(webflowMemberId != null) {  
+  // User Logged In or Sign-up
+}else{
+  // User not Logged In or Sign-up
+}
+```
+
+### Cart Redirection Logic
+
+When a user visits a cart page, we save the cart URL in `localStorage.redirect_url`. After logging-in or signing-up, Memberstack (through a pre-set default) redirects users to `/portal/home`.
+
+There is some on-page JS that checks if `redirect_url` exists. If it does, the URL is deleted, and saved in a temp variable, which is used to redirect the user back to the cart page they were originally on.
+
+## 2. Student Profile
+
+**Existing Students:** To get existing students, we call `getAllPreviousStudents/{memberId}/all`, where we use the `memberId` of the logged-in user. Our frontend logic via `class_details_stripe_bundle.js`, where the `updateOldStudentList()` (via **\<TODO: Which JS file or function?\>**) renders the saved students in a dropdown. Selecting a student from this dropdown auto-fills the Student Details Form.
+
+**Student Details Form:**
+
+- Fields: First Name, Last Name, Email, Grade, School, Gender, Previous Student
+
+When the user clicks the **Next** button, our onClickListener calls `storeBasicData()` to add the form data to `localStorage`  **(TODO: Why are we saving this data? Where does it get used? Is there a step we are missing here, where on load of the Student Profile, we check for localStorage and pre-fill student data??)**
+
+<Tip>
+  **Yes, onload of the student profile, we check localStorage and pre-fill student data. We consider it as a centralized data source for the student profile. For the student details card, I am using this localStorage data.**
+</Tip>
+
+Then, our onClickListener calls `AddStudentData()`, which calls the `checkoutUrlForClasses` API and returns the `checkoutId`.
+
+****`TODO: Are there other things that AddStudentData is going, or is it just calling the API? Also, we need to briefly explain the logic of the API. Finally, what is checkoutId? What does it control. We need to explain in more detail what it does. I think the description below is inadequate.`****
+
+` `
+
+<Info>
+  On clicking **Next**, `AddStudentData()` validates and submits student details to the `checkoutUrlForClasses` API. The API initializes a checkout session by creating or linking the student profile and returns a unique `checkoutId`. This `checkoutId` controls the entire checkout flow, including bundle selection, class selection, briefs, seat validation, and payment.
+</Info>
+
+## 3. Optional Bundle Program
+
+\*\*TODO: Can you explain when the \*\*`getUpsellProgramV2`\*\*API gets triggered? \*\*
+
+### Data & Rendering
+
+**TODO: What frontend function is calling this or handling this...**
+
+<Info>
+  The `getUpsellProgramV2` API is triggered on page load during checkout initialization when the `classDetailsStripe` instance is created to fetch all upsell programs for the current and summer sessions. The frontend filters out`sessionId !== 2`, where `sessionId = 2` represents the summer session, to separate future bundle programs. The filtered upsell programs are then rendered in both the **banner CTA** and **bundle selection modal**.
+
+  When we click on the next button, it will be displayed
+</Info>
+
+- ~~API: ~~`getUpsellProgramV2`
+- 
+- ~~Renders:~~
+  - ~~Bundle modal~~
+  - ~~Banner CTA~~
+
+### Logic Bundle Modal Open and Skip
+
+The modal opens when the user clicks **Next**, unless it is skipped. It is skipped if at least **two checkboxes (**the _Current Session Program_ — selected by default — and one _Bundle Program_**)** are already selected, or if the modal was dismissed within the **last 1 hour**, tracked via cookies.
+
+\*\*TODO: Is this skip logic housed within frontend function that does "Data & Rendering"? \*\*
+
+**Updated the text**
+
+<Warning>
+  **TODO: This logic is pretty hacky. We need to be more algorithmic than "if more than 2 bundles are already selected"**
+
+  **I have updated the description. Please have a look**
+</Warning>
+
+![Image](/images/image-4.png)
+
+### Selection Logic
+
+**TODO: How is selection logic handled? Is there an onClickListener?**
+
+- Updates `$selectedProgram` **(TODO: What is selectedProgram? First time this is being referenced)**
+- Syncs checkboxes by `programDetailId` **(TODO: I have no clue what this means. Give more details.)**
+- Updates cart total dynamically **(TODO: How? What gets called?)**
+
+<Info>
+  `$selectedProgram` is a frontend state array that stores all bundle programs currently selected by the user for the active checkout session. Syncing checkboxes by `programDetailId` ensures that when a program is selected or deselected in one UI location (banner or modal), all corresponding checkboxes for that same program update together. On each selection change, the checkout pricing logic is triggered, recalculating the total amount and updating the cart UI based on the programs stored in `$selectedProgram`.
+</Info>
+
+### Core Program Handling (`updateCoreData`)
+
+- Auto-adds core program if any bundle selected
+- Core price set to **0** in bundle flow
+
+\*\*TODO: What are we calling as a core program?? \*\*
+
+<Info>
+  core program:  Current session program. Like Winter/Spring (2026)
+</Info>
+
+---
+
+## 4. Class Selection & Payment
+
+\*\*TODO: How does the \*\*`getClassDetailByMemberIdAndLevelId`**API get triggered?**
+
+Based on the selected `levelId`, the API gets class data, which populates the location options. Clicking a location shows the class time slot options in the format `{Day} {StartTime} - {EndTime}`.
+
+**TODO: We need to describe what \*\***`numberOfSpots`\*\*\*\*and \*\* **`leftSpots`**\*\*are, and (at a high level) how they are calculated by the API. \*\*
+
+<Info>
+  The total available spots (`numberOfSpot`) are defined at the class.\
+  The remaining spots (`leftSpot`) are calculated by subtracting the total number of registrations for the class from `numberOfSpot` (`leftSpot = numberOfSpot − totalRegistrations`).
+</Info>
+
+### Seat Availability (`getAlertMessage`)
+
+The frontend calculates `leftSpotsPercentage = (leftSpots / numberOfSpots) * 100`. If \*\*≤ 25% spots \*\*are remaining, show a message “Hurry! Only X spots left”. If **no spots** are left show a message that "Seats are full" and allow the user to sign-up for the waitlist (no payment allowed)
+
+<Note>
+  **TODO: In the future, we need a separate page/section discussing the waitlist system**
+</Note>

@@ -1,0 +1,113 @@
+---
+title: "Non-Technical: Checkout Flow"
+---
+
+## Non-Technical: Checkout Flow
+
+The checkout flow follows a **multi-step form**:
+
+1. Login / Sign-up via cart page
+1. Student Details
+2. Optional Bundle Program Selection
+3. Class Selection & Payment
+
+Each step must be completed before moving to the next.
+
+### Step 1: Login / Sign-up via the cart page
+
+![Image](/images/image-3.png)
+
+When a user reaches the **Cart flow**, they must create or access a **Parent Account** before continuing.
+
+**Option 1: Existing Parent (Login)**
+
+- At the top of the page, the user sees:\
+  **“Already have an account?”** with a **Login** button.
+- Clicking **Login** opens a **login modal**.
+- The parent enters their credentials and logs in.
+- On successful login, the user automatically advances to the **Student Details** step.
+
+**Option 2: New Parent (Create Account)**
+
+- If the user does not have an account, they complete the **Create Account** form.
+- On successful account creation:
+  - The parent account is created and logged in automatically.
+  - The flow advances to the **Student Details** step.
+
+### Step 2: Student Details
+
+Parents begin by entering or selecting student information.
+
+**Saved Student Profiles**: A dropdown allows parents to select an existing student profile. Selecting a saved student automatically fills in the form fields.
+
+**Student Information Fields**:
+
+- First & Last Name
+- Email Address
+  - If the student does not have an email, the parent’s email can be used.
+- Student Grade, School, & Gender
+- Has your child participated in a BDC class before?
+
+**Next Button**
+
+- Clicking **Next** saves the student information.
+- After saving, a popup appears to offer discounted bundle programs for future sessions.
+
+### Step 3: Bundle Program (Optional)
+
+A popup appears allowing families to pre-register for future sessions at a discounted rate.
+
+**Bundle Options:** Users can select one or more future sessions to bundle.
+
+**Skipping the Bundle:** Users can skip this step by clicking **“No Thanks”**. The checkout process continues whether or not a bundle is selected.
+
+### Step 4: Class Selection & Payment
+
+**Select Class Location:** Users must first choose a location (e.g., Glen Rock, Fort Lee, Livingston, Online)
+
+**Select Class Time:** Available time slots appear after selecting a location. Example times:
+
+- Friday 4:00 PM – 6:00 PM
+- Sunday 9:30 AM – 11:30 AM
+
+**Seat Availability Messages**
+
+Depending on how many spots are left in the class, users may see messages such as:
+
+- **Limited Availability:** "Hurry! Register now. Seats filling up fast! Only 1 spot left.”
+- **Sold Out:** “Seats are full. You can fill out the waitlist form below.”
+
+<Warning>
+  TODO: What is the difference (in trigger conditions between the bottom two)? We should note all potential messages the user may see, as well as what the trigger is
+</Warning>
+
+## Payment Options
+
+Payment options become available once a class time and location are selected and seats are available. We support **Bank Transfer** and **Credit Card** payment methods. To pay, users:
+
+1. Select a payment method & click **Buy Now**.
+3. They are **redirected to a secure Stripe checkout page**, where they enter payment details & complete payment
+
+### After Payment
+
+Upon successful payment, the user is redirected to a [confirmation (success) page](https://www.bergendebate.com/payment-confirmation?type=Academic&programName=Glen%20Rock%20%7C%20Level%201A%20%7C%20Saturday%209:30AM%20-%2011:30AM&pType=card&transactionID=cs_live_b1ZBFBo5RsbbfPvJHdutwSFnk3f0oGxPQTZbsVAqgoGR5YxQJbk4zYt3IW). The student is officially registered for the class.
+
+## Additional UI Elements of Checkout Flow
+
+**Bundle Program Banner:** On the class level & location select screen. This displays the currently (if there are any) selected bundle programs. It allows users to add or remove their selections prior to payment.
+
+**Bergen Briefs:** On the right-hand sidebar, optional learning briefs can be added alongside class registration. Users can choose full or light versions.
+
+**Student Info Panel:** Displays the selected student’s information for confirmation.
+
+TODO: Does it allow for editing? Or just display?
+
+**Order Details Panel:** Shows:
+
+- selected class level, time and location
+- any upsells (bundle future semesters or briefs)
+- pricing and totals
+
+<Note>
+  The pricing on the order details dynamically updates based on the payment method selected by the user. The default pricing shown is for Bank Transfer.
+</Note>

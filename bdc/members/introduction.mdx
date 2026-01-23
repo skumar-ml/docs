@@ -1,0 +1,77 @@
+---
+title: "Introduction"
+---
+
+## Signing up or Logging in
+
+Users can create fresh accounts on our [sign-up page](https://www.bergendebate.com/sign-up); users with existing accounts can log-in on our [log-in page](https://www.bergendebate.com/log-in). Accounts are uniquely associated with an email address.
+
+Users that have forgotten their password can do a password reset on the log-in page.
+
+<Warning>
+  We do not have an email confirmation process. This has historically led to typos. Adding this functionality is future work, as well as Google OAuth.
+</Warning>
+
+## Account Types
+
+The most important distinction between accounts is the `accountType`, which can be `parent`,  `student`, or `coach`. We support multiple account types to ensure role-based access and family linking:
+
+These distinctions control the following:
+
+- Only `parent` accounts can register for BDC classes. A `student` or `coach` account will be asked to log out and sign-in to a `parent` account during the checkout process.
+- A `student` account _must_ be linked to a `parent` account (cannot exist in isolation). This link is controlled by the `familyId` (more below)
+  - `student` and `parent` accounts see the same portal.
+- Only `coach` accounts can access the BDC Coach Portal, which (upon verification) allows them to access functionality like class & trial class attendance and the millions.
+
+There currently does not exist any mechanism for the admin or user to change the `accountType`. If a need arises, please inform the tech team, and we'll do it manually.
+
+<Note>
+  TODO: Add below to portal documentation...
+
+  - Can students or coach's register via the portal? It doesn't matter as much here, since we have the parent info, but want to confirm if we've handled this case or not... **Yes We are allowing registration from the portal**
+</Note>
+
+<Warning>
+  We need to implement the following:
+
+  - Restrict coach accounts from registering for classes. **Coach can register for classes, but the family id will not generate as per the current implementation**
+</Warning>
+
+## Technical Details
+
+### Memberstack
+
+Memberstack handles all of the member logic. This includes things like sign-in auth, password encryption, log-in redirects, gated content, member-specific pages, etc. We are currently on Memberstack V1; our account can be accessed via https://app.memberstack.io/login.
+
+### Family Architecture
+
+Parent and student accounts are connected through a unique `familyId` that links family members together. This architecture supports multiple students under (at least a single parent) account and handles various sign-up scenarios.
+
+The logic is centralized in the `createAccount` flow and behaves as follows:
+
+**1. Parent-first ownership model**
+
+- The **parent record is treated as the source of truth** for `familyId`.
+- When a signup request contains a `parentEmail`, the system first searches for an existing parent account using that email.
+
+**2. FamilyId generation**
+
+- If no existing parent is found:
+  - A new `familyId` is generated using a random, non-guessable string derived from the parent email and digits.
+  - This `familyId` is assigned at parent creation time.
+- If an existing parent is found:
+  - If the parent already has a valid `familyId`, it is reused.
+  - If the parent exists but has an empty or `"null"` familyId, a new one is generated and backfilled.
+
+**3. Student linkage**
+
+- Students are always linked to a parent via their `familyId`.
+- Student lookup follows this order:
+  - By `studentEmail` (if provided and different from parent email)
+  - Else by `(studentName + familyId)`
+- If a student record exists without a `familyId`, it is updated to inherit the parent’s `familyId`.
+- If no student record exists, a new student is created with the inherited `familyId`.
+
+<Note>
+  **TODO: Are there other cases where a familyId is generated for the parent (other than during checkout)?** Via Retool, when we register new parents and students, we create a family id for the parent and also assigned family id to the student.
+</Note>

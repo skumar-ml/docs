@@ -24,7 +24,7 @@
             "group": "Members",
             "icon": "people-line",
             "pages": [
-              "bdc/members/overview",
+              "bdc/members/introduction",
               "bdc/members/creating-an-account",
               "bdc/members/edit-account-info"
             ]
@@ -36,11 +36,25 @@
               {
                 "group": "Semester",
                 "pages": [
-                  "bdc/checkout-systems/semester/overview",
-                  "bdc/class-checkout/semester/semester-overview-page",
-                  "bdc/class-checkout/semester/pre-reg-system",
-                  "bdc/class-checkout/semester/waitlist-system",
-                  "bdc/class-checkout/semester/retool",
+                  "bdc/checkout-systems/semester/introduction",
+                  "bdc/checkout-systems/semester/semester-overview-page",
+                  {
+                    "group": "Web Checkout",
+                    "pages": [
+                      {
+                        "group": "Technical",
+                        "pages": [
+                          "bdc/checkout-systems/semester/web-checkout/technical/pre-payment",
+                          "bdc/checkout-systems/semester/web-checkout/technical/payment",
+                          "bdc/checkout-systems/semester/web-checkout/technical/post-payment"
+                        ]
+                      },
+                      "bdc/checkout-systems/semester/web-checkout/non-technical"
+                    ]
+                  },
+                  "bdc/checkout-systems/semester/pre-reg-system",
+                  "bdc/checkout-systems/semester/waitlist-system",
+                  "bdc/checkout-systems/semester/retool",
                   "bdc/checkout-systems/semester/mongo-db"
                 ]
               },
@@ -48,7 +62,7 @@
                 "group": "Summer",
                 "pages": [
                   "bdc/checkout-systems/summer/overview",
-                  "bdc/class-checkout/summer/web-checkout",
+                  "bdc/checkout-systems/summer/web-checkout",
                   "bdc/checkout-systems/summer/retool",
                   "bdc/checkout-systems/summer/mongo-db"
                 ]

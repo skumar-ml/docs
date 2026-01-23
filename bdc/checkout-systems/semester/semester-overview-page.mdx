@@ -1,0 +1,127 @@
+---
+title: "Semester Overview"
+---
+
+## Classes Overview Page
+
+Most checkout journeys begin from the [Semester Overview page](https://www.bergendebate.com/classes-overview). This page displays class offerings for a selected semester (e.g., Winter/Spring 2026, Fall).
+
+The Semester Overview page is divided into two main tabs: **GRADES 5–8** and **GRADES 9+**. Each tab displays a list of class levels with expandable rows for additional details.
+
+![Image](/images/image.png)
+
+### Data Sources Overview
+
+| Data Type                 | Source                 |
+| :------------------------ | :--------------------- |
+| Class Level & Metadata    | Webflow CMS            |
+| Syllabus Details          | MongoDB (via API)      |
+| Class Location & Schedule | MongoDB (via API)      |
+| Registration Flow         | Cart / Checkout System |
+
+### Class Level & Metadata
+
+Inside each grade tab, classes are displayed by **Level** with basic information provided from the Webflow CMS. These fields are:
+
+- Level Name, Prerequisite, Suggested Grades
+
+### Syllabus Details
+
+The syllabus details are viewable by clicking on a **button** (which is present for each class level). The class syllabus content is loaded dynamically from MongoDB (Retrieved via API based on the selected class level).
+
+### Class Location & Schedule (Expandable Row)
+
+When a class level row is clicked, it expands to show:
+
+- Class locations (e.g., Fort Lee, Glen Rock, Livingston)
+- Days and times for each location
+
+The data is retrieved from MongoDB via an API that filters according to
+
+- Class level, Semester, and Grade tab selection
+
+### Register Button
+
+Displayed as a **Register** button for each class level. When clicked, the user is redirected to the **cart page** to register for the selected class. Registration and cart logic handled by the enrollment system
+
+## Technical Details
+
+### APIs & Backend Overview 
+
+Single API Endpoint: **getClassDetails?levelId=** fetches all class-level data in one consolidated response, including: 
+
+- Class levels, locations & timings, prerequisites, syllabus details (descriptions & accomplishments) 
+
+<Note>
+  **TODO: Can you confirm what the point of levelId is? Is that optional, and if we don't pass it in, then all are retrieved?**
+
+  \*\*Yes, it's optional, and if we don't pass levelId then it returns all class-level data. \*\*
+</Note>
+
+### Frontend
+
+Uses inline JavaScript to call API, cache data client-side, and render the DOM. The **Key Methods** are:
+
+1. `fetchData(endpoint)` — Generic method for calling the backend API. 
+2. `renderPortalData()` — Triggered on page load to fetch and render all class data. 
+3. `viewClassLocations(classData)` — Updates the DOM with class locations and timing information. 
+4. `openSyllabusModal(levelId)` — Opens the syllabus modal using cached API data. 
+5. `initSyllabusModal()` — Attaches click handlers to syllabus trigger elements. 
+
+### **Page Load Behavior**
+
+On the **Initial Page Load**, all content is fetched once and then rendered. Instantiating classLists triggers renderPortalData(). Then, one API request to getClassDetails?levelId= retrieves all levels. The full response is stored in this.cachedApiData. 
+
+While content is being fetched, our **Loading State** uses a loading spinner (half-circle-spinner). 
+
+**Post Load**, cached data is reused for syllabus modals; no additional API calls are made after the initial load. 
+
+### **Important OnClick / Event Listeners**
+
+<AccordionGroup>
+  <Accordion title="FAQ Accordion Toggle">
+    **Element:** .class-detail-faq-header 
+
+    **Behavior:** Only one accordion item remains open at a time. Opening one closes the others.
+  </Accordion>
+  <Accordion title="Syllabus Modal Trigger">
+    **Element:** .syllabus-content-div (data-gtm="syllabus-trigger") 
+
+    **Data Source:** Cached API data (no new API call). 
+  </Accordion>
+  <Accordion title="Syllabus Modal Close">
+    **Element:** .close-link.syllabus 
+  </Accordion>
+  <Accordion title="Phone Number Validation">
+    **Element:** #Contact-Number
+
+    **Library:** libphonenumber (external)
+
+    **Purpose:** Real-time phone validation. Triggered by input
+  </Accordion>
+</AccordionGroup>
+
+### Student Graphic Info Form
+
+<Note>
+  TODO: Let's revisit the Student Graphic Info Form at a later time. I think the whole thing (form + graphic) deserves its own page.
+</Note>
+
+**Features**
+
+**Form Fields**
+
+- Student Details: First & Last Name, Grade
+- Parent Details: Name, Email, Phone Number
+- Semester (Fall, Winter/Spring, Summer) & Location (Fort Lee, Glen Rock, Livingston, Online) 
+
+**Functionality**
+
+(TODO: finish this later...) On submit, we do field validation (e.g., all fields required). Data is saved to localStorage as **formData**. Then, we call API [studentGraphicInfo](https://b4z5gqv2xj.execute-api.us-east-1.amazonaws.com/prod/camp/studentGraphicInfo)  (while executing, we are displaying loading spinner)
+
+- Phone number formatting and validation (US format) 
+- Form validation (all fields required) 
+- localStorage support (saves/loads form data) 
+- API integration (submits to studentGraphicInfo endpoint) 
+- Success/error message display 
+- Loading spinner during submission 
