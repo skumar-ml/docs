@@ -43,7 +43,7 @@ Then, our onClickListener calls `AddStudentData()`, which validates and submits 
 
 ### Data & Rendering
 
-After a member has logged in, the `classDetailsStripe` instance is created on page load (from **\<TODO: What is classDetailsStripe? I think it's the first time it's mentioned\>)**. This triggers the `getUpsellProgramV2` API, which fetches upsell programs for **both** current session and summer session. The frontend filters out `sessionId !== 2`, where `sessionId = 2` represents the summer session, and the filtered upsells are then rendered in both the **banner CTA** and **bundle selection modal \<TODO: by which JS file?\>**.
+After a member logs in, the `classDetailsStripe`**class**  (defined in `class_details_stripe_bundle.js`) is initialised on page load. (from **\<TODO: What is classDetailsStripe? I think it's the first time it's mentioned \>)**. This class triggers the `getUpsellProgramV2` API, which fetches upsell programs for **both** current session and summer session. The frontend filters out `sessionId !== 2`, where `sessionId = 2` represents the summer session, and the filtered upsells are then rendered in both the **banner CTA** and **bundle selection modal **using `class_details_stripe_bundle.js`file**\<TODO: by which JS file?\>** .
 
 ### Logic Bundle Modal Open and Skip
 
@@ -59,7 +59,7 @@ The modal opens when the user clicks **Next** (on the Student Details Form), unl
 
 ### Selection Logic
 
-Selecting an upsell program adds the program to `$selectedProgram`, a frontend state array that stores all bundle programs currently selected by the user for the active checkout session. We keep track of upsell state (selected or not) via their `programDetailId`, which is used to control the UI state in various locations (banner vs. modal). On each selection change, the checkout pricing logic is triggered **\<TODO: what function is this?\>**, recalculating the total amount and updating the cart UI based on the programs stored in `$selectedProgram`.
+Selecting an upsell program adds the program to `$selectedProgram`, a frontend state array that stores all bundle programs currently selected by the user for the active checkout session. We keep track of upsell state (selected or not) via their `programDetailId`, which is used to control the UI state in various locations (banner vs. modal). On each selection change, the checkout pricing logic is triggered method **updateAmount()** **\<TODO: what function is this?\>**, recalculating the total amount and updating the cart UI based on the programs stored in `$selectedProgram`.
 
 <Note>
   TODO: For future, I think we'll need a little more detail on Upsell, and I think we should probably break it out onto it's own page. \

@@ -95,6 +95,14 @@ The following data is collected before generating the checkout link:
 
 When does a record inserted. When is it used (for what purposes). What information does it store. When is it updated...
 
+**Stripe Checkout – Customer Data Flow for Class Registartions**
+
+When the student form is submitted, the API `checkoutUrlForClasses` is called. This API generates a `checkoutId` and inserts two initial records into the `stripe_checkout_customer` collection. At this stage, the system stores the checkoutId, customerId, paymentType, memberId, studentId, and parentEmail.
+
+After this, the user selects the class details along with optional bundle programs, briefs, or both. These selections are sent to the API `updateDataToCheckoutUrl` with the classId, bundleId, and briefsId. This API creates a Stripe checkout session for payment and updates the existing records in the `stripe_checkout_customer` collection using the checkoutId. The updated data includes the checkoutUrl for card or bank transfer, classId, sessionId, a readable label such as “Fort Lee | Level 2A | Saturday 2:15 PM – 4:15 PM”, topicIds, upsellProgramIds for bundle programs, and any applied discount amount.
+
+Once the payment is completed using the Stripe checkout URL, the system updates the payment status in the `stripe_checkout_customer` collection to either Processing or Completed using the sessionId that was created during the checkout session. At the same time, a new record is inserted into the payment details collection to store the transaction information.
+
 **checkoutId**:  We generate a checkout ID when the user submits the student details form. We then update the checkout session after the user selects a class, bundle program, or briefs, based on the checkout ID.
 
 <Note>
