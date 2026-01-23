@@ -10,53 +10,32 @@ After a payment is completed, Stripe sends a webhook to our system.\
 The webhook determines the payment status and routes the event to the correct handler.\
 For class purchases, all post-payment logic is handled by `updateClassPayment()`. also it's handle Enrollment, referrals, coupons, waitlist cleanup and email
 
-1. Stripe sends webhook → `stripePaymentListener`
-2. Payment status is derived (`Complete`, `Processing`, `Failed`)
-3. `updateClassPayment()` is invoked
-4. System updates payment records
-5. Enrollment, referrals, coupons, waitlist cleanup occur
-6. Emails are triggered
-
 ### `stripePaymentListener` (Stripe Webhook)
 
 We have a single webhook (`stripePaymentListener`) that is triggered by Stripe events such as `payment_intent.succeeded`, `checkout.session.completed`, or async bank transfer updates. This API acts as the single entry point for all post-payment processing.
 
 ### What this API does
 
-- Validates the Stripe webhook signature
-- Extracts the `payment_intent` and checkout metadata
-- Loads the corresponding record from `stripe_checkout_customer`
-- Normalizes Stripe event data into internal payment statuses:
-  - **Complete** → Payment confirmed and funds captured
-  - **Processing** → Bank transfer or async payment still pending
-  - **Failed** → Payment failed or was canceled
-- Routes the event to the appropriate handler:
-  - `updateClassPayment()` for class purchases
-- Ensures idempotency so repeated webhooks do not create duplicates
+Validates the Stripe webhook signature and extracts the `payment_intent` with checkout metadata.\
+Loads the related record from `stripe_checkout_customer` and normalizes the event into internal payment states (Complete, Processing, Failed).\
+Routes the event to the correct functions (e.g., `updateClassPayment()` for class purchases).\
+Ensures idempotency so repeated webhooks do not create duplicates.
 
 ### Behavior by payment status
 
-- **Complete**
-  - Triggers full post-payment processing
-  - Enrollment, referrals, credits, and emails are executed
-- **Processing**
-  - Stores payment as pending
-  - Enrollment is deferred until final confirmation
-- **Failed**
-  - Cleans up partial payment records
-  - Prevents enrollment or benefit application
+- **Complete: **When a payment is marked as **Complete**, full post-payment processing is triggered.\
+  This includes database updates, enrollment, referrals, credits, cleanup, and emails.
+- **Processing: **For **Processing** payments, the payment is stored as pending.
+- **Failed: **For **failed** payments, all partial or temporary records are cleaned up.\
+  No enrollment, credits, or referrals are applied.
 
 ### `updateClassPayment()`
 
 `updateClassPayment()` is the **core business orchestration layer** for class purchases.\
 It executes **all database writes, enrollment logic, referral handling, and cleanup** associated with a payment.
 
-### Responsibilities
-
-- Determines whether the payment is new or already processed (idempotency)
-- Handles logic based on payment status (`Complete`, `Processing`, `Failed`)
-- Persists payment and checkout state
-- Applies all side effects tied to a successful purchase
+Determines whether the payment is new or already processed (idempotency), then handles logic based on payment status (Complete, Processing, Failed).\
+Persists payment and checkout state and applies all side effects associated with a successful purchase.
 
 All sections below execute under this function unless explicitly skipped due to failure or pending status.
 
@@ -64,23 +43,19 @@ All sections below execute under this function unless explicitly skipped due to 
 
 ### A. `payment_details`
 
-- **Insert (first successful payment)**:
-  - payment_intent
-  - amount
-  - studentId
-  - classId
-  - memberId
-  - device & UTM metadata
-  - couponCode (if applied)
+- **Insert (first successful payment)**: 
+
+  We insert payment_intent, payment_intent, amount, studentId, classId, memberId, device & UTM metadata and couponCode (if applied)
 - **Update (subsequent webhook calls)**:
-  - status
-  - receipt_url
+
+  After successful payment, we updatethe  status and receipt_url
 
 ### B. `stripe_checkout_customer`
 
-- Updated on every webhook event:
-  - payment_intent
-  - status (Complete / Processing / Failed)
+Updated on every webhook event:
+
+- payment_intent
+- status (Complete / Processing / Failed)
 
 ### C. Failure Handling
 
@@ -142,14 +117,3 @@ All sections below execute under this function unless explicitly skipped due to 
 ---
 
 ---
-
-## Key Characteristics
-
-- Webhook-driven (idempotent by `payment_intent`)
-- Safe for retries
-- Handles partial & async payments
-- Centralized post-payment orchestration
-
----
-
-This flow ensures financial consistency, enrollment accuracy, referral tracking, and reliable user communication after every payment.
