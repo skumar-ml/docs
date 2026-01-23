@@ -6,6 +6,10 @@ This section explains **everything that happens after a payment is made**, start
 
 ### Core Logic Flow (High Level)
 
+After a payment is completed, Stripe sends a webhook to our system.\
+The webhook determines the payment status and routes the event to the correct handler.\
+For class purchases, all post-payment logic is handled by `updateClassPayment()`. also it's handle Enrollment, referrals, coupons, waitlist cleanup and email
+
 1. Stripe sends webhook → `stripePaymentListener`
 2. Payment status is derived (`Complete`, `Processing`, `Failed`)
 3. `updateClassPayment()` is invoked
