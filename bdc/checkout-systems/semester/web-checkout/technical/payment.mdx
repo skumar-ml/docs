@@ -161,7 +161,7 @@ During the checkout session creation, we provide Stripe the success URL and canc
 At this point, the payment is confirmed and the registration is completed.
 
 <Note>
-  TODO: Discuss deletion logic of localStorage
+  TODO: Discuss deletion logic of localStorage : **Added in the last paragraph**
 </Note>
 
 Post payment, several other operations take place, all described here **\<TODO: SK to link to doc when ready\>**.
@@ -173,3 +173,7 @@ When the user clicks the **Back** button on the Stripe checkout page, Stripe red
 ### 3. Browser Back Button
 
 If the user clicks the **browser's** back button on Stripe, they are redirected  to the original cart URL. On page load, the checkout page detects if **backbuttonstate === "1"** and if there's valid checkout data (in `localStorage`). Then, it restores the last selected class, time slot, and bundle programs so the user can continue checkout seamlessly.
+
+## Clean Checkout Local Data
+
+After successful payment, we delete the local data based on the checkout process, like checkoutData and referralData.
