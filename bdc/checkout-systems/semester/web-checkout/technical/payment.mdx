@@ -2,8 +2,6 @@
 title: "Payment"
 ---
 
-## Before Payment
-
 This section explains the available payment options, how Stripe checkout links are created, what happens when users are redirected to Stripe, and how the system restores state when users return from the Stripe payment page.
 
 ### Available Payment Methods
@@ -93,6 +91,10 @@ The following data is collected before generating the checkout link:
 | successUrl       | Redirect after payment success                                |
 | cancelUrl        | Redirect if payment is cancelled                              |
 
+### stripeCheckoutCustomer Collection
+
+When does a record inserted. When is it used (for what purposes). What information does it store. When is it updated...
+
 **checkoutId**:  We generate a checkout ID when the user submits the student details form. We then update the checkout session after the user selects a class, bundle program, or briefs, based on the checkout ID.
 
 <Note>
@@ -144,14 +146,14 @@ There are several return scenarios, each of which are detailed in the following:
 
 During the checkout session creation, we provide Stripe the success URL and cancel URL. After a successful payment, it redirects to the success URL with `urlParam`: **payment-confirmation?type=Academic&programName=&pType=**
 
-- **Type(Academic | Summer)**: We have the same payment confirmation for both summer and academic registration. The type indicates which registration the payment confirmation is from. Currently, we use this for tracking purposes and analytics.
+- **Type(Academic | Summer)**: We have the same payment confirmation for both summer and academic registration. The type indicates which registration the payment confirmation is from. Currently, we use this for tracking purposes and (Google) analytics.
 - **programName**: Class or Program Name: This will be displayed on the payment confirmation page.
-- **Type**: Payment mode(Card | Bank Transfer). We use this for tracking purposes and analytics.
+- **Type**: Payment mode(Card | Bank Transfer). We use this for tracking purposes and (Google)  analytics.
 
 At this point, the payment is confirmed and the registration is completed.
 
 <Note>
-  TODO: Can we explain **how** we are using the urlParams for tracking and analytics?
+  TODO: Discuss deletion logic of localStorage
 </Note>
 
 ### 2. Cancelled Payment
@@ -161,7 +163,3 @@ When the user clicks the **Back** button on the Stripe checkout page, Stripe red
 ### 3. Browser Back Button
 
 If the user clicks the **browser's** back button on Stripe, they are redirected  to the original cart URL. On page load, the checkout page detects if **backbuttonstate === "1"** and if there's valid checkout data (in `localStorage`). Then, it restores the last selected class, time slot, and bundle programs so the user can continue checkout seamlessly.
-
-<Note>
-  **TODO:** do we set backbuttonstate = 0 if successful payment?
-</Note>
