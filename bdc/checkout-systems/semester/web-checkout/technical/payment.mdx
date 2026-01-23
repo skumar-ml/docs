@@ -93,7 +93,7 @@ The following data is collected before generating the checkout link:
 | successUrl       | Redirect after payment success                                |
 | cancelUrl        | Redirect if payment is cancelled                              |
 
-**checkoutId**:  We generate a checkout ID when the user submits the student details form. We then update the checkout session after the user selects a class, bundle program, or briefs, based on the checkout ID. 
+**checkoutId**:  We generate a checkout ID when the user submits the student details form. We then update the checkout session after the user selects a class, bundle program, or briefs, based on the checkout ID.
 
 <Note>
   TODO: I think we need a separate section altogether for checkoutId (perhaps, at the top). We need to explain that checkoutId is the unique key for the specific checkout section. We need to explain when a new record in this collection is created (and the name of the collection).
@@ -161,3 +161,7 @@ When the user clicks the **Back** button on the Stripe checkout page, Stripe red
 ### 3. Browser Back Button
 
 If the user clicks the **browser's** back button on Stripe, they are redirected  to the original cart URL. On page load, the checkout page detects if **backbuttonstate === "1"** and if there's valid checkout data (in `localStorage`). Then, it restores the last selected class, time slot, and bundle programs so the user can continue checkout seamlessly.
+
+<Note>
+  **TODO:** do we set backbuttonstate = 0 if successful payment?
+</Note>
