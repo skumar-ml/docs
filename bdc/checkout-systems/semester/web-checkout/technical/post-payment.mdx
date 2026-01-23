@@ -23,10 +23,10 @@ Ensures idempotency so repeated webhooks do not create duplicates.
 
 ### Behavior by payment status
 
-- \*\*Complete: \*\*When a payment is marked as **Complete**, full post-payment processing is triggered.\
+- **Complete**: When a payment is marked as **Complete**, full post-payment processing is triggered.\
   This includes database updates, enrollment, referrals, credits, cleanup, and emails.
-- \*\*Processing: \*\*For **Processing** payments, the payment is stored as pending.
-- \*\*Failed: \*\*For **failed** payments, all partial or temporary records are cleaned up.\
+- **Processing**: For **Processing** payments, the payment is stored as pending.
+- **Failed**:For **failed** payments, all partial or temporary records are cleaned up.\
   No enrollment, credits, or referrals are applied.
 
 ### `updateClassPayment()`
@@ -48,7 +48,7 @@ All sections below execute under this function unless explicitly skipped due to 
   We insert payment_intent, payment_intent, amount, studentId, classId, memberId, device & UTM metadata and couponCode (if applied)
 - **Update (subsequent webhook calls)**:
 
-  After successful payment, we updatethe  status and receipt_url
+  After successful payment, we update the  status and receipt_url
 
 ### B. `stripe_checkout_customer`
 
@@ -59,31 +59,15 @@ Updated on every webhook event:
 
 ### C. Failure Handling
 
-- If payment **fails**:
-  - Delete `payment_details`
-  - Delete upsell payments
-  - Mark checkout status as Failed
-
----
+If payment fails, delete payment details and any upsell payments, and mark the checkout status as **Failed **in the `stripe_checkout_customer` collection 
 
 ## Referral & Coupon Processing
 
-- If a coupon is used:
-  - Referral marked as `Purchased`
-  - Purchased date updated
-- If no existing coupon for family:
-  - New **referral coupon** is generated
-  - Coupon created in Stripe
-  - Coupon stored in `coupon_details`
-
----
+If a coupon is used, mark the referral as Purchased and update the purchase date; if no family coupon exists, generate a new referral coupon, create it in Stripe, and store it in `coupon_details`.
 
 ## Trial → Paid Conversion
 
-- If parent previously attended a trial class:
-  - `trial_class_details.status` updated to `Purchased`
-
----
+If the parent previously attended a trial class, the corresponding `trial_class_details` The record is updated to `Purchased`.
 
 ## Enrollment & Cleanup
 
@@ -98,11 +82,7 @@ Updated on every webhook event:
 
 ## Credit & Discounts
 
-- If discount or credit is applied:
-  - Credit balance is updated
-  - Linked to yearId & sessionId
-
----
+If credits or discounts are applied, the credit balance is updated.
 
 ## Emails Triggered
 
