@@ -43,11 +43,11 @@ Then, our onClickListener calls `AddStudentData()`, which validates and submits 
 
 ### Data & Rendering
 
-The `getUpsellProgramV2` API is triggered on page load during checkout initialization when the `classDetailsStripe`  **\<TODO: What is classDetailsStripe? I think it's the first time it's mentioned\>** instance is created to fetch all upsell programs for the current and summer sessions. The frontend filters out `sessionId !== 2`, where `sessionId = 2` represents the summer session, to separate future bundle programs **\<TODO: I don't understand why seperation is needed. Discuss on call\>**. The filtered upsell programs are then rendered in both the **banner CTA** and **bundle selection modal \<TODO: by which JS file?\>**.
+After a member has logged in, the `classDetailsStripe` instance is created on page load (from **\<TODO: What is classDetailsStripe? I think it's the first time it's mentioned\>)**. This triggers the `getUpsellProgramV2` API, which fetches upsell programs for **both** current session and summer session. The frontend filters out `sessionId !== 2`, where `sessionId = 2` represents the summer session, and the filtered upsells are then rendered in both the **banner CTA** and **bundle selection modal \<TODO: by which JS file?\>**.
 
 ### Logic Bundle Modal Open and Skip
 
-The modal opens when the user clicks **Next **(on the Student Details Form), unless it is skipped. It is skipped if at least **two checkboxes (the Current Session Program — selected by default — and one Bundle Program)** are already selected, or if the modal was dismissed within the **last 1 hour**, tracked via cookies.
+The modal opens when the user clicks **Next** (on the Student Details Form), unless it is skipped. It is skipped if at least **two checkboxes (the Current Session Program — selected by default — and one Bundle Program)** are already selected, or if the modal was dismissed within the **last 1 hour**, tracked via cookies.
 
 **Updated the text**
 
@@ -61,24 +61,15 @@ The modal opens when the user clicks **Next **(on the Student Details Form), unl
 
 Selecting an upsell program adds the program to `$selectedProgram`, a frontend state array that stores all bundle programs currently selected by the user for the active checkout session. We keep track of upsell state (selected or not) via their `programDetailId`, which is used to control the UI state in various locations (banner vs. modal). On each selection change, the checkout pricing logic is triggered **\<TODO: what function is this?\>**, recalculating the total amount and updating the cart UI based on the programs stored in `$selectedProgram`.
 
-### Core Program Handling (`updateCoreData`)
-
-- Auto-adds core program if any bundle selected
-- Core price set to **0** in bundle flow
-
-<Info>
-  core program:  Current session program. Like Winter/Spring (2026)
-</Info>
-
----
-
-**TODO: I still don't understand the Core Program Handling section. Let's discuss on call**
+<Note>
+  TODO: For future, I think we'll need a little more detail on Upsell, and I think we should probably break it out onto it's own page. \
+  \
+  Specifically, how do we update the core program pricing when bundle is selected? How do we store in payment_details?
+</Note>
 
 ## 4. Class Selection & Payment
 
-\*\*TODO: How does the \*\*`getClassDetailByMemberIdAndLevelId`**API get triggered?**
-
-Based on the selected `levelId`, the API gets class data, which populates the location options. Clicking a location shows the class time slot options in the format `{Day} {StartTime} - {EndTime}`.
+On page load (after member is logged in), the `getClassDetailByMemberIdAndLevelId` API, based on the selected `levelId`, gets class data, which populates the location options. Clicking a location shows the class time slot options in the format `{Day} {StartTime} - {EndTime}`.
 
 This API also returns the total available spots (`numberOfSpot`) for the class, and the remaining spots (`leftSpot`), which are calculated by subtracting the total number of registrations for the class from `numberOfSpot` (as well as some logic around waitlists, discussed in **\<TODO: SK link to section here\>**
 
