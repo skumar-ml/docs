@@ -14,8 +14,6 @@ This document explains:
 - What users see in each state
 - How admins can control and manage these states using Retool
 
----
-
 ## Overview
 
 Pre-registration allows eligible students to:
@@ -24,8 +22,6 @@ Pre-registration allows eligible students to:
 - Secure class spots before regular registration opens
 
 The system automatically places each user into the correct state based on **timing** and **bundle ownership**.
-
----
 
 ## The Three Pre-Registration States
 
@@ -44,11 +40,9 @@ This is the default experience for most users.
 - Regular pricing
 - No pre-registration messaging or banner
 
----
-
 ### 2. Pre-Registration Information State
 
-This is an informational state that highlights pre-registration eligibility. 
+This is an informational state that highlights pre-registration eligibility.
 
 #### What This Means
 
@@ -71,7 +65,7 @@ This is an informational state that highlights pre-registration eligibility.
 
 ### 3. Bundle Purchase State
 
-This state allows eligible users to complete pre registration  
+This state allows eligible users to complete pre registration
 
 #### What This Means
 
@@ -93,8 +87,6 @@ This state allows eligible users to complete pre registration
 - Select class locations and times
 - Add optional programs or briefs
 - Secure class spots early
-
----
 
 ## How the System Determines the State
 
@@ -120,8 +112,6 @@ The system automatically checks:
 | After pre-reg ends               | Normal                | Standard registration                 |
 | Before pre-reg starts            | Normal                | Standard registration                 |
 
----
-
 ## Retool: Admin Control & Management
 
 Admins manage pre-registration behavior through **Retool**.
@@ -136,7 +126,7 @@ In Retool, admins can:
 
 These actions directly affect which pre-registration state a user sees.
 
- Changes made in Retool take effect immediately and determine whether users see pre-registration messaging or discounted checkout.
+Changes made in Retool take effect immediately and determine whether users see pre-registration messaging or discounted checkout.
 
 ## Summary
 
@@ -152,7 +142,7 @@ The pre-registration system has three clear states:
 
 TODO: Give a technical explanation of how these states are calculated for each user. How the user can "auto-enroll" without making a payment.
 
-### Pre-Registration & Auto-Enrollment State Logic 
+### Pre-Registration & Auto-Enrollment State Logic
 
 ### Overview
 
@@ -167,8 +157,6 @@ Based on the API response (`message` and `data`), the frontend calculates the cu
 - What UI to show
 - Whether the user can **auto-enroll**
 - Whether payment is required or not
-
----
 
 ## API Response Structure
 
@@ -189,8 +177,6 @@ The API returns the following fields:
 | `message`                | Indicates the current phase of pre-registration             |
 | `data`                   | Contains bundle details if the user is eligible to purchase |
 | `preRegistrationEndDate` | Used for countdowns                                         |
-
----
 
 ## State Determination Logic
 
@@ -223,8 +209,6 @@ this.fetchData("getYearLongBundleDetails/" + this.webflowMemberId)
     }
   });
 ```
-
----
 
 ## Defined User States
 
