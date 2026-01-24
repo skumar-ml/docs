@@ -52,7 +52,7 @@ All sections below execute under this function unless explicitly skipped due to 
 ### A. `payment_details`
 
 - On the **first successful payment** (based on `payment_intent`), **we insert:**  payment_intent, payment_intent, amount, studentId, classId, memberId, device, UTM metadata, and couponCode (if applied).
-- On subsequent webhook calls (with the same `payment_intent`), we update the  status and receipt_url.
+- On subsequent webhook calls (with the same `payment_intent`), we update the `status` and `receipt_url`.
 
 ### B. `stripe_checkout_customer`
 
@@ -90,19 +90,16 @@ If the parent previously attended a trial class, the corresponding `trial_class_
   TODO: We'll likely need a seperate note to more thoroughly explain how upsells work. I'll figure out the right structure.
 </Note>
 
-## Credit & Discounts
+## BDC Credit
 
-If credits or discounts are applied, the credit balance is updated.
+If BDC credits were applied by the user, their credit balance is updated. \<TODO: how do we know if BDC credits were used; how is search done and in what collection.\>
 
 ## Emails Triggered
 
 ### Automated Emails
 
-- **Admin Notification**
-  - Sent on successful payment
-  - Includes order & enrollment details
-- **User Emails** (implicit via Stripe receipt)
-  - Stripe receipt URL stored in DB
+- **Admin Notification: **Sent on successful payment. Includes order & enrollment details
+- **User Emails: **Automatically triggered receipt via Stripe. Same as the receipt_url stored in `payment_details`.
 
 ---
 
