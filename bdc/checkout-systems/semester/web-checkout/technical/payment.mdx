@@ -91,39 +91,37 @@ The following data is collected before generating the checkout link:
 | successUrl       | Redirect after payment success                                |
 | cancelUrl        | Redirect if payment is cancelled                              |
 
-### stripeCheckoutCustomer Collection
+### **Stripe Checkout – Customer Data Flow for Class Registrations**
 
-When does a record inserted. When is it used (for what purposes). What information does it store. When is it updated...
-
-**Stripe Checkout – Customer Data Flow for Class Registrations**
-
-When the student form is submitted, the API `checkoutUrlForClasses` is called. This API generates a `checkoutId` and inserts two initial records into the `stripe_checkout_customer` collection. At this stage, the system stores the checkoutId, customerId, paymentType, memberId, studentId, and parentEmail.
-
-After this, the user selects the class details along with optional bundle programs, briefs, or both. These selections are sent to the API `updateDataToCheckoutUrl` with the classId, bundleId, and briefsId. This API creates a Stripe checkout session for payment and updates the existing records in the `stripe_checkout_customer` collection using the checkoutId. The updated data includes the checkoutUrl for card or bank transfer, classId, sessionId, a readable label such as “Fort Lee | Level 2A | Saturday 2:15 PM – 4:15 PM”, topicIds, upsellProgramIds for bundle programs, and any applied discount amount.
-
-Once the payment is completed using the Stripe checkout URL, the system updates the payment status in the `stripe_checkout_customer` collection to either Processing or Completed using the sessionId that was created during the checkout session. At the same time, a new record is inserted into the payment details collection to store the transaction information.
-
-**checkoutId**:  We generate a checkout ID when the user submits the student details form. We then update the checkout session after the user selects a class, bundle program, or briefs, based on the checkout ID.
+When the student form is submitted, the API `checkoutUrlForClasses` is called. This API generates a `checkoutId` and inserts two initial records into the `stripe_checkout_customer` collection. At this stage, the system stores the `checkoutId`, `customerId`, `paymentType`, `memberId`, `studentId`, and `parentEmail`.
 
 <Note>
-  TODO: I think we need a separate section altogether for checkoutId (perhaps, at the top). We need to explain that checkoutId is the unique key for the specific checkout section. We need to explain when a new record in this collection is created (and the name of the collection).
+  TODO:
+
+  1. **Why two? Is one for bank transfer, and one for Credit Card. If so, make this clear\>**
+  2. **What is customerId? Never explained, you can handle this in the TODO below.**
 </Note>
-
-There are additional fields for bundle purchases:
-
-- `paymentId` – Bundle payment identifier
-- `isBundleProgram` – Boolean flag
-- `topics` – Selected brief topics (if applicable)
 
 ### API Call and Response
 
+After this, the user selects the class details along with optional upsells. These selections are sent to the API `updateDataToCheckoutUrl` or `checkoutUrlForUpsellProgram` (difference discussed below) with the `classId`, `bundleId`, and `briefsId`. These APIs create a Stripe checkout session for payment and update the existing records in the `stripe_checkout_customer` collection via the `checkoutId`. The updated data includes the `checkoutUrl` for card or bank transfer, `classId`, `sessionId`, a readable label such as “Fort Lee | Level 2A | Saturday 2:15 PM – 4:15 PM”, `topicIds`, `upsellProgramIds` for bundle programs, and any applied discount amount.
+
+<Note>
+  TODO: This is better. I want you to describe the stripe_checkout_customer schema, and explain **when** each field is added/updated. You can do this in the below table
+</Note>
+
+| Field | Purpose | Step Added |
+| ----- | ------- | ---------- |
+|       |         |            |
+|       |         |            |
+
 Depending on the purchase type, one of two APIs is called:
 
-#### Standard Checkout (`updateDataToCheckoutUrl`)
+#### 1. Standard Checkout (`updateDataToCheckoutUrl`)
 
 This API endpoint is used for normal class registration OR bundled (e.g., pre-registered) purchases.
 
-#### Standard Checkout with any Upsell (`checkoutUrlForUpsellProgram`)
+#### 2. Standard Checkout with any Upsell (`checkoutUrlForUpsellProgram`)
 
 - This API endpoint is used for upsells with bundled semesters or briefs
 - **_We are using this API on the portal purchase as well._**
@@ -137,6 +135,16 @@ Regardless of which API is used, the return signature is:
   "achUrl": "https://checkout.stripe.com/..."
 }
 ```
+
+> There are additional fields for bundle purchases:
+>
+> - `paymentId` – Bundle payment identifier
+> - `isBundleProgram` – Boolean flag
+> - `topics` – Selected brief topics (if applicable)
+
+<Note>
+  TODO: Unclear where these additional fields are used, given the new updates. Please add them to the correct section with appropriate context.
+</Note>
 
 ### Redirect to Stripe
 
@@ -158,13 +166,9 @@ During the checkout session creation, we provide Stripe the success URL and canc
 - **programName**: Class or Program Name: This will be displayed on the payment confirmation page.
 - **Type**: Payment mode(Card | Bank Transfer). We use this for tracking purposes and (Google)  analytics.
 
-At this point, the payment is confirmed and the registration is completed.
+At this point, the payment is confirmed and the registration is completed. The system updates the payment status in the `stripe_checkout_customer` collection to either `Processing` or `Completed` using the `sessionId` that was created during the checkout session. At the same time, a new record is inserted into the `payment_details` collection to store the transaction information. Post payment, several other operations take place, all described here **\<TODO: SK to link to doc when ready\>**.
 
-<Note>
-  TODO: Discuss deletion logic of localStorage : **Added in the last paragraph**
-</Note>
-
-Post payment, several other operations take place, all described here **\<TODO: SK to link to doc when ready\>**.
+After successful payment, **we delete the local data** cached during the checkout process, like `checkoutData` and `referralData`.
 
 ### 2. Cancelled Payment
 
@@ -173,7 +177,3 @@ When the user clicks the **Back** button on the Stripe checkout page, Stripe red
 ### 3. Browser Back Button
 
 If the user clicks the **browser's** back button on Stripe, they are redirected  to the original cart URL. On page load, the checkout page detects if **backbuttonstate === "1"** and if there's valid checkout data (in `localStorage`). Then, it restores the last selected class, time slot, and bundle programs so the user can continue checkout seamlessly.
-
-## Clean Checkout Local Data
-
-After successful payment, we delete the local data based on the checkout process, like checkoutData and referralData.
