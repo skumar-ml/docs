@@ -31,14 +31,12 @@ This is the default experience for most users.
 
 #### What This Means
 
-- Pre-registration is not currently active **or**
-- The user does not have a year-long bundle program
+Pre-registration is not active, or the user does not have a year-long bundle.
 
 #### What Users See
 
-- Standard registration and checkout flow
-- Regular pricing
-- No pre-registration messaging or banner
+Users follow the standard registration and checkout flow.\
+There is no pre-registration banner, discount messaging, or early access.
 
 ### 2. Pre-Registration Information State
 
@@ -46,9 +44,7 @@ This is an informational state that highlights pre-registration eligibility.
 
 #### What This Means
 
-- Pre-registration is currently active
-- The user is eligible (has pre-register a year-long bundle)
-- The user has **not yet completed** pre-registration
+Pre-registration is currently active, but the user has not completed pre-registration yet.
 
 #### What Users See
 
@@ -58,35 +54,22 @@ This is an informational state that highlights pre-registration eligibility.
 - Countdown timer showing when pre-registration ends
 - Information about discounts and early access
 
-#### When This Happens
-
-- Pre-registration window is open
-- User has not completed pre-registration
-
 ### 3. Bundle Purchase State
 
 This state allows eligible users to complete pre registration
 
 #### What This Means
 
-- Pre-registration is active
-- The system recognizes the student as part of a bundle program
+The system recognizes the student as part of a year-long bundle and allows early enrollment.
 
 #### What Users See
 
-- “Pre-Register” button instead of “Register”
-- Option to add Bundle programs or briefs
-
-#### When This Happens
-
-- Pre-registration window is active
-- Student has been matched to a bundle program
+The standard “Pay Now” button is replaced with a “Pre-Register” button.\
+Users can select class locations and times and optionally add bundle programs or briefs.
 
 #### What Users Can Do
 
-- Select class locations and times
-- Add optional programs or briefs
-- Secure class spots early
+Users can secure class spots early. If no add-ons are selected, enrollment can complete without payment. Payment is required only if additional programs are added.
 
 ## How the System Determines the State
 
@@ -128,29 +111,17 @@ These actions directly affect which pre-registration state a user sees.
 
 Changes made in Retool take effect immediately and determine whether users see pre-registration messaging or discounted checkout.
 
-## Summary
-
-The pre-registration system has three clear states:
-
-1. **Normal Registration** – Standard experience for all users
-2. **Pre-Registration Information** – Awareness and upgrade opportunity
-3. **Bundle Purchase** – Discounted checkout and early access
-
-**In retool, we have a bundle management program page there user can add, switch, and delete the bundle program**
-
 ## Technical Details
 
 TODO: Give a technical explanation of how these states are calculated for each user. How the user can "auto-enroll" without making a payment.
 
 ### Pre-Registration & Auto-Enrollment State Logic
 
+This section explains how the frontend determines a user’s pre-registration state and when payment is required.
+
 ### Overview
 
-The system determines a user’s **pre-registration and bundle state** by calling the backend API:
-
-```
-GET getYearLongBundleDetails/{webflowMemberId}
-```
+The frontend determines a user’s state by calling the backend API "getYearLongBundleDetails/{webflowMemberId}"
 
 Based on the API response (`message` and `data`), the frontend calculates the current **user state** and decides:
 
@@ -221,9 +192,7 @@ this.fetchData("getYearLongBundleDetails/" + this.webflowMemberId)
 
 **Meaning**
 
-- Pre-registration is not active
-- User proceeds with standard enrollment flow
-- Payment is required if applicable
+Pre-registration has not started or has already ended. Users proceed with standard enrollment and payment if applicable.
 
 ### 2. **Pre-Registration-Info**
 
@@ -234,9 +203,7 @@ this.fetchData("getYearLongBundleDetails/" + this.webflowMemberId)
 
 **Meaning**
 
-- Pre-registration window is active
-- Only pre-registartion window will display
-- User is **not eligible for bundle purchase**
+Pre-registration is active, but the user has no eligible bundle data. Only informational banners and countdowns are shown.
 
 ### 3. **Bundle-Purchase**
 
@@ -247,7 +214,6 @@ this.fetchData("getYearLongBundleDetails/" + this.webflowMemberId)
 
 **Meaning**
 
-- Pre-registration is active
-- User is eligible to pre-register for a **Year-Long Bundle**
-- user just needs to select the class and click on the  pre-register button. no need for payment
-- Payment is required to complete enrollment if they added bundle programs with pre-register
+Pre-registration is active and bundle data exists. The user can select classes and complete pre-registration.
+
+If no add-ons are selected, enrollment completes **without payment**. Payment is required only when optional bundle programs are added.
