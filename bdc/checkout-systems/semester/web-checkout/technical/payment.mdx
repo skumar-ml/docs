@@ -93,27 +93,44 @@ The following data is collected before generating the checkout link:
 
 ### **Stripe Checkout – Customer Data Flow for Class Registrations**
 
-When the student form is submitted, the API `checkoutUrlForClasses` is called. This API generates a `checkoutId` and inserts two initial records into the `stripe_checkout_customer` collection. At this stage, the system stores the `checkoutId`, `customerId`, `paymentType`, `memberId`, `studentId`, and `parentEmail`.
+When the student form is submitted, the API `checkoutUrlForClasses` is called. This API generates a `checkoutId` and inserts two initial records(for the **cards** and **bank transfer**) into the `stripe_checkout_customer` collection. At this stage, the system stores the `checkoutId`, `customerId`, `paymentType`, `memberId`, `studentId`, and `parentEmail`.
 
 <Note>
   TODO:
 
-  1. **Why two? Is one for bank transfer, and one for Credit Card. If so, make this clear\>**
+  1. \*\*Why two? Is one for bank transfer, and one for Credit Card. If so, make this clear\> Yes, updated the descriptions \*\*
   2. **What is customerId? Never explained, you can handle this in the TODO below.**
 </Note>
 
 ### API Call and Response
 
-After this, the user selects the class details along with optional upsells. These selections are sent to the API `updateDataToCheckoutUrl` or `checkoutUrlForUpsellProgram` (difference discussed below) with the `classId`, `bundleId`, and `briefsId`. These APIs create a Stripe checkout session for payment and update the existing records in the `stripe_checkout_customer` collection via the `checkoutId`. The updated data includes the `checkoutUrl` for card or bank transfer, `classId`, `sessionId`, a readable label such as “Fort Lee | Level 2A | Saturday 2:15 PM – 4:15 PM”, `topicIds`, `upsellProgramIds` for bundle programs, and any applied discount amount.
+After this, the user selects the class details along with optional upsells. These selections are sent to the API `updateDataToCheckoutUrl` or `checkoutUrlForUpsellProgram` (difference discussed below) with the `classId`, `bundleId`, and `briefsId`. These APIs create a Stripe checkout session for payment and update the existing records in the `stripe_checkout_customer` collection via the `checkoutId`. The updated data includes the `checkoutUrl` option for card or bank transfer. `classId`, `sessionId`, a readable label such as “Fort Lee | Level 2A | Saturday 2:15 PM – 4:15 PM”, `topicIds`, `upsellProgramIds` for bundle programs, and any applied discount amount.
+
+<Info>
+  Shubham, can we keep this sentence here?
+
+  Once the payment is completed using the  Stripe checkout URL, the system updates the payment status in the `stripe_checkout_customer` collection to either Processing or Completed using the sessionId that was created during the checkout session. At the same time, a new record is inserted into the payment details collection to store the transaction information.
+</Info>
 
 <Note>
   TODO: This is better. I want you to describe the stripe_checkout_customer schema, and explain **when** each field is added/updated. You can do this in the below table
 </Note>
 
-| Field | Purpose | Step Added |
-| ----- | ------- | ---------- |
-|       |         |            |
-|       |         |            |
+| Field            | Purpose | Step Added |
+| ---------------- | ------- | ---------- |
+| checkoutId       |         |            |
+| customerId       |         |            |
+| paymentType      |         |            |
+| memberId         |         |            |
+| studentId        |         |            |
+| parentEmail      |         |            |
+| checkoutUrl      |         |            |
+| classId          |         |            |
+| sessionId        |         |            |
+| Label            |         |            |
+| topicIds         |         |            |
+| upsellProgramIds |         |            |
+| discountAmount   |         |            |
 
 Depending on the purchase type, one of two APIs is called:
 
