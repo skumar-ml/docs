@@ -117,7 +117,7 @@ After this, the user selects the class details along with optional upsells. Thes
 | isClassPayment   | Flag indicating this is a class registration              | Added during initial `checkoutUrlForClasses` call                                                              |
 | device           | Device type (Mobile/Desktop)                              | Captured from frontend, added during initial `checkoutUrlForClasses` call                                      |
 | deviceUserAgent  | Browser + OS fingerprint                                  | Captured from frontend, added during initial `checkoutUrlForClasses` call                                      |
-| utmSource        | Marketing attribution source                              | **TODO: this is missing **Passed from frontend if available, added during initial `checkoutUrlForClasses` call |
+| utmSource        | Marketing attribution source                              | **TODO: this is missing** Passed from frontend if available, added during initial `checkoutUrlForClasses` call |
 | source           | Entry point (`cart_page`, etc.)                           | Added during initial `checkoutUrlForClasses` call                                                              |
 | status           | Checkout/payment state (`Pending`, `Complete`, `Failed`)  | Updated via Stripe webhook                                                                                     |
 
@@ -153,6 +153,8 @@ Regardless of which API is used, the return signature is:
   **I've updated the text. We can also add this for pre-registration. Let me know If i need to add there?**
 
   **@Yogesh -- yes, let's add it there and with more details. Then, we can link to that page from here...**
+
+  **Added in the pre-registration section**
 </Note>
 
 ### Redirect to Stripe
