@@ -22,7 +22,7 @@ _Events are normalized based on event type and status:_
 - _charge events: paid == True → "Complete"; status == "pending" → "Processing"; status == "failed" → "Failed"_
 - _checkout.session with payment_status == "paid" and amount_total == 0 → "Complete"_
 
-_The unique key is _**_sessionId_**_ (Stripe Checkout Session ID). For payment_intent and charge events, the code retrieves the payment_intent ID, calls _`stripe.checkout.Session.list(payment_intent=paymentIntent)`_to get the session, then extracts sessionId from the session object. For _ `checkout.session`_events, _ **_sessionId_**_ is directly available as _`eventObj["id"]`_._
+\_The unique key is ****sessionId**** (Stripe Checkout Session ID). For payment_intent and charge events, the code retrieves the payment_intent ID, calls \_`stripe.checkout.Session.list(payment_intent=paymentIntent)` to get the session, then extracts sessionId from the session object. For `_ checkout.sessionevents,` \_ sessionId is directly available as `eventObj["id"]`.
 
 <Note>
   TODO:
@@ -68,7 +68,7 @@ All sections below execute under this function unless explicitly skipped due to 
 
 On every webhook event, we update the `payment_intent` & `status` (Complete / Processing / Failed).
 
-The unique identifier for stripe_checkout_customer is sessionId (Stripe Checkout Session ID), not payment_intent. All lookups use `db.stripe_checkout_customer.find_one({"sessionId": sessionId})`, and all updates use `**db.stripe_checkout_customer.update_one({'sessionId': sessionId}, ...)**`. The payment_intent is a field that gets updated on each webhook event (along with status), but sessionId is the primary key that uniquely identifies each checkout session record. This makes sense because a single checkout session can have multiple payment attempts or webhook events, so the sessionId remains constant while payment_intent and status can change over time.
+The unique identifier for stripe_checkout_customer is sessionId (Stripe Checkout Session ID), not payment_intent. All lookups use `db.stripe_checkout_customer.find_one({"sessionId": sessionId})`, and all updates use `db.stripe_checkout_customer.update_one({'sessionId': sessionId}, ...)`. The payment_intent is a field that gets updated on each webhook event (along with status), but sessionId is the primary key that uniquely identifies each checkout session record. This makes sense because a single checkout session can have multiple payment attempts or webhook events, so the sessionId remains constant while payment_intent and status can change over time.
 
 <Note>
   TODO: I thought `payment_intent` was the unique identifier? If it's not, than what is the unique identifier for `stripe_checkout_customer`, that you get from Stripe?
@@ -84,9 +84,9 @@ If payment fails, we delete the payment details and any upsell payments, and mar
 
 For any purchase, we check to see if the family (identified via their `familyId`) has a coupon in **TODO: insert collection**. If it does not exist, we generate **TODO: how?** a new referral coupon, create it in Stripe **TODO: are there any restrictions applied to this coupon?**, and store it in `coupon_details`.
 
-_If a coupon is used, Stripe passes it as a promotion code in the checkout session's discount breakdown. We retrieve it via _`getCouponCode(sessionId)`_, which extracts the promotion code from _`total_details.breakdown.discounts`_. We search referral_details using _`{"guestId": str(parent["_id"])}`_. If a match is found, we mark the referral as Purchased and update the purchase date._
+If a coupon is used, Stripe passes it as a promotion code in the checkout session's discount breakdown. We retrieve it via getCouponCode(sessionId), which extracts the promotion code from total_details.breakdown.discounts. We search referral_details using `{"guestId": str(parent["_id"])}`. If a match is found, we mark the referral as Purchased and update the purchase date.
 
-_For any purchase, we check coupon_details using _`{"familyId": member['familyId']}`_to see if the family has a coupon. If it doesn't exist, we generate a new referral coupon by calling _ `generate_coupon_name(member['firstName']) (or member['name'] for class payments)`_, which creates a unique code by: (1) taking the member's first name, (2) removing non-alphanumeric characters and converting to uppercase, (3) generating an MD5 hash of the _`name + "100"`_, taking the first 5 characters, and (4) combining them as_` {BASENAME}{5CHARHASH} (e.g., "JOHN12345")`_. We create it in Stripe using _`stripe.PromotionCode.create()`_with restrictions: minimum_amount of _ `$100 (10000 cents), minimum_amount_currency "usd", and first_time_transaction set to True`_. The promotion code is based on a base coupon ID stored in AWS Parameter Store _`(/prod/stripe/coupon/id).`_We then store it in coupon_details with the coupon_code, familyId, and createdOn timestamp._ 
+For any purchase, we check coupon_details using `{"familyId": member['familyId']}` to see if the family has a coupon. If it doesn't exist, we generate a new referral coupon by calling \_ generate_coupon_name(member['firstName']) (or member['name'] for class payments), which creates a unique code by: (1) taking the member's first name, (2) removing non-alphanumeric characters and converting to uppercase, (3) generating an MD5 hash of the name + "100", taking the first 5 characters, and (4) combining them as {`{BASENAME}{5CHARHASH}`} (e.g., "JOHN12345"). We create it in Stripe using \_`stripe.PromotionCode.create()`_`with restrictions: minimum_amount of _ $100 (10000 cents), minimum_amount_currency "usd", and first_time_transaction set to True`_. The promotion code is based on a base coupon ID stored in AWS Parameter Store \_`(/prod/stripe/coupon/id).`_We then store it in coupon_details with the coupon_code, familyId, and createdOn timestamp._
 
 <Note>
   TODO: I rewrote this part to add more detail. Please fill in the TODOs. We'll need to give more details about the referral section in a different page, but this should be sufficient for payment purposes.
@@ -96,13 +96,13 @@ _For any purchase, we check coupon_details using _`{"familyId": member['familyId
 
 If the parent previously attended a trial class, the corresponding `trial_class_details`  is updated to `Purchased`. The lookup is performed via **TODO: explain**.
 
-_The lookup is a two-step process. First, the parent is found in the members collection using a regex pattern that matches_` stripeCheckout["parentEmail"]`_to handle single or comma-separated emails: _ `pattern = re.compile(rf'(^|\s*,\s*){re.escape(stripeCheckout["parentEmail"])}(\s*,\s*|$)', re.IGNORECASE)`_and then _ `parentData = db.members.find_one({"email": { "$regex": pattern } })`_. If a parent is found, the trial_class_details collection is queried using _`{"parentId": str(parentData["_id"])}`_— the parent's MongoDB id converted to a string. If a trial class record exists, it is updated to _ `{"status": "Purchased"}`_using the trial class record's id. This links the payment to the trial class via the parent's email and _ `MongoDB _id`_._
+_The lookup is a two-step process. First, the parent is found in the members collection using a regex pattern that matches_` stripeCheckout["parentEmail"]`****`to handle single or comma-separated emails: _ pattern = re.compile(rf'(^|\s*,\s*){re.escape(stripeCheckout["parentEmail"])}(\s*,\s*|$)', re.IGNORECASE)and then _ parentData = db.members.find_one({"email": { "$regex": pattern } }). If a parent is found, the trial_class_details collection is queried using {"parentId": str(parentData["_id"])}— the parent's MongoDB id converted to a string. If a trial class record exists, it is updated to _ {"status": "Purchased"}using the trial class record's id. This links the payment to the trial class via the parent's email and _ MongoDB _id.`****
 
 ## Enrollment & Cleanup
 
 - **Waitlist cleanup**: Searches for student in the `waitlist_details` via **TODO: what key is used to search**. If found, then they are removed from the waitlist via deletion.
 
-  _The waitlist cleanup uses a compound key: both classId and studentId from stripeCheckout. The deletion is performed via _`db.waitlist_details.delete_one({ "classId": stripeCheckout["classId"], "studentId": stripeCheckout["studentId"] }).`_This removes the waitlist entry for the specific student in the specific class when the payment is processed. The lookup requires both fields to uniquely identify the waitlist record to delete._ 
+  \_The waitlist cleanup uses a compound key: both classId and studentId from stripeCheckout. The deletion is performed via \_`db.waitlist_details.delete_one({ "classId": stripeCheckout["classId"], "studentId": stripeCheckout["studentId"] }).`_This removes the waitlist entry for the specific student in the specific class when the payment is processed. The lookup requires both fields to uniquely identify the waitlist record to delete._
 - **Upsell Programs** (if any): Inserted into `upsell_payment_details`
 - **Topic Purchases** (if any): Inserted into topic payment collection
 
@@ -114,7 +114,7 @@ _The lookup is a two-step process. First, the parent is found in the members col
 
 If BDC credits were applied by the user, their credit balance is updated. TODO: how do we know if BDC credits were used; how is search done and in what collection.
 
-_BDC credits are detected by checking if _**_stripeCheckout _**_contains _`"discount_amount"`_and it's _ `greater than 0: if "discount_amount"`_in stripeCheckout and _ `stripeCheckout["discount_amount"] > 0`_. The search is performed in the member_credit_amount collection using_` {"memberId": stripeCheckout["memberId"]}`_to find the member's credit record. If found, the credit balance is updated by subtracting the discount_amount from the current credit_balance (ensuring it doesn't go below 0), and a debit entry is added to the credit_history array with details including the amount, type "debit", description "applied during checkout", paymentId, year, and sessionId. The update is performed via_ ` db.member_credit_amount.update_one({"memberId": stripeCheckout["memberId"]}, ...).`
+\_BDC credits are detected by checking if \_**\_stripeCheckout \_**\_contains \_`"discount_amount"`**`and it's _ greater than 0: if "discount_amount"in stripeCheckout and _ stripeCheckout["discount_amount"] > 0. ` The search is performed in the member_credit_amount collection using `{"memberId": stripeCheckout["memberId"]}`_to find the member's credit record. If found, the credit balance is updated by subtracting the discount_amount from the current credit_balance (ensuring it doesn't go below 0), and a debit entry is added to the credit_history array with details including the amount, type "debit", description "applied during checkout", paymentId, year, and sessionId. The update is performed via_ ` db.member_credit_amount.update_one({"memberId": stripeCheckout["memberId"]}, ...).`
 
 ## Emails Triggered
 
