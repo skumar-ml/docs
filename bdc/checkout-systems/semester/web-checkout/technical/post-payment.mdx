@@ -78,11 +78,9 @@ If payment fails, we delete the payment details and any upsell payments, and mar
 
 **If a coupon is used**, Stripe passes it as **TODO: insert**. We search to see if the coupon exists in **TODO: insert referral collection**. If a match is found, we mark the referral as Purchased and update the purchase date.
 
-For any purchase, we check to see if the family (identified via their `familyId`) has a coupon in **referral_details. TODO: insert collection**. If it does not exist, we generate  **TODO: how? **\< The referral is generated only if a **coupon code** is present for the session. The system first checks whether a referral already exists for the purchasing parent (`guestId`); if it does, it updates the referral stage to **"Purchased"**. If no referral exists, it looks up the coupon to find the **family** that owns it, finds the referring member for that family, and inserts a new referral record linking the referring member to the guest.\> a new referral coupon, create it in Stripe **TODO: are there any restrictions applied to this coupon?**, and store it in `coupon_details`.
+For any purchase, we check to see if the family (identified via their `familyId`) has a coupon in **TODO: insert collection\<referral_details\>** . If it does not exist, we generate  **TODO: how?** \< The referral is generated only if a **coupon code** is present for the session. The system first checks whether a referral already exists for the purchasing parent (`guestId`); if it does, it updates the referral stage to **"Purchased"**. If no referral exists, it looks up the coupon to find the **family** that owns it, finds the referring member for that family, and inserts a new referral record linking the referring member to the guest.\> a new referral coupon, create it in Stripe **TODO: are there any restrictions applied to this coupon?\<**The coupon includes restrictions: minimum purchase of **\$100 (10,000 cents USD)** and **valid only for first-time transactions**.**\>**, and store it in `coupon_details`.
 
 If a coupon is used, Stripe passes it as a promotion code in the checkout session's discount breakdown. We retrieve it via getCouponCode(sessionId), which extracts the promotion code from total_details.breakdown.discounts. We search referral_details using `{"guestId": str(parent["_id"])}`. If a match is found, we mark the referral as Purchased and update the purchase date.
-
-For any purchase, we check coupon_details using `{"familyId": member['familyId']}` to see if the family has a coupon. If it doesn't exist, we generate a new referral coupon by calling \_ generate_coupon_name(member['firstName']) (or member['name'] for class payments), which creates a unique code by: (1) taking the member's first name, (2) removing non-alphanumeric characters and converting to uppercase, (3) generating an MD5 hash of the name + "100", taking the first 5 characters, and (4) combining them as \`{BASENAME}{5CHARHASH}\` (e.g., "JOHN12345"). We create it in Stripe using \_`stripe.PromotionCode.create()`_`with restrictions: minimum_amount of _ $100 (10000 cents), minimum_amount_currency "usd", and first_time_transaction set to True`_. The promotion code is based on a base coupon ID stored in AWS Parameter Store \_`(/prod/stripe/coupon/id).`_We then store it in coupon_details with the coupon_code, familyId, and createdOn timestamp._
 
 <Note>
   TODO: I rewrote this part to add more detail. Please fill in the TODOs. We'll need to give more details about the referral section in a different page, but this should be sufficient for payment purposes.
@@ -94,7 +92,7 @@ If the parent previously attended a trial class, the corresponding `trial_class_
 
 ## Enrollment & Cleanup
 
-- **Waitlist cleanup**: Searches for student in the `waitlist_details` via **TODO: what key is used to search **\<classId and studentId from stripeCheckout**\>**. If found, then they are removed from the waitlist via deletion.
+- **Waitlist cleanup**: Searches for student in the `waitlist_details` via ****TODO: what key is used to search \<classId and studentId from stripeCheckout\>****. If found, then they are removed from the waitlist via deletion.
 - **Upsell Programs** (if any): Inserted into `upsell_payment_details`
 - **Topic Purchases** (if any): Inserted into topic payment collection
 
@@ -104,7 +102,7 @@ If the parent previously attended a trial class, the corresponding `trial_class_
 
 ## BDC Credit
 
-If BDC credits were applied by the user, their credit balance is updated. **TODO: how do we know if BDC credits were used; how is search done and in what collection. **\<while processing the amount we are subtracting discount_amount, which we added in stripe_checkout_customer collections after payment, we are only subtracting from the member credit amount collection based on the discounted amount \>
+If BDC credits were applied by the user, their credit balance is updated. \*\*TODO: how do we know if BDC credits were used; how is search done and in what collection. \*\*\<while processing the amount we are subtracting discount_amount, which we added in stripe_checkout_customer collections after payment, we are only subtracting from the member credit amount collection based on the discounted amount \>
 
 ## Emails Triggered
 
