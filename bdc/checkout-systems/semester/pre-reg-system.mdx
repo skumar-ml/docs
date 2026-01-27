@@ -169,3 +169,13 @@ Pre-registration is active, but the user has no eligible bundle data. Only infor
 Pre-registration is active and bundle data exists. The user can select classes and complete pre-registration.
 
 If no add-ons are selected, enrollment completes **without payment**. Payment is required only when optional bundle programs are added.
+
+## Pre-Reg Payment
+
+When a user clicks “**Pre-Register**”, the system initiates the payment using the same **initializeStripePayment()** method as the standard checkout flow. Along with the usual payment data, the request includes the bundle-specific **paymentId**, a flag indicating a bundle purchase `(isBundleProgram: true)`, and the selected **classUniqueId**.
+
+For bundle purchases, the API endpoint is chosen based on whether the user has selected any upsell programs or briefs.
+
+If the pre-registration includes upsells or briefs, the system routes the request to the **checkoutUrlForUpsellProgram** API. This creates a separate Stripe checkout session for the pre-registration with Upsell programs or briefs.
+
+If the pre-registration does not include upsells or briefs, the system calls the **updateDataToCheckoutUrl** API. In this case, the existing checkout session—identified by the checkoutId—is updated with the pre-registration and class selection details. The corresponding stripe_checkout_customer records are updated, and the API returns the latest cardUrl and achUrl for redirecting the user to Stripe Checkout.
