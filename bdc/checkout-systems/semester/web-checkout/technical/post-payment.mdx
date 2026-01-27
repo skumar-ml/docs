@@ -16,19 +16,15 @@ We have a single webhook (`stripePaymentListener`) that is triggered by Stripe e
 
 This webhook (1) validates the Stripe webhook signature and extracts the `payment_intent` with checkout metadata; (2) finds the related record from `stripe_checkout_customer` and normalizes the event into internal payment states (Complete, Processing, Failed); (3) Based on the payment state, triggers the next functions.
 
-_Events are normalized based on event type and status:_
+In this webhook, Stripe events are normalized into three internal states: **Complete**, **Processing**, and **Failed**. A `payment_intent` with `status = "requires_payment_method"` is treated as **Failed**. For `charge` events, `paid = true` maps to **Complete**, `status = "pending"` maps to **Processing** (used for bank transfers), and `status = "failed"` maps to **Failed**. Separately, a `checkout.session` that is `paid`, `complete`, and has `amount_total = 0` (free-coupon flow) is also mapped to **Complete**. Overall, the system infers payment state from a limited set of Stripe fields and largely relies on `charge` events to represent success and in-progress states.
 
-- _payment_intent with requires_payment_method → "Failed"_
-- _charge events: paid == True → "Complete"; status == "pending" → "Processing"; status == "failed" → "Failed"_
-- _checkout.session with payment_status == "paid" and amount_total == 0 → "Complete"_
-
-\_The unique key is ****sessionId**** (Stripe Checkout Session ID). For payment_intent and charge events, the code retrieves the payment_intent ID, calls \_`stripe.checkout.Session.list(payment_intent=paymentIntent)` to get the session, then extracts sessionId from the session object. For `_ checkout.sessionevents,` \_ sessionId is directly available as `eventObj["id"]`.
+The unique key is the **sessionId** (Stripe Checkout Session ID). From the webhook event, we obtain the **payment_intent** from the charge object. Using this **payment_intent**, we retrieve the corresponding **sessionId**, which allows us to identify the session created by the app user.
 
 <Note>
   TODO:
 
-  1. **How is the event normalized into internal payment states? Unclear right now**
-  2. **What is the unique key from Stripe used to find the related record in** `stripe_checkout_customer`?
+  1. **How is the event normalized into internal payment states? Unclear right now. Updated desc above**
+  2. **What is the unique key from Stripe used to find the related record in** `stripe_checkout_customer`?  **Updated desc above**
 </Note>
 
 \
@@ -37,7 +33,7 @@ The webhook ensures idempotency so repeated webhooks do not create duplicates.
 Idempotency is ensured by using payment_intent as the unique identifier. Each update function (updateInvoiceResponses, updateSummerPayment, updateClassPayment, updateUpsellPaymentDetails, addPurchaseTopicDetails) first checks if a record exists using `find_one({"payment_intent": chargeObj["payment_intent"]})`. If found, it updates the existing record (status, receipt_url, etc.) instead of inserting a new one. If not found, it inserts a new record. This ensures that repeated webhooks with the same payment_intent update existing records rather than creating duplicates, making the webhook idempotent.
 
 <Note>
-  **TODO: Explain how you ensure idempotency.**
+  **TODO: Explain how you ensure idempotency. Updated desc above**
 </Note>
 
 ### Behaviour by payment status
@@ -68,10 +64,10 @@ All sections below execute under this function unless explicitly skipped due to 
 
 On every webhook event, we update the `payment_intent` & `status` (Complete / Processing / Failed).
 
-The unique identifier for stripe_checkout_customer is sessionId (Stripe Checkout Session ID), not payment_intent. All lookups use `db.stripe_checkout_customer.find_one({"sessionId": sessionId})`, and all updates use `db.stripe_checkout_customer.update_one({'sessionId': sessionId}, ...)`. The payment_intent is a field that gets updated on each webhook event (along with status), but sessionId is the primary key that uniquely identifies each checkout session record. This makes sense because a single checkout session can have multiple payment attempts or webhook events, so the sessionId remains constant while payment_intent and status can change over time.
+The unique identifier for stripe_checkout_customer is sessionId (Stripe Checkout Session ID), not payment_intent. All lookups use `db.stripe_checkout_customer.find_one({"sessionId": sessionId})`, and all updates use `db.stripe_checkout_customer.update_one({'sessionId': sessionId}, ...)`. The payment_intent is a field that gets updated on each webhook event (along with status), but sessionId is the primary key that uniquely identifies each checkout session record. This makes sense because a single checkout session can have multiple webhook events, so the sessionId remains constant while payment_intent and status can change over time.
 
 <Note>
-  TODO: I thought `payment_intent` was the unique identifier? If it's not, than what is the unique identifier for `stripe_checkout_customer`, that you get from Stripe?
+  TODO: I thought `payment_intent` was the unique identifier? If it's not, than what is the unique identifier for `stripe_checkout_customer`, that you get from Stripe?. **Added desc above**
 </Note>
 
 ### C. Failure Handling
@@ -82,11 +78,11 @@ If payment fails, we delete the payment details and any upsell payments, and mar
 
 **If a coupon is used**, Stripe passes it as **TODO: insert**. We search to see if the coupon exists in **TODO: insert referral collection**. If a match is found, we mark the referral as Purchased and update the purchase date.
 
-For any purchase, we check to see if the family (identified via their `familyId`) has a coupon in **TODO: insert collection**. If it does not exist, we generate **TODO: how?** a new referral coupon, create it in Stripe **TODO: are there any restrictions applied to this coupon?**, and store it in `coupon_details`.
+For any purchase, we check to see if the family (identified via their `familyId`) has a coupon in **referral_details. TODO: insert collection**. If it does not exist, we generate  **TODO: how? **\< The referral is generated only if a **coupon code** is present for the session. The system first checks whether a referral already exists for the purchasing parent (`guestId`); if it does, it updates the referral stage to **"Purchased"**. If no referral exists, it looks up the coupon to find the **family** that owns it, finds the referring member for that family, and inserts a new referral record linking the referring member to the guest.\> a new referral coupon, create it in Stripe **TODO: are there any restrictions applied to this coupon?**, and store it in `coupon_details`.
 
 If a coupon is used, Stripe passes it as a promotion code in the checkout session's discount breakdown. We retrieve it via getCouponCode(sessionId), which extracts the promotion code from total_details.breakdown.discounts. We search referral_details using `{"guestId": str(parent["_id"])}`. If a match is found, we mark the referral as Purchased and update the purchase date.
 
-For any purchase, we check coupon_details using `{"familyId": member['familyId']}` to see if the family has a coupon. If it doesn't exist, we generate a new referral coupon by calling \_ generate_coupon_name(member['firstName']) (or member['name'] for class payments), which creates a unique code by: (1) taking the member's first name, (2) removing non-alphanumeric characters and converting to uppercase, (3) generating an MD5 hash of the name + "100", taking the first 5 characters, and (4) combining them as {`{BASENAME}{5CHARHASH}`} (e.g., "JOHN12345"). We create it in Stripe using \_`stripe.PromotionCode.create()`_`with restrictions: minimum_amount of _ $100 (10000 cents), minimum_amount_currency "usd", and first_time_transaction set to True`_. The promotion code is based on a base coupon ID stored in AWS Parameter Store \_`(/prod/stripe/coupon/id).`_We then store it in coupon_details with the coupon_code, familyId, and createdOn timestamp._
+For any purchase, we check coupon_details using `{"familyId": member['familyId']}` to see if the family has a coupon. If it doesn't exist, we generate a new referral coupon by calling \_ generate_coupon_name(member['firstName']) (or member['name'] for class payments), which creates a unique code by: (1) taking the member's first name, (2) removing non-alphanumeric characters and converting to uppercase, (3) generating an MD5 hash of the name + "100", taking the first 5 characters, and (4) combining them as \`{BASENAME}{5CHARHASH}\` (e.g., "JOHN12345"). We create it in Stripe using \_`stripe.PromotionCode.create()`_`with restrictions: minimum_amount of _ $100 (10000 cents), minimum_amount_currency "usd", and first_time_transaction set to True`_. The promotion code is based on a base coupon ID stored in AWS Parameter Store \_`(/prod/stripe/coupon/id).`_We then store it in coupon_details with the coupon_code, familyId, and createdOn timestamp._
 
 <Note>
   TODO: I rewrote this part to add more detail. Please fill in the TODOs. We'll need to give more details about the referral section in a different page, but this should be sufficient for payment purposes.
@@ -94,15 +90,11 @@ For any purchase, we check coupon_details using `{"familyId": member['familyId']
 
 ## Trial → Paid Conversion
 
-If the parent previously attended a trial class, the corresponding `trial_class_details`  is updated to `Purchased`. The lookup is performed via **TODO: explain**.
-
-_The lookup is a two-step process. First, the parent is found in the members collection using a regex pattern that matches_` stripeCheckout["parentEmail"]` to handle single or comma-separated emails: `pattern = re.compile(rf'(^|\s*,\s*)re.escape(stripeCheckout["parentEmail"])(\s*,\s*|$), re.IGNORECASE) and then  parentData = db.members.find_one({"email": { "$regex": pattern } }).` If a parent is found, the trial_class_details collection is queried using `{"parentId": str(parentData["_id"])}` the parents MongoDB id converted to a string. If a trial class record exists, it is updated to `{"status": "Purchased"}` using the trial class record's id. This links the payment to the trial class via the parent's email and  MongoDB \_id
+If the parent previously attended a trial class, the corresponding `trial_class_details`  is updated to `Purchased`. The lookup is performed via **TODO: explain**.\<if the user is exists in the trail class details based on parentId, then we are updating  the status to purchased\>
 
 ## Enrollment & Cleanup
 
-- **Waitlist cleanup**: Searches for student in the `waitlist_details` via **TODO: what key is used to search**. If found, then they are removed from the waitlist via deletion.
-
-  \_The waitlist cleanup uses a compound key: both classId and studentId from stripeCheckout. The deletion is performed via \_`db.waitlist_details.delete_one({ "classId": stripeCheckout["classId"], "studentId": stripeCheckout["studentId"] }).`_This removes the waitlist entry for the specific student in the specific class when the payment is processed. The lookup requires both fields to uniquely identify the waitlist record to delete._
+- **Waitlist cleanup**: Searches for student in the `waitlist_details` via **TODO: what key is used to search **\<classId and studentId from stripeCheckout**\>**. If found, then they are removed from the waitlist via deletion.
 - **Upsell Programs** (if any): Inserted into `upsell_payment_details`
 - **Topic Purchases** (if any): Inserted into topic payment collection
 
@@ -112,9 +104,7 @@ _The lookup is a two-step process. First, the parent is found in the members col
 
 ## BDC Credit
 
-If BDC credits were applied by the user, their credit balance is updated. TODO: how do we know if BDC credits were used; how is search done and in what collection.
-
-\_BDC credits are detected by checking if \_**\_stripeCheckout \_**\_contains \_`"discount_amount"`\*\*`and it's _ greater than 0: if "discount_amount"in stripeCheckout and _ stripeCheckout["discount_amount"] > 0. ` The search is performed in the member_credit_amount collection using `{"memberId": stripeCheckout["memberId"]}`_to find the member's credit record. If found, the credit balance is updated by subtracting the discount_amount from the current credit_balance (ensuring it doesn't go below 0), and a debit entry is added to the credit_history array with details including the amount, type "debit", description "applied during checkout", paymentId, year, and sessionId. The update is performed via_ ` db.member_credit_amount.update_one({"memberId": stripeCheckout["memberId"]}, ...).`
+If BDC credits were applied by the user, their credit balance is updated. **TODO: how do we know if BDC credits were used; how is search done and in what collection. **\<while processing the amount we are subtracting discount_amount, which we added in stripe_checkout_customer collections after payment, we are only subtracting from the member credit amount collection based on the discounted amount \>
 
 ## Emails Triggered
 
