@@ -142,11 +142,11 @@ Depending on the purchase type, one of two APIs is called:
 
 #### 1. Standard Checkout (`updateDataToCheckoutUrl`)
 
-This API endpoint is used for normal class registration OR bundled (e.g., pre-registered) purchases.
+This API endpoint is used for normal class registration OR Pre-registration (e.g., pre-registered) purchases.
 
 #### 2. Standard Checkout with any Upsell (`checkoutUrlForUpsellProgram`)
 
-- This API endpoint is used for upsells with bundled semesters or briefs
+- This API endpoint is used for Pre-regstration with the bundled Program or briefs
 - **_We are using this API on the portal purchase as well._**
 
 Regardless of which API is used, the return signature is:
@@ -159,14 +159,15 @@ Regardless of which API is used, the return signature is:
 }
 ```
 
-> There are additional fields for bundle purchases:
+> There are additional fields for **Pre-registartion** purchases:
 >
-> - `paymentId` – Bundle payment identifier
-> - `isBundleProgram` – Boolean flag
-> - `topics` – Selected brief topics (if applicable)
+> - `paymentId` – **Pre-registartion** payment identifier, 
+> - `isBundleProgram` – Boolean flag, We mantain flag for the **pre-registartion**, If it's true 
 
 <Note>
-  TODO: Unclear where these additional fields are used, given the new updates. Please add them to the correct section with appropriate context.
+  TODO: Unclear where these additional fields are used, given the new updates. Please add them to the correct section with appropriate context. 
+
+  **I've updated the text. We can also add this for pre-registration. Let me know If i need to add there?**
 </Note>
 
 ### Redirect to Stripe
