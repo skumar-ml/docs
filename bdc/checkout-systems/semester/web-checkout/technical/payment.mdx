@@ -93,28 +93,11 @@ The following data is collected before generating the checkout link:
 
 ### **Stripe Checkout – Customer Data Flow for Class Registrations**
 
-When the student form is submitted, the API `checkoutUrlForClasses` is called. This API generates a `checkoutId` and inserts two initial records(for the **cards** and **bank transfer**) into the `stripe_checkout_customer` collection. At this stage, the system stores the `checkoutId`, `customerId`, `paymentType`, `memberId`, `studentId`, and `parentEmail`.
-
-<Note>
-  TODO:
-
-  1. \*\*Why two? Is one for bank transfer, and one for Credit Card. If so, make this clear\> Yes, updated the descriptions \*\*
-  2. **What is customerId? Never explained, you can handle this in the TODO below.**
-</Note>
+When the student form is submitted, the API `checkoutUrlForClasses` is called. This API generates a `checkoutId` and inserts two initial records (one for the **card** and one for **bank transfer**) into the `stripe_checkout_customer` collection. At this stage, the system stores the `checkoutId`, `customerId`, `paymentType`, `memberId`, `studentId`, and `parentEmail`.
 
 ### API Call and Response
 
 After this, the user selects the class details along with optional upsells. These selections are sent to the API `updateDataToCheckoutUrl` or `checkoutUrlForUpsellProgram` (difference discussed below) with the `classId`, `bundleId`, and `briefsId`. These APIs create a Stripe checkout session for payment and update the existing records in the `stripe_checkout_customer` collection via the `checkoutId`. The updated data includes the `checkoutUrl` option for card or bank transfer. `classId`, `sessionId`, a readable label such as “Fort Lee | Level 2A | Saturday 2:15 PM – 4:15 PM”, `topicIds`, `upsellProgramIds` for bundle programs, and any applied discount amount.
-
-<Info>
-  Shubham, can we keep this sentence here?
-
-  Once the payment is completed using the  Stripe checkout URL, the system updates the payment status in the `stripe_checkout_customer` collection to either Processing or Completed using the sessionId that was created during the payment process. At the same time, a new record is inserted into the payment details collection to store the transaction information.
-</Info>
-
-<Note>
-  TODO: This is better. I want you to describe the stripe_checkout_customer schema, and explain **when** each field is added/updated. You can do this in the below table
-</Note>
 
 | Field            | Purpose                                                   | Step Added                                                                           |
 | ---------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------ |
@@ -134,7 +117,7 @@ After this, the user selects the class details along with optional upsells. Thes
 | isClassPayment   | Flag indicating this is a class registration              | Added during initial `checkoutUrlForClasses` call                                    |
 | device           | Device type (Mobile/Desktop)                              | Captured from frontend, added during initial `checkoutUrlForClasses` call            |
 | deviceUserAgent  | Browser + OS fingerprint                                  | Captured from frontend, added during initial `checkoutUrlForClasses` call            |
-| utmSource        | Marketing attribution source                              |                                                                                      |
+| utmSource        | Marketing attribution source                              | **TODO: this is missing**                                                            |
 | source           | Entry point (`cart_page`, etc.)                           | Passed from frontend if available, added during initial `checkoutUrlForClasses` call |
 | status           | Checkout/payment state (`Pending`, `Complete`, `Failed`)  | Updated via Stripe webhook                                                           |
 
@@ -159,15 +142,17 @@ Regardless of which API is used, the return signature is:
 }
 ```
 
-> There are additional fields for **Pre-registartion** purchases:
+> There are additional fields for **Pre-registration** purchases:
 >
-> - `paymentId` – **Pre-registartion** payment identifier, 
-> - `isBundleProgram` – Boolean flag, We mantain flag for the **pre-registartion**, If it's true 
+> - `paymentId` – **Pre-registartion** payment identifier,
+> - `isBundleProgram` – Boolean flag, We mantain flag for the **pre-registartion**, If it's true
 
 <Note>
-  TODO: Unclear where these additional fields are used, given the new updates. Please add them to the correct section with appropriate context. 
+  TODO: Unclear where these additional fields are used, given the new updates. Please add them to the correct section with appropriate context.
 
   **I've updated the text. We can also add this for pre-registration. Let me know If i need to add there?**
+
+  **@Yogesh -- yes, let's add it there and with more details. Then, we can link to that page from here...**
 </Note>
 
 ### Redirect to Stripe
@@ -190,7 +175,7 @@ During the checkout session creation, we provide Stripe the success URL and canc
 - **programName**: Class or Program Name: This will be displayed on the payment confirmation page.
 - **Type**: Payment mode(Card | Bank Transfer). We use this for tracking purposes and (Google)  analytics.
 
-At this point, the payment is confirmed and the registration is completed. The system updates the payment status in the `stripe_checkout_customer` collection to either `Processing` or `Completed` using the `sessionId` that was created during the checkout session. At the same time, a new record is inserted into the `payment_details` collection to store the transaction information. Post payment, several other operations take place, all described here **\<TODO: SK to link to doc when ready\>**.
+At this point, the payment is confirmed and the registration is completed. The system updates the payment status in the `stripe_checkout_customer` collection to either `Processing` or `Completed` using the `sessionId` that was created during the checkout session. At the same time, a new record is inserted into the `payment_details` collection to store the transaction information. Post payment, several other operations take place, [all described here](/bdc/checkout-systems/semester/web-checkout/technical/post-payment).
 
 After successful payment, **we delete the local data** cached during the checkout process, like `checkoutData` and `referralData`.
 
