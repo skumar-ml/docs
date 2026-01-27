@@ -26,7 +26,7 @@ _Events are normalized based on event type and status:_
 
 - _checkout.session with payment_status == "paid" and amount_total == 0 → "Complete"_
 
-_The unique key is sessionId (Stripe Checkout Session ID). For payment_intent and charge events, the code retrieves the payment_intent ID, calls stripe.checkout.Session.list(payment_intent=paymentIntent) to get the session, then extracts sessionId from the session object. For checkout.session events, sessionId is directly available as eventObj["id"].
+_The unique key is sessionId (Stripe Checkout Session ID). For payment_intent and charge events, the code retrieves the payment_intent ID, calls stripe.checkout.Session.list(payment_intent=paymentIntent) to get the session, then extracts sessionId from the session object. For checkout.session events, sessionId is directly available as eventObj["id"]._
 
 <Note>
   TODO:
@@ -38,7 +38,6 @@ _The unique key is sessionId (Stripe Checkout Session ID). For payment_intent an
 \
 The webhook ensures idempotency so repeated webhooks do not create duplicates.
 
-_Idempotency is ensured by using payment_intent as the unique identifier. Each update function (updateInvoiceResponses, updateSummerPayment, updateClassPayment, updateUpsellPaymentDetails, addPurchaseTopicDetails) first checks if a record exists using find_one({"payment_intent" chargeObj["payment_intent"]}). If found, it updates the existing record (status, receipt_url, etc.) instead of inserting a new one. If not found, it inserts a new record. This ensures that repeated webhooks with the same payment_intent update existing records rather than creating duplicates, making the webhook idempotent._
 
 <Note>
   **TODO: Explain how you ensure idempotency.**
