@@ -1,0 +1,166 @@
+---
+title: "Non-Technical: Checkout Flow"
+---
+
+## Cart Page
+
+<Steps>
+  <Step title="New Step">
+    TODO: Explain steps of checkout here. Keep this non-technical
+  </Step>
+</Steps>
+
+## Overview
+
+The Summer Checkout flow includes:
+
+1. Entering student details
+2. Selecting a session and location
+3. Optionally choosing future bundle programs
+4. Completing payment
+
+Each step must be completed before moving forward.
+
+---
+
+## Step 1: Student Details
+
+This is the first step of the checkout process.
+
+### Information Collected
+
+The user is asked to provide:
+
+- **Student First Name**
+- **Student Last Name**
+- **Email Address**
+- **Student Grade**
+- **Student School Name**
+- **Student Gender**
+- **Has your child participated in a BDC class before?** (Yes / No)
+
+### What Happens Next
+
+- The information is saved
+- Clicking **Next** moves the user to the **Select Session** step
+
+---
+
+## Step 2: Select Session
+
+In this step, the user chooses when and where the summer program will take place.
+
+### Session Selection
+
+- The user selects a **session**
+  - Example: Session 1, Session 2, etc.
+
+### Location Selection
+
+- Based on the selected session, available **locations** are displayed
+- The user selects **one location**
+
+### What Happens Next
+
+- Clicking **Next** opens the **Bundle Program Popup**
+
+---
+
+## Step 3: Bundle Program Popup (Optional)
+
+This step allows families to add **future programs** as a discounted bundle.
+
+### What the User Sees
+
+- A popup listing available future bundle programs
+- The option to:
+  - Select one or more bundle programs
+  - Skip by clicking **No Thanks**
+
+### Behavior
+
+- Bundle selection is optional
+- Users can select multiple programs
+- Closing the popup moves the user to the **Payment Screen**
+
+---
+
+## Step 4: Payment Screen
+
+This is the final step where the user reviews details and completes payment.
+
+---
+
+### Payment Options
+
+Once the checkout details are confirmed, payment options appear.
+
+#### Available Payment Methods
+
+- **Bank Transfer**
+- **Credit Card**
+
+### Payment Flow
+
+- User selects a payment method
+- After selecting a payment option, the **Buy Now** button becomes available
+- Clicking **Buy Now** redirects the user to the **Stripe Checkout page**
+
+---
+
+## Stripe Checkout
+
+### On the Stripe Page
+
+- User enters payment details securely
+- Stripe processes the payment
+- Payment information is not stored on the website
+
+### After Successful Payment
+
+- User is redirected to a **Success / Confirmation page**
+- The student is successfully registered for the summer program
+
+---
+
+## Bundle Program Banner
+
+On the payment screen, a **Bundle Program Banner** is visible.
+
+### Purpose
+
+- Shows any selected future bundle programs
+- Allows users to:
+  - Review selected bundle programs
+  - Add or update bundle selections directly from the banner
+
+---
+
+## Order Details
+
+This section shows a full summary of the registration.
+
+### Information Displayed
+
+- Selected summer program and session
+- Selected location
+- Selected bundle future programs
+- Selected briefs (if applicable)
+- Price breakdown and total amount
+
+### Why This Matters
+
+- Helps users review their selections
+- Ensures transparency before payment
+- Reduces checkout errors
+
+---
+
+## Summer Checkout Summary
+
+1. Enter student information
+2. Select session and location
+3. Optionally choose future bundle programs
+4. Select payment method
+5. Complete payment on Stripe
+6. View confirmation page

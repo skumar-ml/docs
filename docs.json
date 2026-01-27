@@ -62,7 +62,14 @@
                 "group": "Summer",
                 "pages": [
                   "bdc/checkout-systems/summer/overview",
-                  "bdc/checkout-systems/summer/web-checkout",
+                  "bdc/checkout-systems/summer/summer-overview",
+                  {
+                    "group": "Web Checkout",
+                    "pages": [
+                      "bdc/checkout-systems/summer/web-checkout/technical",
+                      "bdc/checkout-systems/summer/web-checkout/non-technical-checkout"
+                    ]
+                  },
                   "bdc/checkout-systems/summer/retool",
                   "bdc/checkout-systems/summer/mongo-db"
                 ]
