@@ -10,10 +10,9 @@ TODO: Explain non-technical process for checkout (stand-alone). This should be p
 
 ### 1. Before Login
 
-- If the user is **not logged in**, the **Briefs Checkout page** is visible in a read-only state.
+- If the user is not logged in, the user is shown the **account signup form** on the Briefs Checkout page and must complete signup before continuing.
 
   ![Image](/images/image-12.png)
-- The user is prompted to \*\*log in or create an account **in the**Order Details \*\* Section before proceeding further.
 
 ---
 
@@ -21,10 +20,11 @@ TODO: Explain non-technical process for checkout (stand-alone). This should be p
 
 Once the user logs in successfully:
 
-- The user is taken to the **Select Briefs** step.
+- The user is taken to the **Select Briefs** section.
 
   ![Image](/images/image-13.png)
 - Brief cards are displayed (e.g., _Logical Fallacies_, _Cognitive Biases_, _Argumentation_).
+- Each brief card shows a short description and a **Preview PDF** button.
 - Each brief card contains two options:
   - **Full Version**
   - **Light Version**
@@ -56,11 +56,11 @@ Once the user logs in successfully:
 
 ### 5. Applying Credits
 
-- If the user clicks **“Yes, apply credits”**:
-  - Credits are applied automatically to the order.
-  - The **Processing** button reflects the updated amount in the \*\*Order Details \*\*Section.
-- If the user clicks **“No, save them”**:
-  - The order continues without applying credits and navigates to the Stripe Payment Page.
+- **If the user clicks “Yes, apply credits”:**
+  - Credits are automatically applied to the order, and the modal is closed.
+  - The **Processing** button reflects the updated amount on the Stripe payment page.
+- **If the user clicks “No, save them”:**
+  - The order continues without applying credits, and the user is navigated to the Stripe payment page.
 
 ---
 
@@ -70,7 +70,7 @@ Once the user logs in successfully:
   - The user is redirected to the **Stripe checkout page**.
 
     ![Image](/images/image-17.png)
-  - Payment is completed securely via Stripe.
+  - Then, enter a valid promotion code (if applicable) and click "Pay"to complete the payment.
 
 ## Technical
 
