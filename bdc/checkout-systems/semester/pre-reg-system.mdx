@@ -40,20 +40,13 @@ Pre-registered users will see that the standard “Pay Now” button is replaced
 
 Admins manage pre-registration behavior through **Retool**.
 
-<Note>
-  TODO: Need to explain
-
-  1. how admin can see who is pre-registered for a semester
-  2. how admin can change dates pre-registration is active on the website
-</Note>
-
 ### Bundle Management Program Retool Page
 
-Admins can view the list of bundle users on the **Bundle Management** Retool page. The page includes filters for **Year**, **Session**, **Parent**, and **Student**, allowing admins to quickly narrow down results.
+Admins can view the list of bundle users on the [Bundle Management Retool page](https://bergendebate.retool.com/apps/54fa8214-ae56-11f0-a066-7f737d30b0d1/Bundle%20Management%20System). The page includes filters for **Year**, **Session**, **Parent**, and **Student**, allowing admins to quickly narrow down results.
 
 It displays **student details**, **parent details**, and **class information**, along with options to **switch programs** or **process refunds**.
 
-Additionally, admins can add a new bundle program using the **“Add Bundle Program”** button.
+Additionally, admins can add a new student to a bundle program using the **“Add Bundle Program”** button.
 
 ![Image](/images/image-5.png)
 
@@ -63,15 +56,13 @@ In Retool, admins can:
 - **Switch** a student's pre-registration to a different semester
 - **Remove** a student's pre-registration status
 
-## Technical Details
-
 <Note>
-  TODO: SK needs to review this section
+  TODO: Need to explain
+
+  2. how admin can change dates pre-registration is active on the website
 </Note>
 
-TODO: Give a technical explanation of how these states are calculated for each user. How the user can "auto-enroll" without making a payment.
-
-### Pre-Registration & Auto-Enrollment State Logic
+## Technical Details
 
 This section explains how the frontend determines a user’s pre-registration state and when payment is required.
 
@@ -138,7 +129,7 @@ Pre-registration is active and bundle data exists. The user can select classes a
 
 ## Pre-Reg Payment
 
-When a user clicks “**Pre-Register**”, the system initiates the payment using the same `initializeStripePayment()` method as the standard checkout flow. Along with the usual payment data, the request includes the bundle-specific `paymentId` ****************************************\<TODO: remind briefly what paymentId is used for..?\>****************************************\<Comment: The paymentId refers to the MongoDB ObjectId (\_id) of the original payment record stored in the payment_details collection. In the earlier transaction, the user also purchased a bundle program as part of the payment. Based on this existing payment record, the system now uses the paymentId to pre-register the user for the bundled program without requiring a new payment.\>, a flag indicating a bundle purchase `(isBundleProgram: true)`, and the selected `classUniqueId`.
+When a user clicks “**Pre-Register**”, the system initiates the payment using the same `initializeStripePayment()` method as the standard checkout flow. Along with the usual payment data, the request includes: (1) the bundle-specific `paymentId`, which references the original payment record stored in the `payment_details` collection when the user originally pre-registered. Based on this existing payment record, the system now uses the `paymentId` to pre-register the user for the bundled program without requiring a new payment. (2) There is a flag indicating a bundle purchase `(isBundleProgram: true)`, and the selected `classUniqueId`.
 
 For bundle purchases, the API endpoint is chosen based on whether the user has selected any upsell programs or briefs.
 
