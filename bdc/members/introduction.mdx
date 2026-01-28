@@ -19,9 +19,18 @@ The most important distinction between accounts is the `accountType`, which can 
 These distinctions control the following:
 
 - Only `parent` accounts can register for BDC classes. A `student` or `coach` account will be asked to log out and sign-in to a `parent` account during the checkout process.
-- A `student` account _must_ be linked to a `parent` account (cannot exist in isolation). This link is controlled by the `familyId` (more below)
+
+  <Danger>
+    KS: 1. Should we add a page link here so users can clearly see which classes are considered BDC classes? \
+    \
+    2.Student and Coach accounts are not forced to log out during checkout. Instead, when they attempt to register for a class, they are prompted to create a new Parent account to continue. So we can update the line if required.
+  </Danger>
   - `student` and `parent` accounts see the same portal.
 - Only `coach` accounts can access the BDC Coach Portal, which (upon verification) allows them to access functionality like class & trial class attendance and the millions.
+
+  <Danger>
+    KS: The phrase “class & trial class attendance” feels slightly unclear. We could update the line for more clarity.
+  </Danger>
 
 There currently does not exist any mechanism for the admin or user to change the `accountType`. If a need arises, please inform the tech team, and we'll do it manually.
 
@@ -59,6 +68,11 @@ The logic is centralized in the `createAccount` flow and behaves as follows:
 - If no existing parent is found:
   - A new `familyId` is generated using a random, non-guessable string derived from the parent email and digits.
   - This `familyId` is assigned at parent creation time.
+
+    <Danger>
+      KS -It’s **clear,** but if required, we can make it slightly more explicit for new readers.\
+      This familyId is assigned to the parent at the time the parent account is created.
+    </Danger>
 - If an existing parent is found:
   - If the parent already has a valid `familyId`, it is reused.
   - If the parent exists but has an empty or `"null"` familyId, a new one is generated and backfilled.
@@ -69,6 +83,10 @@ The logic is centralized in the `createAccount` flow and behaves as follows:
 - Student lookup follows this order:
   - By `studentEmail` (if provided and different from parent email)
   - Else by `(studentName + familyId)`
+
+    <Danger>
+      KS: I think the bracket can be removed.
+    </Danger>
 - If a student record exists without a `familyId`, it is updated to inherit the parent’s `familyId`.
 - If no student record exists, a new student is created with the inherited `familyId`.
 
