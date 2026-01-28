@@ -8,69 +8,23 @@ TODO: Explain non-technical process for checkout (stand-alone). This should be p
 
 ## Briefs Checkout Flow
 
-### 1. Before Login
+### 1. Log-in or Sign-up
 
-- If the user is not logged in, the user is shown the **account signup form** on the Briefs Checkout page and must complete signup before continuing.
+If the user is not logged in, the user is shown the **account signup form** on the Briefs Checkout page and must complete signup before continuing. This is the same as all of our other checkout flows.
 
-  ![Image](/images/image-12.png)
+### 2. Brief Selection
 
----
+Once the user logs in successfully, the user is taken to the **Select Briefs** section. They can select multiple briefs, but must choose between the **Full** and **Light** version.
 
-### 2. After Login
+Any selected item is immediately added to the **Order Details** section on the right, and the **total price** updates dynamically based on selections.
 
-Once the user logs in successfully:
+![Image](/images/image-15.png)
 
-- The user is taken to the **Select Briefs** section.
+### 3. Payment
 
-  ![Image](/images/image-13.png)
-- Brief cards are displayed (e.g., _Logical Fallacies_, _Cognitive Biases_, _Argumentation_).
-- Each brief card shows a short description and a **Preview PDF** button.
-- Each brief card contains two options:
-  - **Full Version**
-  - **Light Version**
+On clicking the **Next** button, a **credits popup** is displayed (if the user has Bergen credits available). There, they can opt to apply or save their BDC credits. \<TODO: SK link to where this has been described in detail\>. 
 
----
-
-### 3. Selecting Briefs
-
-- When the user selects **Full** or **Light** for any brief:
-  - The selected item is immediately added to the **Order Details** section on the right.
-  - The **total price** updates dynamically based on selections.
-
-    ![Image](/images/image-15.png)
-
----
-
-### 4. Proceeding to Payment
-
-- On clicking the **Next** button:
-  - A **credits popup** is displayed (if the user has Bergen credits available).
-  - The popup shows:
-    - Available credit amount
-    - Price before credits
-    - Price after credits (if applied)
-
-      ![Image](/images/image-16.png)
-
----
-
-### 5. Applying Credits
-
-- **If the user clicks “Yes, apply credits”:**
-  - Credits are automatically applied to the order, and the modal is closed.
-  - The **Processing** button reflects the updated amount on the Stripe payment page.
-- **If the user clicks “No, save them”:**
-  - The order continues without applying credits, and the user is navigated to the Stripe payment page.
-
----
-
-### 6. Stripe Checkout
-
-- After confirming the credits choice:
-  - The user is redirected to the **Stripe checkout page**.
-
-    ![Image](/images/image-17.png)
-  - Then, enter a valid promotion code (if applicable) and click "Pay"to complete the payment.
+Then, the user is redirected to the **Stripe checkout page** to complete payment.
 
 ## Technical
 
