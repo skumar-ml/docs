@@ -132,13 +132,17 @@ Pre-registration is active and bundle data exists. The user can select classes a
 
 ## Pre-Reg Payment
 
-When a user clicks “**Pre-Register**”, the system initiates the payment using the same `initializeStripePayment()` method as the standard checkout flow. Along with the usual payment data, the request includes the bundle-specific `paymentId` **\<TODO: remind briefly what paymentId is used for..?\>**, a flag indicating a bundle purchase `(isBundleProgram: true)`, and the selected `classUniqueId`.
+When a user clicks “**Pre-Register**”, the system initiates the payment using the same `initializeStripePayment()` method as the standard checkout flow. Along with the usual payment data, the request includes the bundle-specific `paymentId` **\<TODO: remind briefly what paymentId is used for..?\>\<Comment: **The **paymentId** is the MongoDB ObjectId (`_id`) of the original payment record in the **payment_details** collection. During this purchase, the user also bought a bundle program, which now needs to be pre-registered.**\>**, a flag indicating a bundle purchase `(isBundleProgram: true)`, and the selected `classUniqueId`.
 
 For bundle purchases, the API endpoint is chosen based on whether the user has selected any upsell programs or briefs.
 
-If the pre-registration includes upsells or briefs, the system routes the request to the `checkoutUrlForUpsellProgram` API. This creates a separate Stripe checkout session for the pre-registration with Upsell programs or briefs.
+~~If the pre-registration includes upsells or briefs, the system routes the request to the ~~`checkoutUrlForUpsellProgram`~~API. This creates a separate Stripe checkout session for the pre-registration with Upsell programs or briefs.~~ 
 
-If the pre-registration does not include upsells or briefs, the system calls the `updateDataToCheckoutUrl` API. In this case, the existing checkout session—identified by the checkoutId—is updated with the pre-registration and class selection details. The corresponding `stripe_checkout_customer` records are updated, and the API returns the latest cardUrl and achUrl for redirecting the user to Stripe Checkout.
+~~If the pre-registration does not include upsells or briefs, the system calls the ~~`updateDataToCheckoutUrl`~~API. In this case, the existing checkout session—identified by the checkoutId—is updated with the pre-registration and class selection details. The corresponding ~~ `stripe_checkout_customer`~~records are updated, and the API returns the latest cardUrl and achUrl for redirecting the user to Stripe Checkout.~~ 
+
+If the pre-registration includes a **bundle or briefs**, the system routes the request to the **checkoutUrlForUpsellProgram** API. This API creates a **new Stripe Checkout Session** for the pre-registration with the selected bundle or briefs, inserts/updates the corresponding records in the **stripe_checkout_customer** collection, and returns the **cardUrl** and **achUrl** for redirecting the user to Stripe Checkout.
+
+If the pre-registration **does not include any bundle or briefs**, the system does **not** create a new checkout session. Instead, it updates only the **payment_details** collection using the existing **paymentId**, adding the pre-registration and class selection details. In this case, the **stripe_checkout_customer** collection is not modified, and no new Stripe URLs are returned.
 
 <Note>
   TODO: Isn't this last part wrong? Why does the API return cardUrl and achUrl? It should just pre-register them... \
