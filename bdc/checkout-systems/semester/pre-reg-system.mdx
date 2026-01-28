@@ -10,9 +10,7 @@ Pre-registration typically runs **at least one-week** before the start of the ge
 
 ### 1. Normal Registration State
 
-**This is the default experience** for most users. In this state, pre-registration is not active _and_ the user is not pre-registered for the semester.
-
-**User's see** the standard registration and checkout flow.
+**This is the default experience** for most users. In this state, pre-registration is not active _and_ the user is not pre-registered for the semester. **User's see** the standard registration and checkout flow.
 
 ### 2. Pre-Registration Information State
 
@@ -25,7 +23,7 @@ The user **sees** (1) a banner message that "Registration is currently open only
 This state occurs **when** we recognize the student as having pre-registered for the semester, allowing for early enrollment.
 
 <Note>
-  If pre-registration is active, the user can only enroll pre-registered students (they cannot enroll a \_different \_student).
+  If pre-registration is active, the user can only enroll pre-registered students (they cannot enroll a _different student_).
 </Note>
 
 Pre-registered users will see that the standard “Pay Now” button is replaced with a “Pre-Register” button. Users can select class locations and times and complete enrollment without payment. Payment is required only if additional programs are added.
@@ -73,13 +71,9 @@ This section explains how the frontend determines a user’s pre-registration st
 
 ### Overview
 
-The frontend determines a user’s state by calling the backend API "getYearLongBundleDetails/webflowMemberId"
+The frontend determines a user’s state by calling the backend API `getYearLongBundleDetails/webflowMemberId`
 
-Based on the API response (`message` and `data`), the frontend calculates the current **user state** and decides:
-
-- What UI to show
-- Whether the user can **auto-enroll**
-- Whether payment is required or not
+Based on the API response (`message` and `data`), the frontend calculates the current **user state** and decides: (1) what UI to show; (2) whether the user can **auto-enroll**; (3) whether payment is required or not
 
 ## API Response Structure
 
@@ -93,8 +87,6 @@ The API returns the following fields:
 }
 ```
 
-### Key Fields
-
 | Field                    | Purpose                                                     |
 | :----------------------- | :---------------------------------------------------------- |
 | `message`                | Indicates the current phase of pre-registration             |
@@ -103,37 +95,7 @@ The API returns the following fields:
 
 ## State Determination Logic
 
-The frontend evaluates the response using the following logic:
-
-```
-var enrollmentState = "Normal"
-this.fetchData("getYearLongBundleDetails/" + this.webflowMemberId)
-  .then((data) => {
-    if (
-      data.message &&
-      data.data.length == 0 &&
-      data.message == "Either pre-registration not yet started or already ended"
-    ) {
-      enrollmentState = "Normal";
-    }
-    else if (
-      data.data &&
-      data.data.length == 0 &&
-      data.message == "Pre-registration is going on"
-    ) {
-      enrollmentState = "Pre-Registration-Info"; // Showing banner
-    }
-    else if (
-      data.data &&
-      data.data.length > 0 &&
-      data.message == "Pre-registration is going on"
-    ) {
-      enrollmentState = "Bundle-Purchase"; // Pre-registartion purchase
-    }
-  });
-```
-
-## Defined User States
+The frontend evaluates the response using the following logic
 
 ### 1. **Normal**
 
@@ -166,16 +128,20 @@ Pre-registration is active, but the user has no eligible bundle data. Only infor
 
 **Meaning**
 
-Pre-registration is active and bundle data exists. The user can select classes and complete pre-registration.
-
-If no add-ons are selected, enrollment completes **without payment**. Payment is required only when optional bundle programs are added.
+Pre-registration is active and bundle data exists. The user can select classes and complete pre-registration. If no add-ons are selected, enrollment completes **without payment**. Payment is required only when optional bundle programs are added.
 
 ## Pre-Reg Payment
 
-When a user clicks “**Pre-Register**”, the system initiates the payment using the same **initializeStripePayment()** method as the standard checkout flow. Along with the usual payment data, the request includes the bundle-specific **paymentId**, a flag indicating a bundle purchase `(isBundleProgram: true)`, and the selected **classUniqueId**.
+When a user clicks “**Pre-Register**”, the system initiates the payment using the same `initializeStripePayment()` method as the standard checkout flow. Along with the usual payment data, the request includes the bundle-specific `paymentId` **\<TODO: remind briefly what paymentId is used for..?\>**, a flag indicating a bundle purchase `(isBundleProgram: true)`, and the selected `classUniqueId`.
 
 For bundle purchases, the API endpoint is chosen based on whether the user has selected any upsell programs or briefs.
 
-If the pre-registration includes upsells or briefs, the system routes the request to the **checkoutUrlForUpsellProgram** API. This creates a separate Stripe checkout session for the pre-registration with Upsell programs or briefs.
+If the pre-registration includes upsells or briefs, the system routes the request to the `checkoutUrlForUpsellProgram` API. This creates a separate Stripe checkout session for the pre-registration with Upsell programs or briefs.
 
-If the pre-registration does not include upsells or briefs, the system calls the **updateDataToCheckoutUrl** API. In this case, the existing checkout session—identified by the checkoutId—is updated with the pre-registration and class selection details. The corresponding stripe_checkout_customer records are updated, and the API returns the latest cardUrl and achUrl for redirecting the user to Stripe Checkout.
+If the pre-registration does not include upsells or briefs, the system calls the `updateDataToCheckoutUrl` API. In this case, the existing checkout session—identified by the checkoutId—is updated with the pre-registration and class selection details. The corresponding `stripe_checkout_customer` records are updated, and the API returns the latest cardUrl and achUrl for redirecting the user to Stripe Checkout.
+
+<Note>
+  TODO: Isn't this last part wrong? Why does the API return cardUrl and achUrl? It should just pre-register them... \
+  \
+  Perhaps you meant to add it to the above, where the pre-registration includes upsells/briefs.
+</Note>
