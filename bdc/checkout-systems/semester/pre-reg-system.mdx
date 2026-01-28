@@ -142,12 +142,6 @@ When a user clicks “**Pre-Register**”, the system initiates the payment usin
 
 For bundle purchases, the API endpoint is chosen based on whether the user has selected any upsell programs or briefs.
 
-If the pre-registration includes a **bundle or briefs**, the system routes the request to the **checkoutUrlForUpsellProgram** API. This API creates a **new Stripe Checkout Session** for the pre-registration with the selected bundle or briefs, inserts/updates the corresponding records in the **stripe_checkout_customer** collection, and returns the **cardUrl** and **achUrl** for redirecting the user to Stripe Checkout.
+If the pre-registration includes a **bundle or briefs**, the system routes the request to the `checkoutUrlForUpsellProgram` API. This API creates a **new Stripe Checkout Session** for the pre-registration with the selected bundle or briefs, inserts/updates the corresponding records in the `stripe_checkout_customer` collection, and returns the `cardUrl` and `achUrl` for redirecting the user to Stripe Checkout.
 
-If the pre-registration **does not include any bundle or briefs**, the system does **not** create a new checkout session. Instead, it updates only the **payment_details** collection using the existing **paymentId**, adding the pre-registration and class selection details. In this case, the **stripe_checkout_customer** collection is not modified, and no new Stripe URLs are returned.
-
-<Note>
-  TODO: Isn't this last part wrong? Why does the API return cardUrl and achUrl? It should just pre-register them... \
-  \
-  Perhaps you meant to add it to the above, where the pre-registration includes upsells/briefs.
-</Note>
+If the pre-registration **does not include any bundle or briefs**, the system does **not** create a new checkout session. Instead, it updates only the `payment_details` collection using the existing `paymentId`, adding the pre-registration and class selection details. In this case, the `stripe_checkout_customer` collection is not modified, and no new Stripe URLs are returned.
