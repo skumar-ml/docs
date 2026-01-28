@@ -21,7 +21,7 @@ In this webhook, Stripe events are normalized into three internal states: **Comp
 From the webhook event, we obtain the `payment_intent` from the charge object. `payment_intent` is used to **ensure idempotency**, so repeated webhooks do not create duplicates used as the unique identifier. Each update function (`updateInvoiceResponses`, `updateSummerPayment`, `updateClassPayment`, `updateUpsellPaymentDetails`, `addPurchaseTopicDetails`) first checks if a record exists using `find_one({"payment_intent": chargeObj["payment_intent"]})`. If found, it updates the existing record (`status`, `receipt_url`, etc.) instead of inserting a new one. If not found, it inserts a new record. This ensures that repeated webhooks with the same `payment_intent` update existing records rather than creating duplicates, making the webhook idempotent.
 
 <Note>
-  **TODO: Can you explain why we use **`payment_intent`**in payment_details and invoice responses? If it can change on each webhook event, wouldn't it better to use ** `sessionId`**for these as well?** 
+  \*\*TODO: Can you explain why we use \*\*`payment_intent`\*\*in payment_details and invoice responses? If it can change on each webhook event, wouldn't it better to use \*\* `sessionId`**for these as well?**
 
   **I recommend we discuss this on call**
 </Note>
@@ -29,7 +29,7 @@ From the webhook event, we obtain the `payment_intent` from the charge object. `
 ### Behaviour by payment status
 
 - **Complete**: When a payment is marked as **Complete**, full post-payment processing is triggered via `updateClassPayment()`.
-- **Processing**: For **Processing** payments, the payment is stored as pending in the `stripe_checkout_customer`. 
+- **Processing**: For **Processing** payments, the payment is stored as pending in the `stripe_checkout_customer`.
 - **Failed**: For **failed** payments, all partial or temporary records are cleaned up.\
   No enrollment, credits, or referrals are applied.
 
@@ -56,6 +56,8 @@ On every webhook event, we update the `payment_intent` & `status` (Complete / Pr
 
 <Note>
   TODO: Looking at stripe_checkout_customer, there is no `payment_intent` field. Do we just update `status`?
+
+  \<No, we are updating payment_intent and status while payment is complete or processing\> for other cases, it will not be added or updated.
 </Note>
 
 The unique identifier for stripe_checkout_customer is `sessionId` (Stripe Checkout Session ID), not `payment_intent`. All lookups use `db.stripe_checkout_customer.find_one({"sessionId": sessionId})`, and all updates use `db.stripe_checkout_customer.update_one({'sessionId': sessionId}, ...)`. The `payment_intent` is a field that gets updated on each webhook event (along with `status`), but `sessionId` is the primary key that uniquely identifies each checkout session record. This makes sense because a single checkout session can have multiple webhook events, so the `sessionId` remains constant while `payment_intent` and `status` can change over time.
@@ -86,7 +88,7 @@ If the parent previously attended a trial class, the corresponding `trial_class_
 
 ## BDC Credit
 
-If a `discount_amount` is present in `stripe_checkout_customer`, we know the user applied BDC Credits, and the transaction is updated in `member_credit_amount`. 
+If a `discount_amount` is present in `stripe_checkout_customer`, we know the user applied BDC Credits, and the transaction is updated in `member_credit_amount`.
 
 ## Emails Triggered
 
