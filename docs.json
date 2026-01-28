@@ -78,8 +78,7 @@
                 "group": "Briefs",
                 "pages": [
                   "bdc/checkout-systems/briefs/management",
-                  "bdc/checkout-systems/briefs/checkout-non-technical",
-                  "bdc/checkout-systems/briefs/checkout-technical"
+                  "bdc/checkout-systems/briefs/checkout-non-technical"
                 ]
               },
               {
