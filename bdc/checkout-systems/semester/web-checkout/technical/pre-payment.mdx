@@ -39,7 +39,7 @@ Then, our onClickListener calls `AddStudentData()`, which validates and submits 
 
 ### Data & Rendering
 
-After a member logs in, the `classDetailsStripe`**class**  (defined in `class_details_stripe_bundle.js`) is initialised on page load. This class triggers the `getUpsellProgramV2` API, which fetches upsell programs for **both** current session and summer session. The frontend filters out `sessionId !== 2`, where `sessionId = 2` represents the summer session, and the filtered upsells are then rendered in both the **banner CTA** and **bundle selection modal **using `class_details_stripe_bundle.js`.
+After a member logs in, the `classDetailsStripe`**class**  (defined in `class_details_stripe_bundle.js`) is initialised on page load. This class triggers the `getUpsellProgramV2` API, which fetches upsell programs for **both** current session and summer session. The frontend filters out `sessionId !== 2`, where `sessionId = 2` represents the summer session, and the filtered upsells are then rendered in both the **banner CTA** and \*\*bundle selection modal \*\*using `class_details_stripe_bundle.js`.
 
 ### Logic Bundle Modal Open and Skip
 
@@ -65,7 +65,7 @@ Selecting an upsell program adds the program to `$selectedProgram`, a frontend s
 
 ## 4. Class Selection & Payment
 
-On page load (after member is logged in), the `getClassDetailByMemberIdAndLevelId` API, based on the selected `levelId`, gets class data, which populates the location options. Clicking a location shows the class time slot options in the format `{Day} {StartTime} - {EndTime}`.
+On page load (after member is logged in), the `getClassDetails `API, based on the selected `levelId`, gets class data, which populates the location options. Clicking a location shows the class time slot options in the format `{Day} {StartTime} - {EndTime}`.
 
 This API also returns the total available spots (`numberOfSpot`) for the class, and the remaining spots (`leftSpot`), which are calculated by subtracting the total number of registrations for the class from `numberOfSpot` (as well as some logic around waitlists, discussed in **\<TODO: SK link to section here\>**
 
