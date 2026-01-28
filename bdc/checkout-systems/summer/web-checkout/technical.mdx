@@ -2,10 +2,6 @@
 title: "Technical: Checkout Flow"
 ---
 
-TODO: Give a technical explanation of how checkout page works (before payment). Explain things that are materially different than how we do them on the semester checkout end. Else, just reference the APIs/codes that accomplish the functionality.
-
-Things to explain are the sign-up / log-in redirect, how session & locations are added in, the number of spots calculation, the code & triggers for code for PF Labs, how Model UN & Young Entreneurship are combined.
-
 The summer checkout system is implemented in `checkout_summer_bundle.js` and follows a multi-step flow similar to [semester checkout](/bdc/checkout-systems/semester/introduction). This documentation focuses on nuances specific to summer enrollment.
 
 <Warning>
@@ -36,14 +32,14 @@ When the user clicks **Next** on the student details form:
 
 **API Call:** `POST createNewProgramCheckoutUrls`
 
-This API:
-
-- Creates or retrieves a Stripe customer ID via `getCustomerId(email)`
-- Creates or links the student profile via `checkAndCreateMembers()`
-- Generates a unique `checkoutId` (16-character alphanumeric string)
-- Creates two Stripe checkout sessions (one for card, one for ACH) via `createCheckoutSessionUrl()`
-- Inserts two records into `stripe_checkout_customer` collection (one per payment type)
-- Returns `checkoutId`, `cardUrl`, and `achUrl`
+<Accordion title="What happens">
+  - Creates or retrieves a Stripe customer ID via `getCustomerId(email)`
+  - Creates or links the student profile via `checkAndCreateMembers()`
+  - Generates a unique `checkoutId` (16-character alphanumeric string)
+  - Creates two Stripe checkout sessions (one for card, one for ACH) via `createCheckoutSessionUrl()`
+  - Inserts two records into `stripe_checkout_customer` collection (one per payment type)
+  - Returns `checkoutId`, `cardUrl`, and `achUrl`
+</Accordion>
 
 ### 2. Session & Location Selection
 
@@ -56,8 +52,6 @@ On page load, the `CheckOutWebflow` class calls `getSummerSessionDetails/{member
 - Retrieves all summer program sessions for the given `programId` and current `yearId`
 - For each session, fetches inventory data from `summer_inventory_caps` collection
 - Returns session data with `leftSpot` and `numberOfSpots` for each location
-
-**API:** `getSummerSessionDetails/{memberId}/{programId}`
 
 **Number of Spots Calculation:**
 
@@ -261,8 +255,6 @@ See [Semester Post-Payment: stripePaymentListener](#) for more detailed implemen
 
 **Collection:** `summer_inventory_caps` with fields: `yearId`, `programId`, `summerSessionId`, `locationId`, `numberOfSpots`, `leftSpot`
 
-**Implementation:** `bcdc_aws-main/scheduler_service/api/stripePaymentListener.py` - `updateSummerInventoryCaps()` function
-
 **Reference:** See [Summer MongoDB: summer_inventory_caps](#) for collection structure.
 
 ### Referral & Coupon Handling
@@ -283,7 +275,9 @@ If upsell programs were purchased (and payment is Complete/Processing):
 
 **Reference:** See [Semester Post-Payment: Enrollment & Cleanup](#) for upsell details.
 
----
+<Note>
+  TODO: Shubham to check if this is duplicated and can be removed.
+</Note>
 
 ### Credit Balance Updates
 
@@ -291,9 +285,7 @@ If upsell programs were purchased (and payment is Complete/Processing):
 
 ---
 
-## 4. Automated Emails
-
-**Similar to Semester Checkout:** Same email triggering logic.
+## Automated Emails
 
 ### Admin Emails
 
@@ -307,50 +299,8 @@ If upsell programs were purchased (and payment is Complete/Processing):
 
 ### User Emails
 
-- Stripe receipt generated automatically by Stripe
-- `receipt_url` stored in `summer_payment_details` collection
-- User receives receipt email directly from Stripe
+A Stripe receipt is generated automatically by Stripe, stored as `receipt_url` in `summer_payment_details` collection. The user receives receipt email directly from Stripe
 
-**Reference:** See [Semester Post-Payment: Emails Triggered](#) for email details.
+## User Redirection After Payment
 
----
-
-## 5. User Redirection After Payment
-
-**Similar to Semester Checkout:** Same redirection logic based on payment type.
-
-### Card Payments
-
-- Redirected immediately to **Success / Thank You page**
-- URL: `payment-confirmation?type=Summer&programName={programName}&transactionID={CHECKOUT_SESSION_ID}`
-- Payment status is `Complete` at this point
-
-### Bank Transfer Payments
-
-- Redirected to **Processing / Pending Confirmation page**
-- URL: `payment-confirmation?type=Summer&programName={programName}&transactionID={CHECKOUT_SESSION_ID}`
-- Payment status is `Processing` initially
-- Final confirmation happens asynchronously via webhook when bank transfer completes
-- Status updates to `Complete` when webhook receives confirmation
-
-**Reference:** See [Semester Payment: Successful Payment](#) for redirection details.
-
----
-
-## 6. Failure Handling
-
-**Similar to Semester Checkout:** Same failure handling pattern.
-
-If payment fails (`status == "Failed"`):
-
-- `summer_payment_details` record is **deleted** via `delete_one({"payment_intent": chargeObj["payment_intent"]})`
-- Inventory is **restored** via `updateSummerInventoryCaps()` with `eventType = "add"`
-- `stripe_checkout_customer` is marked as `Failed`
-- No enrollment, coupon generation, or referral processing occurs
-- No emails are sent
-
-**Implementation:** ` stripePaymentListener.py` - `updateSummerPayment()` function
-
-**Reference:** See [Semester Post-Payment: Failure Handling](/bdc/checkout-systems/semester/web-checkout/technical/post-payment#c-failure-handling) for failure details.
-
----
+**Similar to Semester Checkout:** Same redirection logic based on payment type: URL: `payment-confirmation?type=Summer&programName={programName}&transactionID={CHECKOUT_SESSION_ID}`
