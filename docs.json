@@ -77,7 +77,7 @@
               {
                 "group": "Briefs",
                 "pages": [
-                  "bdc/checkout-systems/briefs/offerings-page",
+                  "bdc/checkout-systems/briefs/management",
                   "bdc/checkout-systems/briefs/checkout-non-technical",
                   "bdc/checkout-systems/briefs/checkout-technical"
                 ]
