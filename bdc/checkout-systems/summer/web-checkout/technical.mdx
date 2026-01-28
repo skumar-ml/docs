@@ -113,40 +113,7 @@ The implementation follows the same pattern as semester checkout, except that th
 
 ## Payment
 
-The summer checkout supports **two payment methods**, which are shown on the payment step after all required selections are completed. The payment flow is similar to semester checkout, with dynamic pricing updates handled on the frontend.
-
-### 1. ACH Payment (Bank Transfer)
-
-- Paid directly from a bank account
-- Uses Stripe’s secure ACH payment flow
-- No additional processing fees are applied
-- Displays the base program price
-- Redirects the user to a Stripe-hosted checkout page to complete payment
-
-ACH payments are often preferred when users want to avoid card processing fees.
-
----
-
-### 2. Credit / Debit Card Payment
-
-- Paid using a credit or debit card
-- Processed securely through Stripe
-- Includes a standard card processing fee
-- Displays a slightly higher total price due to the fee
-- Redirects the user to a Stripe-hosted checkout page for card entry
-
----
-
-## When Payment Options Appear
-
-Payment options become available only after the user has:
-
-1. Completed the student information form
-2. Selected a summer session
-3. Selected a location
-4. Reached the payment step of the checkout flow
-
-Once these steps are completed, both payment buttons are displayed and the user may choose either option.
+The summer checkout supports **two payment methods**, which are shown on the payment step after all required selections (for summer session & location) are completed. The payment flow is similar to semester checkout, with dynamic pricing updates handled on the frontend.
 
 ---
 
