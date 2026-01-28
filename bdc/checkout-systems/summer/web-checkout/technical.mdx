@@ -268,6 +268,8 @@ Checkout links are created and updated in stages as the user progresses through 
 
 TODO: Explain everything that happens after payment. What APIs get triggered, what writes happen in the DB, where user gets directed after, any automated emails
 
+**Similar to Semester Checkout:** The post-payment flow follows the same webhook-driven pattern as semester checkout, with summer-specific database collections and logic.
+
 ## 1. API Triggered After Payment
 
 ### `stripePaymentListener` (Stripe Webhook)
@@ -277,29 +279,40 @@ TODO: Explain everything that happens after payment. What APIs get triggered, wh
 - Stripe events such as:
   - `checkout.session.completed`
   - `payment_intent.succeeded`
+  - `charge.succeeded` / `charge.pending` / `charge.failed`
   - Async updates for **Bank Transfer**
 
 **Responsibility:**
 
-- Acts as the single orchestrator for all post-payment logic.
-- Calls `updateSummerPayment()` with:
-  - `stripeCheckout`
-  - `status` (`Complete`, `Processing`, `Failed`)
-  - `chargeObj`
-  - `sessionId`
+- Acts as the single orchestrator for all post-payment logic (same as semester checkout)
+- Validates Stripe webhook signature
+- Extracts `payment_intent` and `sessionId` from the event
+- Finds the related record from `stripe_checkout_customer` using `sessionId`
+- Normalizes Stripe events into internal payment states: **Complete**, **Processing**, **Failed**
+- Routes to `updateSummerPayment()` for summer program purchases
+
+**Key Difference from Semester:** Calls `updateSummerPayment()` instead of `updateClassPayment()` for summer program purchases.
+
+**Implementation:** `stripePaymentListener.py`
+
+**Reference:** See [Semester Post-Payment: stripePaymentListener](#) for webhook normalization logic.
 
 ---
 
 ## 2. High-Level Logic Flow
 
-1. Stripe confirms payment → webhook fires
-2. `stripePaymentListener` is invoked
-3. `updateSummerPayment()` executes
-4. Payment record is inserted or updated
-5. Inventory caps are updated
-6. Referral & coupon logic runs
-7. Emails are triggered
-8. User is redirected based on payment type
+ 1. Stripe confirms payment → webhook fires
+ 2. `stripePaymentListener` is invoked
+ 3. Payment state is normalized (Complete / Processing / Failed)
+ 4. `updateSummerPayment()` is called with `stripeCheckout`, `status`, `chargeObj`, and `sessionId`
+ 5. Payment record is inserted or updated in `summer_payment_details`
+ 6. `stripe_checkout_customer` status is updated
+ 7. Inventory caps are updated via `updateSummerInventoryCaps()`
+ 8. Referral & coupon logic runs
+ 9. Upsell programs are processed (if any)
+10. Credit balance is updated (if credits were applied)
+11. Emails are triggered
+12. User is redirected based on payment type
 
 ---
 
@@ -309,143 +322,220 @@ TODO: Explain everything that happens after payment. What APIs get triggered, wh
 
 **Insert (first successful payment):**
 
-- payment_intent
-- programId
-- studentId
-- memberId
-- yearId
-- summerSessionId
-- locationId
-- amount
-- couponCode (if any)
-- UTM source
-- createdOn
+- `payment_intent` (used as unique identifier for idempotency)
+- `submissionId` (same as payment_intent)
+- `programId`
+- `studentId`
+- `memberId`
+- `yearId`
+- `sessionId` (always `2` for summer)
+- `summerSessionId`
+- `locationId`
+- `paymentTotalChecksum` (amount in dollars)
+- `bankToken` (balance_transaction ID)
+- `myProducts` (product details)
+- `prevStudent`
+- `couponCode` (if any)
+- `utm_source`
+- `createdOn`
 
 **Update (subsequent webhook calls):**
 
-- status
-- receipt_url
+- `status` (Complete / Processing / Failed)
+- `receipt_url` (from Stripe charge object)
 
 **Delete (on Failed payment):**
 
-- Existing `summer_payment_details` record is removed
+- Existing `summer_payment_details` record is removed via `delete_one()`
+
+**Idempotency:** Uses `payment_intent` to ensure duplicate webhooks don't create multiple records. Checks `find_one({"payment_intent": chargeObj["payment_intent"]})` before insert.
+
+**Implementation:** `stripePaymentListener.py` - `updateSummerPayment()` function 
 
 ---
 
 ### 3.2 `stripe_checkout_customer`
 
-Updated on **every webhook event**:
+**Updated on every webhook event:**
 
-- payment_intent
-- status (`Complete`, `Processing`, `Failed`)
+- `payment_intent` (from charge object)
+- `status` (`Complete`, `Processing`, `Failed`)
+
+**Lookup:** Uses `sessionId` (Stripe Checkout Session ID) as the unique identifier, not `payment_intent`. All updates use `update_one({'sessionId': sessionId}, ...)`.
+
+**Key Difference from Semester:** Same structure and update pattern as semester checkout.
+
+**Implementation:** `stripePaymentListener.py` - `updateSummerPayment()` function
 
 ---
 
 ### 3.3 Inventory Management (`updateSummerInventoryCaps`)
 
-- **On Failed payment**
-  - Inventory is **released** (`eventType = add`)
-- **On Complete / Processing**
-  - Inventory is **consumed** (`eventType = minus`)
+**Unique to Summer:** Summer programs use `summer_inventory_caps` collection instead of class-based inventory.
 
-This ensures real-time seat availability for summer programs.
+**Function:** `updateSummerInventoryCaps(yearId, programId, summerSessionId, locationId, eventType)`
+
+**Logic:**
+
+- **On Failed payment:**
+  - Inventory is **released** (`eventType = "add"`)
+  - Increments `leftSpot` in `summer_inventory_caps` collection
+- **On Complete / Processing:**
+  - Inventory is **consumed** (`eventType = "minus"`)
+  - Decrements `leftSpot` in `summer_inventory_caps` collection
+  - Only triggers for:
+    - Card payments with `status == "Complete"`
+    - Bank Transfer payments with `status == "Processing"`
+
+**Collection:** `summer_inventory_caps` with fields: `yearId`, `programId`, `summerSessionId`, `locationId`, `numberOfSpots`, `leftSpot`
+
+**Implementation:** `bcdc_aws-main/scheduler_service/api/stripePaymentListener.py` - `updateSummerInventoryCaps()` function
+
+**Reference:** See [Summer MongoDB: summer_inventory_caps](#) for collection structure.
 
 ---
 
 ### 3.4 Referral & Coupon Handling
 
+**Similar to Semester Checkout:** Follows the same referral and coupon logic as semester checkout.
+
 **If coupon was used:**
 
-- Referral marked as `Purchased`
-- `purchased_date` updated
+- `getCouponCode(sessionId)` retrieves the promotion code from Stripe checkout session
+- Searches `referral_details` for matching coupon
+- If found, referral is marked as `Purchased` and `purchased_date` is updated
+- If not found but coupon exists in `coupon_details`, creates new referral record linking the referrer and purchaser
 
 **If no existing coupon for family:**
 
-- New coupon code is generated
-- Coupon created in **Stripe**
-- Coupon stored in `coupon_details` with:
-  - coupon_code
-  - familyId
-  - createdOn
+- Checks if family has a coupon in `coupon_details` using `familyId`
+- If no coupon exists:
+  - Generates new coupon code via `generate_coupon_name(firstName)`:
+    - Takes member's first name, removes non-alphanumeric, converts to uppercase
+    - Generates MD5 hash of name + "100", takes first 5 characters
+    - Combines as `BASENAME+5CHARHASH` (e.g., "JOHN12345")
+  - Creates coupon in **Stripe** via `generate_coupon_code(coupon_name)`:
+    - Minimum purchase: \$100 (10,000 cents)
+    - Valid only for first-time transactions
+  - Stores coupon in `coupon_details` with:
+    - `coupon_code`
+    - `familyId`
+    - `createdOn`
+
+**Implementation:** `stripePaymentListener.py` - `updateSummerPayment()` function 
+
+**Reference:** See [Semester Post-Payment: Referral & Coupon Processing](#) for detailed logic.
 
 ---
 
 ### 3.5 `coupon_details`
 
-- New coupon inserted **only once per family**
+**Similar to Semester Checkout:** Same collection and structure.
+
+- New coupon inserted **only once per family** (checked via `familyId`)
 - Used for future referrals and discounts
+- Coupon code is also created in Stripe for promotion code usage
+
+**Implementation:** `stripePaymentListener.py` - `updateSummerPayment()` function 
 
 ---
 
 ### 3.6 Upsell Programs
 
-If upsell programs were purchased:
+**Similar to Semester Checkout:** Same upsell processing logic.
 
-- Records inserted via `addUpsellToPaymentDetails()`
+If upsell programs were purchased (and payment is Complete/Processing):
+
+- Records inserted via `addUpsellToPaymentDetails(chargeObj, stripeCheckout)`
+- Upsell data is stored in `upsell_payment_details` collection
+- Links to the main payment via `payment_intent`
+
+**Implementation:** `stripePaymentListener.py` - `updateSummerPayment()` function 
+
+**Reference:** See [Semester Post-Payment: Enrollment & Cleanup](#) for upsell details.
 
 ---
 
 ### 3.7 Credit Balance Updates
 
-If discount / credit was applied:
+**Similar to Semester Checkout:** Same credit balance update logic.
 
-- `updateCreditBalance()` updates remaining credits
+If discount / credit was applied (`discount_amount > 0` in `stripeCheckout`):
+
+- `updateCreditBalance(stripeCheckout, chargeObj, yearId, currentSessionId)` is called
+- Updates `member_credit_amount` collection
+- Reduces `credit_balance` by the applied discount amount
 - Linked to:
-  - yearId
-  - currentSessionId
+  - `yearId`
+  - `currentSessionId`
+  - `memberId`
+
+**Implementation:** `stripePaymentListener.py` - `updateSummerPayment()` function 
+
+**Reference:** See [Semester Post-Payment: BDC Credit](#) for credit system details.
 
 ---
 
 ## 4. Automated Emails
 
+**Similar to Semester Checkout:** Same email triggering logic.
+
 ### Admin Emails
 
 - **Sent on:**
-  - Card payment → `Complete`
-  - Bank transfer → `Processing`
-- Triggered via:
+  - Card payment → `status == "Complete"`
+  - Bank transfer → `status == "Processing"`
+- **Triggered via:** `sendSuccessEmailToAdmin(stripeCheckout, yearId)`
+- Includes order and enrollment details for admin review
 
-  ```
-  sendSuccessEmailToAdmin(stripeCheckout, yearId)
-  
-  ```
+**Implementation:**`stripePaymentListener.py` - `updateSummerPayment()` function 
 
 ### User Emails
 
-- Stripe receipt generated automatically
-- `receipt_url` stored in MongoDB
+- Stripe receipt generated automatically by Stripe
+- `receipt_url` stored in `summer_payment_details` collection
+- User receives receipt email directly from Stripe
+
+**Reference:** See [Semester Post-Payment: Emails Triggered](#) for email details.
 
 ---
 
 ## 5. User Redirection After Payment
 
+**Similar to Semester Checkout:** Same redirection logic based on payment type.
+
 ### Card Payments
 
 - Redirected immediately to **Success / Thank You page**
+- URL: `payment-confirmation?type=Summer&programName={programName}&transactionID={CHECKOUT_SESSION_ID}`
+- Payment status is `Complete` at this point
 
 ### Bank Transfer Payments
 
 - Redirected to **Processing / Pending Confirmation page**
-- Final confirmation happens asynchronously via webhook
+- URL: `payment-confirmation?type=Summer&programName={programName}&transactionID={CHECKOUT_SESSION_ID}`
+- Payment status is `Processing` initially
+- Final confirmation happens asynchronously via webhook when bank transfer completes
+- Status updates to `Complete` when webhook receives confirmation
+
+**Reference:** See [Semester Payment: Successful Payment](#) for redirection details.
 
 ---
 
 ## 6. Failure Handling
 
-If payment fails:
+**Similar to Semester Checkout:** Same failure handling pattern.
 
-- `summer_payment_details` record deleted
-- Inventory restored
-- Checkout marked as Failed
-- No enrollment or coupon generation occurs
+If payment fails (`status == "Failed"`):
+
+- `summer_payment_details` record is **deleted** via `delete_one({"payment_intent": chargeObj["payment_intent"]})`
+- Inventory is **restored** via `updateSummerInventoryCaps()` with `eventType = "add"`
+- `stripe_checkout_customer` is marked as `Failed`
+- No enrollment, coupon generation, or referral processing occurs
+- No emails are sent
+
+**Implementation:** ` stripePaymentListener.py` - `updateSummerPayment()` function
+
+**Reference:** See [Semester Post-Payment: Failure Handling](/bdc/checkout-systems/semester/web-checkout/technical/post-payment#c-failure-handling) for failure details.
 
 ---
-
-## 7. Key Characteristics
-
-- Fully **webhook-driven**
-- **Idempotent** via `payment_intent`
-- Supports **async bank transfers**
-- Inventory-safe
-- Referral-safe
-- Retry-safe
