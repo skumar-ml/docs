@@ -232,40 +232,17 @@ Checkout links are created and updated in stages as the user progresses through 
 
 ## After Payment
 
-TODO: Explain everything that happens after payment. What APIs get triggered, what writes happen in the DB, where user gets directed after, any automated emails
-
 **Similar to Semester Checkout:** The post-payment flow follows the same webhook-driven pattern as semester checkout, with summer-specific database collections and logic.
 
 ## 1. API Triggered After Payment
 
 ### `stripePaymentListener` (Stripe Webhook)
 
-**Triggered by:**
+**Key Difference from Semester:** Calls `updateSummerPayment()` instead of `updateClassPayment()` for summer program purchases. **\<TODO: Explain how API knows the purchase is summer...?\>**
 
-- Stripe events such as:
-  - `checkout.session.completed`
-  - `payment_intent.succeeded`
-  - `charge.succeeded` / `charge.pending` / `charge.failed`
-  - Async updates for **Bank Transfer**
+See [Semester Post-Payment: stripePaymentListener](#) for more detailed implementation.
 
-**Responsibility:**
-
-- Acts as the single orchestrator for all post-payment logic (same as semester checkout)
-- Validates Stripe webhook signature
-- Extracts `payment_intent` and `sessionId` from the event
-- Finds the related record from `stripe_checkout_customer` using `sessionId`
-- Normalizes Stripe events into internal payment states: **Complete**, **Processing**, **Failed**
-- Routes to `updateSummerPayment()` for summer program purchases
-
-**Key Difference from Semester:** Calls `updateSummerPayment()` instead of `updateClassPayment()` for summer program purchases.
-
-**Implementation:** `stripePaymentListener.py`
-
-**Reference:** See [Semester Post-Payment: stripePaymentListener](#) for webhook normalization logic.
-
----
-
-## 2. High-Level Logic Flow
+## `updateSummerPayment()`
 
  1. Stripe confirms payment → webhook fires
  2. `stripePaymentListener` is invoked
