@@ -107,7 +107,7 @@ When the user clicks **Next** on the student details form:
 - If validation passes, the user continues to session selection
 
 **API:** `POST /camp/validateUserForProgram`\
-**Implementation:** `bcdc/checkout_summer_bundle.js` - `validateUserForProgram()` method 
+**Implementation:** `bcdc/checkout_summer_bundle.js` - `validateUserForProgram()` method
 
 #### 5. Model UN & Young Entrepreneurship Combination (Program ID: 102)
 
@@ -121,7 +121,7 @@ In `getSummerSessionDetails` API, when `programId == 102`:
 - Inventory data from both programs is combined and returned together
 - The frontend displays locations only if **both** programs have available spots at that location
 
-**Implementation:** `bcdc_aws-main/class-service/api/getSummerSessionDetails.py` 
+**Implementation:** `bcdc_aws-main/class-service/api/getSummerSessionDetails.py`
 
 ```python
 if int(programId) == 102:
@@ -145,7 +145,9 @@ The implementation follows the same pattern as semester checkout:
 
 **Reference:** See [Semester Pre-Payment: Optional Bundle Program](#) for detailed implementation.
 
-The summer checkout supports **two payment methods**, which are shown on the payment step after all required selections are completed.
+## Payment
+
+The summer checkout supports **two payment methods**, which are shown on the payment step after all required selections are completed. The payment flow is similar to semester checkout, with dynamic pricing updates handled on the frontend.
 
 ### 1. ACH Payment (Bank Transfer)
 
