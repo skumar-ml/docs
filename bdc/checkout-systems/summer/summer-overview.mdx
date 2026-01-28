@@ -24,112 +24,36 @@ Each collection item contains structured fields that control what appears on the
 
 ### 1. Program Name
 
-**Examples:**
-
-- Model UN + Young Entrepreneurship
-- Model UN
-- Young Entrepreneurship
-- Intro to Debate
-- PF Labs
-- August Intensive
-
-**Source:** Webflow CMS – Program Name field
-
-**Why It’s Important:**
-
-- Acts as the primary identifier for the program
-- Used as the main clickable row title
-- Helps parents quickly compare offerings
+Displayed as the main title for each program row. Examples include Model UN + Young Entrepreneurship, Model UN, Young Entrepreneurship, Intro to Debate, PF Labs, and August Intensive.\
+Data comes from the Webflow CMS Program Name field.
 
 ### 2. Program Time
 
-**Examples:**
-
-- 9:30 AM – 3:15 PM
-- 9:30 AM – 12:00 PM
-
-**Source:** Webflow CMS – Time field
-
-**Why It’s Important:**
-
-- Helps parents assess daily schedule compatibility
-- Displayed directly in the overview row for quick scanning
-- Reduces clicks by showing key timing upfront
+Displayed in the overview row next to the program name. Examples include 9:30 AM – 3:15 PM and 9:30 AM – 12:00 PM. Data comes from the Webflow CMS Time field.
 
 ### 3. Suggested Grades
 
-**Examples:**
-
-- 6th–8th
-- 7th–9th
-
-**Source:** Webflow CMS – Suggested Grades field
-
-**Why It’s Important:**
-
-- Ensures parents understand age and grade suitability
-- Prevents incorrect registrations
-- Helps families quickly filter relevant programs
+Displayed in the overview row to show eligible grades. Examples include 6th–8th and 7th–9th. Data comes from the Webflow CMS Suggested Grades field.
 
 ### 4. Register Now Button
 
-**Behavior:**
-
-- Redirects users directly to the **cart / checkout page**
-
-**Source:** Webflow CMS – Register Link field
-
-**Why It’s Important:**
-
-- Primary conversion action
-- Allows marketing and admin teams to control registration links
-- Can be updated per program without developer involvement
+Clicking this button takes the user directly to the cart or checkout page. The link comes from the Webflow CMS Register Link field.
 
 ### 5. Learn More Link
 
-**Behavior:**
-
-- Redirects users to the **detailed program page**
-
-**Source:** Webflow CMS – Program Detail Page link
-
-**Why It’s Important:**
-
-- Provides deeper program descriptions
-- Supports parents who want more information before registering
-- Keeps the overview page clean and uncluttered
+Clicking this link takes the user to the detailed program page. The link comes from the Webflow CMS Program Detail Page field.
 
 ## Expanded Program Information (On Row Click)
 
-When a user clicks on a program row, **additional details expand**, all sourced from the same Webflow collection item.
+When a program row is clicked, additional details expand using data from the same Webflow collection item.
 
-### 6. Location
+### 1. Location
 
-**Examples:**
+Shown only in the expanded view. Examples include Fort Lee, Glen Rock, and Livingston.\
+Data comes from the Webflow CMS Location field.
 
-- Fort Lee
-- Glen Rock
-- Livingston
+### 2. Session Information
 
-**Source:** Webflow CMS – Location field (multi-value or reference)
-
-**Why It’s Important:**
-
-- Helps families choose based on proximity
-- Supports programs offered in multiple locations
-- Displayed only on expansion to keep the overview concise
-
-### 7. Session Information
-
-**Examples:**
-
-- Session 2: 7/6 – 7/17
-- Session 3: 7/21 – 8/1
-
-**Source:** Webflow CMS – Session field(s)
-
-**Why It’s Important:**
-
-- Clearly communicates program duration
-- Allows multiple sessions under one program
-- Reduces confusion about start and end dates
+Shown in the expanded view and supports multiple sessions under one program.\
+Examples include Session 2: 7/6 – 7/17 and Session 3: 7/21 – 8/1.\
+Data comes from the Webflow CMS Session field(s).
