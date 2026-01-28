@@ -2,16 +2,6 @@
 title: "Non-Technical: Checkout Flow"
 ---
 
-## Cart Page
-
-<Steps>
-  <Step title="New Step">
-    TODO: Explain steps of checkout here. Keep this non-technical
-  </Step>
-</Steps>
-
-## Overview
-
 The Summer Checkout flow includes:
 
 1. Login / Sign-up via cart page
@@ -32,62 +22,40 @@ This step work same as the  semester page login and signup sections
 
 This is the first step of the checkout process . It's the same as the semester student details form.
 
-![Image](/images/image-19.png)
-
 The user enters the student’s basic information, including first name, last name, email address, grade, school name, gender, and whether the student has previously participated in a BDC class.\
 After completing the form, clicking **Next** saves the information and moves the user to the session selection step.
 
 ## Step 3: Select Session and Location
 
-![Image](/images/image-18.png)
+In this step, the user selects when and where the summer program will take place. 
 
-In this step, the user selects when and where the summer program will take place.\
-The user first chooses a session (for example, Session 1 or Session 2).\
-Based on the selected session, available locations are shown.\
-The user selects one location and clicks **Next**, which opens the bundle program popup.
+The user first chooses a session (for example, Session 1 or Session 2). Based on the selected session, available locations are shown. The user selects one location and clicks **Next**, which opens the bundle program popup.
 
 ## Step 4: Bundle Program Popup (Optional)
 
-This optional step allows users to add future programs as a discounted bundle.\
-A popup displays available bundle programs.\
-The user can select one or more bundle programs or skip this step by clicking **No Thanks**.\
-Closing the popup moves the user to the payment screen.
+This optional step allows users to add future programs as a discounted bundle. 
+
+A popup displays available bundle programs. The user can select one or more bundle programs or skip this step by clicking **No Thanks**. Closing the popup moves the user to the payment screen.
 
 ![Image](/images/image-20.png)
 
 ## Step 5: Payment Screen
 
-This is the final <u>step </u>where the user reviews details and completes payment.
-
 ![Image](/images/image-21.png)
-
-### Payment Options
 
 This is the final step where the user reviews details and completes payment. Once checkout details are confirmed, payment options appear. Available payment methods include **bank transfer**  and **credit card**. After selecting a payment method, the **Buy Now** button becomes available.\
 Clicking **Buy Now** redirects the user to the Stripe Checkout page.
 
-### Stripe Checkout
-
-**On the Stripe Page**
-
-On the Stripe Checkout page, the user enters payment details securely.\
-Stripe processes the payment, and no payment information is stored on the website
-
-**After Successful Payment**
-
-After payment is completed, the user is redirected to a success or confirmation page.\
-The student is successfully registered for the selected summer program.
-
 ### Bundle Program Banner
 
-A Bundle Program Banner is visible on the payment screen.\
-It shows any selected future bundle programs and allows users to review, add, or update bundle selections directly from the banner.
-
----
+A Bundle Program Banner is visible on the payment screen. It shows any selected future bundle programs and allows users to review, add, or update bundle selections directly from the banner.
 
 ### Order Details
 
-The order details section displays a full summary of the registration.\
-It includes the selected summer program and session, selected location, selected bundle programs, selected briefs if applicable, and a price breakdown with the total amount.
+The order details section displays a full summary of the registration. It includes the selected summer program and session, selected location, selected bundle programs, and a price breakdown with the total amount.
 
----
+## 6. Stripe Checkout
+
+**On the Stripe Page: **the user enters payment details securely. Stripe processes the payment, and no payment information is stored on the website
+
+**After Successful Payment: **After payment is completed, the user is redirected to a success or confirmation page. The student is successfully registered for the selected summer program.
