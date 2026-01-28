@@ -14,6 +14,86 @@ TODO: Explain process for adding/editing on Briefs Retool page: https://bergende
 
 Explain any confusing fields (for example, how to generate the PDF URL -- by hosting on Webflow, and then copying URL)
 
+### **Manage Briefs / Topics**
+
+This page allows admins to **view, add, and edit all available briefs (topics)** along with their **Full and Light versions** and pricing details.
+
+![Image](/images/image-10.png)
+
+### Page Overview
+
+- The **left panel** displays a list of all added topics with:
+  - Topic Name
+  - Headings (short description shown in the list)
+  - Topic Order (display sequence)
+  - Created Date
+  - Edit option
+- The **right panel** shows the **details of the selected topic**, including:
+  - Description
+  - Price
+  - PDF URL
+  - Preview PDF URL\
+    These details are shown separately for **Full Version** and **Light Version** using tabs.
+
+This page also displays the **price/amount for both Light and Full versions** of each brief.
+
+---
+
+### Adding a New Topic (Brief)
+
+1. Click on **“Add Topic”**.
+2. Enter the required basic details:
+   - **Topic Name**
+   - **Headings**
+   - **Display Order**
+3. Fill in the details under the **Full Version** and **Light Version** tabs:
+   - Description
+   - Price
+   - PDF URL
+   - Preview PDF URL
+4. Click **“Add Topic”** to save.
+
+---
+
+### Editing an Existing Topic
+
+1. Select a topic from the list.
+2. Click on the **Edit** button.
+3. Update any required fields for either **Full** or **Light** version.
+4. Save the changes to update the topic.
+
 ## Technical: Offerings Page
 
 TODO: Talk about dynamic functionality on this page: https://www.nsdebatecamp.com/briefs
+
+### Briefs Listing
+
+The briefs page displays **all available Bergen Briefs** in a card-based layout.
+
+![Image](/images/image-8.png)
+
+Each brief card includes:
+
+- Brief title (e.g., Logical Fallacies, Cognitive Biases, Argumentation)
+- Short description of the brief content
+- Available versions:
+  - **Full Version** with pricing
+  - **Light Version** with pricing
+- Action buttons: **Preview** and **Purchase**
+
+The pricing for both **Light** and **Full** versions is clearly shown on the page to help users compare options before purchasing.
+
+### Preview Functionality
+
+- Clicking the **Preview** button dynamically opens the **full-detail preview PDF** for the selected brief.
+
+  ![Image](/images/image-9.png)
+- The preview content is specific to the selected brief.
+- Users can **view and download** the preview PDF before making a purchase.
+
+### Purchase Functionality
+
+- Clicking the **Purchase** button redirects the user to the checkout page:\
+  `https://www.bergendebate.com/briefs-checkout`
+- The selected brief and version (Light or Full) are passed to the checkout flow.
+- The checkout process uses **Stripe payment integration** to securely complete the transaction.

@@ -6,6 +6,72 @@ title: "Checkout"
 
 TODO: Explain non-technical process for checkout (stand-alone). This should be pretty simple.
 
+## Briefs Checkout Flow
+
+### 1. Before Login
+
+- If the user is **not logged in**, the **Briefs Checkout page** is visible in a read-only state.
+
+  ![Image](/images/image-12.png)
+- The user is prompted to \*\*log in or create an account **in the**Order Details \*\* Section before proceeding further.
+
+---
+
+### 2. After Login
+
+Once the user logs in successfully:
+
+- The user is taken to the **Select Briefs** step.
+
+  ![Image](/images/image-13.png)
+- Brief cards are displayed (e.g., _Logical Fallacies_, _Cognitive Biases_, _Argumentation_).
+- Each brief card contains two options:
+  - **Full Version**
+  - **Light Version**
+
+---
+
+### 3. Selecting Briefs
+
+- When the user selects **Full** or **Light** for any brief:
+  - The selected item is immediately added to the **Order Details** section on the right.
+  - The **total price** updates dynamically based on selections.
+
+    ![Image](/images/image-15.png)
+
+---
+
+### 4. Proceeding to Payment
+
+- On clicking the **Next** button:
+  - A **credits popup** is displayed (if the user has Bergen credits available).
+  - The popup shows:
+    - Available credit amount
+    - Price before credits
+    - Price after credits (if applied)
+
+      ![Image](/images/image-16.png)
+
+---
+
+### 5. Applying Credits
+
+- If the user clicks **“Yes, apply credits”**:
+  - Credits are applied automatically to the order.
+  - The **Processing** button reflects the updated amount in the \*\*Order Details \*\*Section.
+- If the user clicks **“No, save them”**:
+  - The order continues without applying credits and navigates to the Stripe Payment Page.
+
+---
+
+### 6. Stripe Checkout
+
+- After confirming the credits choice:
+  - The user is redirected to the **Stripe checkout page**.
+
+    ![Image](/images/image-17.png)
+  - Payment is completed securely via Stripe.
+
 ## Technical
 
 TODO: Explain the technical parts of checkout process. Explain what happens after payment. Explain the subscription vs. regular purchase, and how they are represented in db
