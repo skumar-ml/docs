@@ -109,14 +109,7 @@ We have specific logic to handle the case of PF Labs (which is restricted to spe
 
 **Similar to Semester Checkout:** After session and location selection, users can optionally select bundle programs (future semester sessions) at a discounted rate.
 
-The implementation follows the same pattern as semester checkout:
-
-- `getUpsellProgramV2` API fetches upsell programs (filtered for `sessionId == 2` which represents summer)
-- Bundle programs are displayed in a modal
-- Selected programs are stored in `$selectedProgram` array
-- Pricing is recalculated dynamically via `updateAmount()` method
-
-**Reference:** See [Semester Pre-Payment: Optional Bundle Program](#) for detailed implementation.
+The implementation follows the same pattern as semester checkout, except that the `getUpsellProgramV2` API fetches summer upsell programs (filtered for `sessionId == 2` which represents summer). See the docs for the detailed implementation. \<TODO: SK link to correct docs\>.
 
 ## Payment
 
