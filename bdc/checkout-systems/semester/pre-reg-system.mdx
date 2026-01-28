@@ -81,7 +81,7 @@ The frontend determines a user’s state by calling the backend API `getYearLong
 
 Based on the API response (`message` and `data`), the frontend calculates the current **user state** and decides: (1) what UI to show; (2) whether the user can **auto-enroll**; (3) whether payment is required or not
 
-## API Response Structure
+### API Response Structure
 
 The API returns the following fields:
 
@@ -99,7 +99,7 @@ The API returns the following fields:
 | `data`                   | Contains bundle details if the user is eligible to purchase |
 | `preRegistrationEndDate` | Used for countdowns                                         |
 
-## State Determination Logic
+### State Determination Logic
 
 The frontend evaluates the response using the following logic
 
@@ -138,13 +138,9 @@ Pre-registration is active and bundle data exists. The user can select classes a
 
 ## Pre-Reg Payment
 
-When a user clicks “**Pre-Register**”, the system initiates the payment using the same `initializeStripePayment()` method as the standard checkout flow. Along with the usual payment data, the request includes the bundle-specific `paymentId` ********`<TODO: remind briefly what paymentId is used for..?><Comment: `********The `paymentId` refers to the MongoDB ObjectId (`_id`) of the original payment record stored in the `payment_details` collection. In the earlier transaction, the user also purchased a **bundle program** as part of the payment. Based on this existing payment record, the system now uses the `paymentId` to **pre-register the user for the bundled program** without requiring a new payment.********`>`********, a flag indicating a bundle purchase `(isBundleProgram: true)`, and the selected `classUniqueId`.
+When a user clicks “**Pre-Register**”, the system initiates the payment using the same `initializeStripePayment()` method as the standard checkout flow. Along with the usual payment data, the request includes the bundle-specific `paymentId` ********************\<TODO: remind briefly what paymentId is used for..?\>\<Comment: ********************The paymentId refers to the MongoDB ObjectId (\_id) of the original payment record stored in the payment_details collection. In the earlier transaction, the user also purchased a bundle program as part of the payment. Based on this existing payment record, the system now uses the paymentId to pre-register the user for the bundled program without requiring a new payment.********************\>********************, a flag indicating a bundle purchase `(isBundleProgram: true)`, and the selected `classUniqueId`.
 
 For bundle purchases, the API endpoint is chosen based on whether the user has selected any upsell programs or briefs.
-
-~~If the pre-registration includes upsells or briefs, the system routes the request to the ~~`checkoutUrlForUpsellProgram`~~API. This creates a separate Stripe checkout session for the pre-registration with Upsell programs or briefs.~~
-
-~~If the pre-registration does not include upsells or briefs, the system calls the ~~`updateDataToCheckoutUrl`~~API. In this case, the existing checkout session—identified by the checkoutId—is updated with the pre-registration and class selection details. The corresponding ~~ `stripe_checkout_customer`~~records are updated, and the API returns the latest cardUrl and achUrl for redirecting the user to Stripe Checkout.~~
 
 If the pre-registration includes a **bundle or briefs**, the system routes the request to the **checkoutUrlForUpsellProgram** API. This API creates a **new Stripe Checkout Session** for the pre-registration with the selected bundle or briefs, inserts/updates the corresponding records in the **stripe_checkout_customer** collection, and returns the **cardUrl** and **achUrl** for redirecting the user to Stripe Checkout.
 
