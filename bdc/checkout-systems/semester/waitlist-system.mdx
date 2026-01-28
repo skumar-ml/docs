@@ -64,11 +64,11 @@ Finally, the user is added to the **waitlist_details** collection. If the user i
 
 This handles sending invites to waitlisted users when seats are available. It can also remove invites if needed. The invite status is updated in the **waitlist_details** collection, and emails are sent to inform users.
 
-## Automatic Removal After Purchase
+### Automatic Removal After Purchase
 
 When a Stripe payment is marked as **Complete** or **Processing**, the system checks if the user was on the waitlist. If so, the corresponding entry is automatically and permanently removed from the **waitlist_details** collection.
 
-## Email Notifications
+### Email Notifications
 
 Handled by `inviteUninviteUser.py`. and sent Invitation and Uninvitation emails
 
