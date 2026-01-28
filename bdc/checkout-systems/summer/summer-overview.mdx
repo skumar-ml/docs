@@ -6,54 +6,22 @@ title: "Summer Overview"
 
 Most checkout journeys begin from the [summer overview page](https://www.bergendebate.com/classes-overview).
 
-TODO: Explain how data from the semester overview page is populated via Webflow CMS. Explain importance of each field.
-
 The **Summer Semester Overview page** displays a list of available summer programs.\
-All program-level information on this page is **fully driven by Webflow CMS collections**, allowing the content team to manage programs without code changes.
-
-Each row on the page represents **one Webflow collection item (one summer program)**.
+All program-level information on this page is **fully driven by Webflow CMS collections**. Each row on the page represents one Webflow collection item (one summer program). The collection item contains structured fields that control what appears on the overview page and what expands when a program row is clicked.
 
 ![Image](/images/image-2.png)
 
-## Webflow CMS as the Data Source
+## Information Displayed on the Page (from Webflow CMS)
 
-All summer programs are stored as **collection items in Webflow CMS**.\
-Each collection item contains structured fields that control what appears on the overview page and what expands when a program row is clicked.
+1. **Program Name:** Displayed as the main title for each program row.
+2. **Program Time:** Displayed in the overview row next to the program name.
+3. **Suggested Grades:** Displayed in the overview row to show eligible grades.
+4. **Register Now Button:** Clicking this button takes the user directly to the cart or checkout page. The link comes from the Webflow CMS Register Link field.
+5. **Learn More Link:** Clicking this link takes the user to the detailed program page. The link comes from the Webflow CMS Program Detail Page field.
 
-## Information Displayed on the Page
-
-### 1. Program Name
-
-Displayed as the main title for each program row. Examples include Model UN + Young Entrepreneurship, Model UN, Young Entrepreneurship, Intro to Debate, PF Labs, and August Intensive.\
-Data comes from the Webflow CMS Program Name field.
-
-### 2. Program Time
-
-Displayed in the overview row next to the program name. Examples include 9:30 AM – 3:15 PM and 9:30 AM – 12:00 PM. Data comes from the Webflow CMS Time field.
-
-### 3. Suggested Grades
-
-Displayed in the overview row to show eligible grades. Examples include 6th–8th and 7th–9th. Data comes from the Webflow CMS Suggested Grades field.
-
-### 4. Register Now Button
-
-Clicking this button takes the user directly to the cart or checkout page. The link comes from the Webflow CMS Register Link field.
-
-### 5. Learn More Link
-
-Clicking this link takes the user to the detailed program page. The link comes from the Webflow CMS Program Detail Page field.
-
-## Expanded Program Information (On Row Click)
+### Expanded Program Information (On Row Click)
 
 When a program row is clicked, additional details expand using data from the same Webflow collection item.
 
-### 1. Location
-
-Shown only in the expanded view. Examples include Fort Lee, Glen Rock, and Livingston.\
-Data comes from the Webflow CMS Location field.
-
-### 2. Session Information
-
-Shown in the expanded view and supports multiple sessions under one program.\
-Examples include Session 2: 7/6 – 7/17 and Session 3: 7/21 – 8/1.\
-Data comes from the Webflow CMS Session field(s).
+1. **Location:** Each location in the CMS is toggled on/off, and shown in expanded view accordingly.
+2. **Session Information:** Detailed location information (what sessions are being offered). Each location has it's own CMS field.
