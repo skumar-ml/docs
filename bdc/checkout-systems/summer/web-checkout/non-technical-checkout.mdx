@@ -25,86 +25,41 @@ Each step must be completed before moving forward.
 
 ## Step 1: Student Details
 
-This is the first step of the checkout process.
-
 ### Information Collected
 
-The user is asked to provide:
+This is the first step of the checkout process.\
+The user enters the student’s basic information, including first name, last name, email address, grade, school name, gender, and whether the student has previously participated in a BDC class.\
+After completing the form, clicking **Next** saves the information and moves the user to the session selection step.
 
-- **Student First Name**
-- **Student Last Name**
-- **Email Address**
-- **Student Grade**
-- **Student School Name**
-- **Student Gender**
-- **Has your child participated in a BDC class before?** (Yes / No)
+## Step 2: Select Session and Location
 
-### What Happens Next
-
-- The information is saved
-- Clicking **Next** moves the user to the **Select Session** step
-
----
-
-## Step 2: Select Session
-
-In this step, the user chooses when and where the summer program will take place.
-
-### Session Selection
-
-- The user selects a **session**
-  - Example: Session 1, Session 2, etc.
-
-### Location Selection
-
-- Based on the selected session, available **locations** are displayed
-- The user selects **one location**
-
-### What Happens Next
-
-- Clicking **Next** opens the **Bundle Program Popup**
-
----
+In this step, the user selects when and where the summer program will take place.\
+The user first chooses a session (for example, Session 1 or Session 2).\
+Based on the selected session, available locations are shown.\
+The user selects one location and clicks **Next**, which opens the bundle program popup.
 
 ## Step 3: Bundle Program Popup (Optional)
 
-This step allows families to add **future programs** as a discounted bundle.
-
-### What the User Sees
-
-- A popup listing available future bundle programs
-- The option to:
-  - Select one or more bundle programs
-  - Skip by clicking **No Thanks**
-
-### Behavior
-
-- Bundle selection is optional
-- Users can select multiple programs
-- Closing the popup moves the user to the **Payment Screen**
+This optional step allows users to add future programs as a discounted bundle.\
+A popup displays available bundle programs.\
+The user can select one or more bundle programs or skip this step by clicking **No Thanks**.\
+Closing the popup moves the user to the payment screen.
 
 ---
 
 ## Step 4: Payment Screen
 
-This is the final step where the user reviews details and completes payment.
+This is the final <u>step </u>where the user reviews details and completes payment.
 
 ---
 
 ### Payment Options
 
-Once the checkout details are confirmed, payment options appear.
-
-#### Available Payment Methods
-
-- **Bank Transfer**
-- **Credit Card**
-
-### Payment Flow
-
-- User selects a payment method
-- After selecting a payment option, the **Buy Now** button becomes available
-- Clicking **Buy Now** redirects the user to the **Stripe Checkout page**
+This is the final step where the user reviews details and completes payment.\
+Once checkout details are confirmed, payment options appear.\
+Available payment methods include**bank transfer**  and **credit card**.\
+After selecting a payment method, the **Buy Now** button becomes available.\
+Clicking **Buy Now** redirects the user to the Stripe Checkout page.
 
 ---
 
@@ -112,55 +67,26 @@ Once the checkout details are confirmed, payment options appear.
 
 ### On the Stripe Page
 
-- User enters payment details securely
-- Stripe processes the payment
-- Payment information is not stored on the website
+On the Stripe Checkout page, the user enters payment details securely.\
+Stripe processes the payment, and no payment information is stored on the website
 
 ### After Successful Payment
 
-- User is redirected to a **Success / Confirmation page**
-- The student is successfully registered for the summer program
+After payment is completed, the user is redirected to a success or confirmation page.\
+The student is successfully registered for the selected summer program.
 
 ---
 
 ## Bundle Program Banner
 
-On the payment screen, a **Bundle Program Banner** is visible.
-
-### Purpose
-
-- Shows any selected future bundle programs
-- Allows users to:
-  - Review selected bundle programs
-  - Add or update bundle selections directly from the banner
+A Bundle Program Banner is visible on the payment screen.\
+It shows any selected future bundle programs and allows users to review, add, or update bundle selections directly from the banner.
 
 ---
 
 ## Order Details
 
-This section shows a full summary of the registration.
-
-### Information Displayed
-
-- Selected summer program and session
-- Selected location
-- Selected bundle future programs
-- Selected briefs (if applicable)
-- Price breakdown and total amount
-
-### Why This Matters
-
-- Helps users review their selections
-- Ensures transparency before payment
-- Reduces checkout errors
+The order details section displays a full summary of the registration.\
+It includes the selected summer program and session, selected location, selected bundle programs, selected briefs if applicable, and a price breakdown with the total amount.
 
 ---
-
-## Summer Checkout Summary
-
-1. Enter student information
-2. Select session and location
-3. Optionally choose future bundle programs
-4. Select payment method
-5. Complete payment on Stripe
-6. View confirmation page
