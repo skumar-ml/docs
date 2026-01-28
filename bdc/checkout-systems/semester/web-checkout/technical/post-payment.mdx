@@ -2,7 +2,7 @@
 title: "Post-Payment (After Successful Checkout)"
 ---
 
-This section explains **everything that happens after a payment is made**, starting from Stripe webhook to DB writes, emails, and user redirection.
+This section explains **everything that happens after a payment is made**, starting with Stripe webhook to DB writes, emails, and user redirection.
 
 ## Core Logic Flow
 
@@ -18,28 +18,18 @@ This webhook (1) validates the Stripe webhook signature and extracts the `paymen
 
 In this webhook, Stripe events are normalized into three internal states: **Complete**, **Processing**, and **Failed**. A `payment_intent` with `status = "requires_payment_method"` is treated as **Failed**. For `charge` events, `paid = true` maps to **Complete**, `status = "pending"` maps to **Processing** (used for bank transfers), and `status = "failed"` maps to **Failed**. Separately, a `checkout.session` that is `paid`, `complete`, and has `amount_total = 0` (free-coupon flow) is also mapped to **Complete**. Overall, the system infers payment state from a limited set of Stripe fields and largely relies on `charge` events to represent success and in-progress states.
 
-The unique key is the **sessionId** (Stripe Checkout Session ID). From the webhook event, we obtain the **payment_intent** from the charge object. Using this **payment_intent**, we retrieve the corresponding **sessionId**, which allows us to identify the session created by the app user.
+From the webhook event, we obtain the `payment_intent` from the charge object. `payment_intent` is used to **ensure idempotency**, so repeated webhooks do not create duplicates used as the unique identifier. Each update function (`updateInvoiceResponses`, `updateSummerPayment`, `updateClassPayment`, `updateUpsellPaymentDetails`, `addPurchaseTopicDetails`) first checks if a record exists using `find_one({"payment_intent": chargeObj["payment_intent"]})`. If found, it updates the existing record (`status`, `receipt_url`, etc.) instead of inserting a new one. If not found, it inserts a new record. This ensures that repeated webhooks with the same `payment_intent` update existing records rather than creating duplicates, making the webhook idempotent.
 
 <Note>
-  TODO:
+  **TODO: Can you explain why we use **`payment_intent`**in payment_details and invoice responses? If it can change on each webhook event, wouldn't it better to use ** `sessionId`**for these as well?** 
 
-  1. **How is the event normalized into internal payment states? Unclear right now. Updated desc above**
-  2. **What is the unique key from Stripe used to find the related record in** `stripe_checkout_customer`?  **Updated desc above**
-</Note>
-
-\
-The webhook ensures idempotency so repeated webhooks do not create duplicates.
-
-Idempotency is ensured by using payment_intent as the unique identifier. Each update function (updateInvoiceResponses, updateSummerPayment, updateClassPayment, updateUpsellPaymentDetails, addPurchaseTopicDetails) first checks if a record exists using `find_one({"payment_intent": chargeObj["payment_intent"]})`. If found, it updates the existing record (status, receipt_url, etc.) instead of inserting a new one. If not found, it inserts a new record. This ensures that repeated webhooks with the same payment_intent update existing records rather than creating duplicates, making the webhook idempotent.
-
-<Note>
-  **TODO: Explain how you ensure idempotency. Updated desc above**
+  **I recommend we discuss this on call**
 </Note>
 
 ### Behaviour by payment status
 
 - **Complete**: When a payment is marked as **Complete**, full post-payment processing is triggered via `updateClassPayment()`.
-- **Processing**: For **Processing** payments, the payment is stored as pending in the **stripe_checkout_customer**. **TODO: stored as pending where?**
+- **Processing**: For **Processing** payments, the payment is stored as pending in the `stripe_checkout_customer`. 
 - **Failed**: For **failed** payments, all partial or temporary records are cleaned up.\
   No enrollment, credits, or referrals are applied.
 
@@ -48,27 +38,27 @@ Idempotency is ensured by using payment_intent as the unique identifier. Each up
 `updateClassPayment()` is the **core business orchestration layer** for class purchases.\
 It executes **all database writes, enrollment logic, referral handling, coupons, waitlist cleanup, and automated emails** associated with a payment.
 
-Determines whether the payment is new or already processed (idempotency), then handles logic based on payment status (Complete, Processing, Failed).\
-Persists payment and checkout state and applies all side effects associated with a successful purchase.
-
 All sections below execute under this function unless explicitly skipped due to failure or pending status.
 
 ## Database Writes & Updates
 
 ### A. `payment_details`
 
-- On the **first successful payment** (based on `payment_intent`), **we insert:**  payment_intent, payment_intent, amount, studentId, classId, memberId, device, UTM metadata, and couponCode (if applied).
+- On the **first successful payment** (based on `payment_intent`), **we insert:**  `payment_intent`, `amount`, `studentId`, `classId`, `memberId`, `device`, UTM metadata, and `couponCode` (if applied).
 - On subsequent webhook calls (with the same `payment_intent`), we update the `status` and `receipt_url`.
+  - For example, when the bank transfer is completed processing
 
 ### B. `stripe_checkout_customer`
 
+On every webhook event, we use the Webhook's `payment_intent` to retrieve the corresponding `sessionId` from Stripe, which is the unique key for the `stripe_checkout_customer` collection.
+
 On every webhook event, we update the `payment_intent` & `status` (Complete / Processing / Failed).
 
-The unique identifier for stripe_checkout_customer is sessionId (Stripe Checkout Session ID), not payment_intent. All lookups use `db.stripe_checkout_customer.find_one({"sessionId": sessionId})`, and all updates use `db.stripe_checkout_customer.update_one({'sessionId': sessionId}, ...)`. The payment_intent is a field that gets updated on each webhook event (along with status), but sessionId is the primary key that uniquely identifies each checkout session record. This makes sense because a single checkout session can have multiple webhook events, so the sessionId remains constant while payment_intent and status can change over time.
-
 <Note>
-  TODO: I thought `payment_intent` was the unique identifier? If it's not, than what is the unique identifier for `stripe_checkout_customer`, that you get from Stripe?. **Added desc above**
+  TODO: Looking at stripe_checkout_customer, there is no `payment_intent` field. Do we just update `status`?
 </Note>
+
+The unique identifier for stripe_checkout_customer is `sessionId` (Stripe Checkout Session ID), not `payment_intent`. All lookups use `db.stripe_checkout_customer.find_one({"sessionId": sessionId})`, and all updates use `db.stripe_checkout_customer.update_one({'sessionId': sessionId}, ...)`. The `payment_intent` is a field that gets updated on each webhook event (along with `status`), but `sessionId` is the primary key that uniquely identifies each checkout session record. This makes sense because a single checkout session can have multiple webhook events, so the `sessionId` remains constant while `payment_intent` and `status` can change over time.
 
 ### C. Failure Handling
 
@@ -76,21 +66,17 @@ If payment fails, we delete the payment details and any upsell payments, and mar
 
 ## Referral & Coupon Processing
 
-**If a coupon is used**, Stripe passes it as **TODO: insert \<** a promotion code in the checkout session's discount breakdown. We retrieve it via getCouponCode(sessionId), which extracts the promotion code from total_details.breakdown.discounts.**\>**. We search to see if the coupon exists in **TODO: insert referral collection**\<referral_details\>. If a match is found, we mark the referral as Purchased and update the purchase date.
+**If a coupon is used**, Stripe passes it as a promotion code in the checkout session's discount breakdown. We retrieve it via `getCouponCode(sessionId)`, which calls Stripe to extract the promotion code from `total_details.breakdown.discounts`. We search to see if the coupon exists in `referral_details`. If a match is found, we mark the referral as Purchased and update the purchase date.
 
-For any purchase, we check to see if the family (identified via their `familyId`) has a coupon in ****TODO: insert collection\<coupon_details\>**** . If it does not exist, we generate  **TODO: how?** \<a new referral coupon by calling  generate_coupon_name(firstName), which creates a unique code by: (1) taking the member's first name, (2) removing non-alphanumeric characters and converting to uppercase, (3) generating an MD5 hash of the name + "100", taking the first 5 characters, and (4) combining them as `BASENAME+5CHARHASH` (e.g., "JOHN12345")\>. a new referral coupon, create it in Stripe **TODO: are there any restrictions applied to this coupon?\<**The coupon includes restrictions: minimum purchase of \$100 (10,000 cents USD) and valid only for first-time transactions.**\>**, and store it in `coupon_details`.
-
-<Note>
-  TODO: I rewrote this part to add more detail. Please fill in the TODOs. We'll need to give more details about the referral section in a different page, but this should be sufficient for payment purposes.
-</Note>
+For any purchase, we check to see if the family (identified via their `familyId`) has a referral coupon in `coupon_details`.  If it does not exist, we generate  a new referral coupon with  `generate_coupon_name(firstName)`, which creates a unique code by: (1) taking the member's first name, (2) removing non-alphanumeric characters and converting to uppercase, (3) generating an MD5 hash of the name + "100", taking the first 5 characters, and (4) combining them as `BASENAME+5CHARHASH` (e.g., "JOHN12345").  We create the coupon in Stripe, with the following restrictions: (1) minimum purchase of \$100 (10,000 cents USD), (2) valid only for first-time transactions. The family's coupon data is stored it in `coupon_details`.
 
 ## Trial → Paid Conversion
 
-If the parent previously attended a trial class, the corresponding `trial_class_details`  is updated to `Purchased`. The lookup is performed via **TODO: explain**.\<if the user is exists in the trail class details based on parentId, then we are updating  the status to purchased\>
+If the parent previously attended a trial class, the corresponding `trial_class_details`  is updated to `Purchased`. The lookup is performed via the purchaser's `parentId`.
 
 ## Enrollment & Cleanup
 
-- **Waitlist cleanup**: Searches for student in the `waitlist_details` via ****TODO: what key is used to search \<classId and studentId from stripeCheckout\>****. If found, then they are removed from the waitlist via deletion.
+- **Waitlist cleanup**: Searches for student in the `waitlist_details` with `classId` and `studentId`. If found, then they are removed from the waitlist via deletion.
 - **Upsell Programs** (if any): Inserted into `upsell_payment_details`
 - **Topic Purchases** (if any): Inserted into topic payment collection
 
@@ -100,11 +86,11 @@ If the parent previously attended a trial class, the corresponding `trial_class_
 
 ## BDC Credit
 
-If BDC credits were applied by the user, their credit balance is updated. \*\*TODO: how do we know if BDC credits were used; how is search done and in what collection. \*\*\<while processing the amount we are subtracting discount_amount, which we added in stripe_checkout_customer collections after payment, we are only subtracting from the member credit amount collection based on the discounted amount \>
+If a `discount_amount` is present in `stripe_checkout_customer`, we know the user applied BDC Credits, and the transaction is updated in `member_credit_amount`. 
 
 ## Emails Triggered
 
 ### Automated Emails
 
 - **Admin Notification:** Sent on successful payment. Includes order & enrollment details
-- **User Emails:** Automatically triggered receipt via Stripe. Same as the receipt_url stored in `payment_details`.
+- **User Emails:** Automatically triggered receipt via Stripe. Same as the `receipt_url` stored in `payment_details`.
