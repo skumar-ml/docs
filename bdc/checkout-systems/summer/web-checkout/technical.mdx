@@ -6,6 +6,10 @@ TODO: Give a technical explanation of how checkout page works (before payment). 
 
 Things to explain are the sign-up / log-in redirect, how session & locations are added in, the number of spots calculation, the code & triggers for code for PF Labs, how Model UN & Young Entreneurship are combined.
 
+## Overview
+
+The summer checkout flow follows a similar structure to the [semester checkout](/bdc/checkout-systems/semester/web-checkout/technical/pre-payment), with key differences in how sessions and locations are handled, and how certain programs are validated or combined. This document explains the technical implementation of the summer checkout system, highlighting unique aspects compared to semester checkout.
+
 <Warning>
   TODO: Need to add the following(Future)
 
@@ -19,9 +23,127 @@ Things to explain are the sign-up / log-in redirect, how session & locations are
 
 TODO: For all of these, reference logics that are similar to semester checkout. Specifically highlight logic that is unique to summer.
 
+The summer checkout system is implemented in `checkout_summer_bundle.js` and follows a multi-step flow similar to semester checkout. Key differences include session-based selection (instead of class time slots), location filtering based on available spots, and program-specific validation logic.
+
 ### Before Payment
 
 TODO: Explain the payment options, how the checkout links are created, what happens when user is directed to Stripe, what happens if user returns back from Stripe page
+
+The pre-payment flow consists of three main steps: student information collection, session and location selection, and optional bundle program selection. The implementation follows similar patterns to semester checkout but with summer-specific logic.
+
+#### 1. Login / Signup / Cart Redirection
+
+**Similar to Semester Checkout.**
+
+Reference: See Semester Pre-Payment: Login / Signup / Cart Redirection for detailed implementation.
+
+#### 2. Student Profile & Information Collection
+
+**Similar to Semester Checkout:** Student information is collected via a form with fields: First Name, Last Name, Email, Grade, School, Gender, and Previous Student status.
+
+**Key Difference:** Unlike semester checkout, summer checkout does **not** currently support saved student profiles. The system does not call `getAllPreviousStudents/{memberId}/all` to populate a dropdown of existing students. This is a planned future enhancement (see Warning section below).
+
+When the user clicks **Next** on the student details form:
+
+- `storeBasicData()` saves form data to `localStorage` (used to pre-fill on future visits)
+- `initializeStripePayment()` is called, which triggers the `createNewProgramCheckoutUrls` API
+
+**API Call:** `POST createNewProgramCheckoutUrls`
+
+This API:
+
+- Creates or retrieves a Stripe customer ID via `getCustomerId(email)`
+- Creates or links the student profile via `checkAndCreateMembers()`
+- Generates a unique `checkoutId` (16-character alphanumeric string)
+- Creates two Stripe checkout sessions (one for card, one for ACH) via `createCheckoutSessionUrl()`
+- Inserts two records into `stripe_checkout_customer` collection (one per payment type)
+- Returns `checkoutId`, `cardUrl`, and `achUrl`
+
+#### 3. Session & Location Selection
+
+**Unique to Summer:** Unlike semester checkout where users select specific class time slots, summer checkout requires users to select a **summer session** and a **location**.
+
+**Session Data Retrieval:**
+
+On page load, the `CheckOutWebflow` class calls `getSummerSessionDetails/{memberId}/{programId}` API, which:
+
+- Retrieves all summer program sessions for the given `programId` and current `yearId`
+- For each session, fetches inventory data from `summer_inventory_caps` collection
+- Returns session data with `leftSpot` and `numberOfSpots` for each location
+
+**API:** `getSummerSessionDetails/{memberId}/{programId}`
+
+**Number of Spots Calculation:**
+
+The spots calculation is retrieved from the `summer_inventory_caps` MongoDB collection:
+
+- `numberOfSpots`: Total available spots for a program at a location for a specific session
+- `leftSpot`: Remaining spots (calculated as `numberOfSpots - registrations`)
+
+The frontend filters sessions based on availability:
+
+- Sessions are hidden if both Fort Lee (locationId: 2) and Glen Rock (locationId: 1) have `leftSpot == 0`
+- Locations are only displayed if they have `leftSpot > 0` for the selected session
+
+**Session & Location Update:**
+
+After the user selects a session and location, clicking **Next** triggers `updateStudentDataInDB()`, which:
+
+- Calls `updateDataToCheckoutUrl` API with `checkoutId`, `summerSessionId`, and `locationId`
+- The API updates the existing `stripe_checkout_customer` records via `updateSummerSessionAndLocation()`
+- No new checkout sessions are created; the existing sessions are updated with session and location metadata
+
+**API:** `POST /camp/updateDataToCheckoutUrl`
+
+#### 4. PF Labs Validation (Program ID: 101)
+
+**Unique to Summer:** For PF Labs (programId: 101), an additional validation step occurs before allowing the user to proceed to session selection.
+
+When the user clicks **Next** on the student details form:
+
+- If `programId == '101'`, the frontend calls `validateUserForProgram` API
+- The API validates the student's eligibility based on first name, last name, and memberId
+- If validation fails (`eligible: false`), the user is shown an error message and cannot proceed
+- If validation passes, the user continues to session selection
+
+**API:** `POST /camp/validateUserForProgram`\
+**Implementation:** `bcdc/checkout_summer_bundle.js` - `validateUserForProgram()` method 
+
+#### 5. Model UN & Young Entrepreneurship Combination (Program ID: 102)
+
+**Unique to Summer:** Program ID 102 represents a combined program that includes both Model UN and Young Entrepreneurship.
+
+**How It Works:**
+
+In `getSummerSessionDetails` API, when `programId == 102`:
+
+- The system queries `summer_inventory_caps` for **both** programId 103 and programId 104
+- Inventory data from both programs is combined and returned together
+- The frontend displays locations only if **both** programs have available spots at that location
+
+**Implementation:** `bcdc_aws-main/class-service/api/getSummerSessionDetails.py` 
+
+```python
+if int(programId) == 102:
+    summerInventoryCaps = db.summer_inventory_caps.find({"programId": { "$in": [103,104] },"yearId": yearId})
+else:
+    summerInventoryCaps = db.summer_inventory_caps.find({"programId": int(programId), "yearId": yearId})
+```
+
+**Frontend Logic:** `checkout_summer_bundle.js` - `updateLocation()` method checks that both programs have available spots before displaying a location.
+
+#### 6. Optional Bundle Program Selection
+
+**Similar to Semester Checkout:** After session and location selection, users can optionally select bundle programs (future semester sessions) at a discounted rate.
+
+The implementation follows the same pattern as semester checkout:
+
+- `getUpsellProgramV2` API fetches upsell programs (filtered for `sessionId == 2` which represents summer)
+- Bundle programs are displayed in a modal
+- Selected programs are stored in `$selectedProgram` array
+- Pricing is recalculated dynamically via `updateAmount()` method
+
+**Reference:** See [Semester Pre-Payment: Optional Bundle Program](#) for detailed implementation.
 
 The summer checkout supports **two payment methods**, which are shown on the payment step after all required selections are completed.
 
