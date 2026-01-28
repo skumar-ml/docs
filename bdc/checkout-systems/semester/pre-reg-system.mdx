@@ -47,15 +47,21 @@ Admins manage pre-registration behavior through **Retool**.
   2. how admin can change dates pre-registration is active on the website
 </Note>
 
-### Bundle Management Program Page
+### Bundle Management Program Retool Page
+
+Admins can view the list of bundle users on the **Bundle Management** Retool page. The page includes filters for **Year**, **Session**, **Parent**, and **Student**, allowing admins to quickly narrow down results.
+
+It displays **student details**, **parent details**, and **class information**, along with options to **switch programs** or **process refunds**.
+
+Additionally, admins can add a new bundle program using the **“Add Bundle Program”** button.
+
+![Image](/images/image-5.png)
 
 In Retool, admins can:
 
 - **Add** new students as pre-registered for any future semester
-- **Switch** a students pre-registration to a different semester
+- **Switch** a student's pre-registration to a different semester
 - **Remove** a student's pre-registration status
-
-Changes made in Retool take effect immediately and determine whether users see pre-registration messaging or discounted checkout.
 
 ## Technical Details
 
@@ -132,13 +138,13 @@ Pre-registration is active and bundle data exists. The user can select classes a
 
 ## Pre-Reg Payment
 
-When a user clicks “**Pre-Register**”, the system initiates the payment using the same `initializeStripePayment()` method as the standard checkout flow. Along with the usual payment data, the request includes the bundle-specific `paymentId` **\<TODO: remind briefly what paymentId is used for..?\>\<Comment: **The **paymentId** is the MongoDB ObjectId (`_id`) of the original payment record in the **payment_details** collection. During this purchase, the user also bought a bundle program, which now needs to be pre-registered.**\>**, a flag indicating a bundle purchase `(isBundleProgram: true)`, and the selected `classUniqueId`.
+When a user clicks “**Pre-Register**”, the system initiates the payment using the same `initializeStripePayment()` method as the standard checkout flow. Along with the usual payment data, the request includes the bundle-specific `paymentId` ********`<TODO: remind briefly what paymentId is used for..?><Comment: The paymentId is the MongoDB ObjectId (_id) of the original payment record in the payment_details collection. During this purchase, the user also bought a bundle program, which now needs to be pre-registered.>`********, a flag indicating a bundle purchase `(isBundleProgram: true)`, and the selected `classUniqueId`.
 
 For bundle purchases, the API endpoint is chosen based on whether the user has selected any upsell programs or briefs.
 
-~~If the pre-registration includes upsells or briefs, the system routes the request to the ~~`checkoutUrlForUpsellProgram`~~API. This creates a separate Stripe checkout session for the pre-registration with Upsell programs or briefs.~~ 
+~~If the pre-registration includes upsells or briefs, the system routes the request to the ~~`checkoutUrlForUpsellProgram`~~API. This creates a separate Stripe checkout session for the pre-registration with Upsell programs or briefs.~~
 
-~~If the pre-registration does not include upsells or briefs, the system calls the ~~`updateDataToCheckoutUrl`~~API. In this case, the existing checkout session—identified by the checkoutId—is updated with the pre-registration and class selection details. The corresponding ~~ `stripe_checkout_customer`~~records are updated, and the API returns the latest cardUrl and achUrl for redirecting the user to Stripe Checkout.~~ 
+~~If the pre-registration does not include upsells or briefs, the system calls the ~~`updateDataToCheckoutUrl`~~API. In this case, the existing checkout session—identified by the checkoutId—is updated with the pre-registration and class selection details. The corresponding ~~ `stripe_checkout_customer`~~records are updated, and the API returns the latest cardUrl and achUrl for redirecting the user to Stripe Checkout.~~
 
 If the pre-registration includes a **bundle or briefs**, the system routes the request to the **checkoutUrlForUpsellProgram** API. This API creates a **new Stripe Checkout Session** for the pre-registration with the selected bundle or briefs, inserts/updates the corresponding records in the **stripe_checkout_customer** collection, and returns the **cardUrl** and **achUrl** for redirecting the user to Stripe Checkout.
 
