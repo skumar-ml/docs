@@ -115,15 +115,11 @@ The implementation follows the same pattern as semester checkout, except that th
 
 The summer checkout supports **two payment methods**, which are shown on the payment step after all required selections (for summer session & location) are completed. The payment flow is similar to semester checkout, with dynamic pricing updates handled on the frontend.
 
----
-
-## How Checkout Links Are Created
+### How Checkout Links Are Created
 
 Checkout links are created and updated in stages as the user progresses through the checkout flow. This ensures Stripe always has the most up-to-date information.
 
 **Similar to Semester Checkout:** The checkout link creation follows a similar pattern, but with key differences in when and how sessions are updated.
-
----
 
 ### Step 1: Initial Checkout Creation
 
@@ -131,23 +127,21 @@ Checkout links are created and updated in stages as the user progresses through 
 
 **API Call:** `POST createNewProgramCheckoutUrls`
 
-**What happens:**
-
-- Student details are collected (name, email, grade, school, gender, previous participation)
-- `checkAndCreateMembers()` creates or links the student profile
-- A unique `checkoutId` is generated (16-character alphanumeric string)
-- Two Stripe checkout sessions are created (one for card, one for ACH) via `createCheckoutSessionUrl()`
-- Two records are inserted into `stripe_checkout_customer` collection:
-  - One for `paymentType: "Card"`
-  - One for `paymentType: "Bank Transfer"`
-- Each record contains: `checkoutId`, `sessionId`, `customerId`, `checkoutUrl`, `studentId`, `memberId`, `programId`, `yearId`, `utmSource`
-- Returns `checkoutId`, `cardUrl`, and `achUrl`
+<Accordion title="What happens:">
+  - Student details are collected (name, email, grade, school, gender, previous participation)
+  - `checkAndCreateMembers()` creates or links the student profile
+  - A unique `checkoutId` is generated (16-character alphanumeric string)
+  - Two Stripe checkout sessions are created (one for card, one for ACH) via `createCheckoutSessionUrl()`
+  - Two records are inserted into `stripe_checkout_customer` collection:
+    - One for `paymentType: "Card"`
+    - One for `paymentType: "Bank Transfer"`
+  - Each record contains: `checkoutId`, `sessionId`, `customerId`, `checkoutUrl`, `studentId`, `memberId`, `programId`, `yearId`, `utmSource`
+  - Returns `checkoutId`, `cardUrl`, and `achUrl`
+</Accordion>
 
 **Key Difference from Semester:** At this stage, `summerSessionId` and `locationId` are **not** included. They are added in Step 2.
 
 **Implementation:** `createNewProgramCheckoutUrls.py` - `createCheckoutSessionUrl()` function
-
----
 
 ### Step 2: Updating Session and Location
 
@@ -155,14 +149,7 @@ Checkout links are created and updated in stages as the user progresses through 
 
 **API Call:** `POST updateDataToCheckoutUrl` with body: `{checkoutId, summerSessionId, locationId}`
 
-**What happens:**
-
-- The API calls `updateSummerSessionAndLocation(checkoutId, summerSessionId, locationId)`
-- Updates **both** `stripe_checkout_customer` records (card and ACH) with:
-  - `summerSessionId`
-  - `locationId`
-- **No new Stripe checkout sessions are created** — only metadata is updated in MongoDB
-- The existing Stripe checkout URLs remain valid
+The API calls `updateSummerSessionAndLocation(checkoutId, summerSessionId, locationId)`, which updates  **both** `stripe_checkout_customer` records (card and ACH) with `summerSessionId` and `locationId`. **No new Stripe checkout sessions are created** — only metadata is updated in MongoDB, and the existing Stripe checkout URLs remain valid
 
 **Key Difference from Semester:** Semester checkout updates the Stripe session with class details at this stage. Summer checkout only updates MongoDB metadata; Stripe sessions are updated later when payment is clicked.
 
@@ -170,32 +157,28 @@ Checkout links are created and updated in stages as the user progresses through 
 
 **Frontend:** `bcdc/checkout_summer_bundle.js` - `updateStudentDataInDB()` method
 
----
-
 ### Step 3: Final Update Before Redirecting to Stripe
 
 **When this happens:** When the user clicks either the **ACH** or **Card** payment button.
 
 **API Call:** `POST updateDataToCheckoutUrl` with body: `{checkoutId, isSummerData: true, upsellProgramIds, successUrl, cancelUrl}`
 
-**What happens:**
-
-- The API calls `updateSummerCheckoutUrl()` which:
+<Accordion title="What happens">
+  - The API calls `updateSummerCheckoutUrl()`
   - Sets `checkoutClicked: true` in `stripe_checkout_customer`
   - If `upsellProgramIds` are provided, calls `createCheckoutSessionUrlForSummer()` to:
     - Create new Stripe checkout sessions with bundle programs included
     - Update `stripe_checkout_customer` records with new `sessionId` and `checkoutUrl`
     - Include upsell program line items in the Stripe session
-- Returns updated `cardUrl` and `achUrl`
-- Frontend redirects user to the selected payment URL
+  - Returns updated `cardUrl` and `achUrl`
+  - Frontend redirects user to the selected payment URL
+</Accordion>
 
 **Key Difference from Semester:** Summer checkout creates new Stripe sessions at payment click time (if upsells are selected), whereas semester checkout may update existing sessions.
 
 **Implementation:** `updateDataToCheckoutUrl.py` - `updateSummerCheckoutUrl()` and `createCheckoutSessionUrlForSummer()` functions
 
 **Frontend:** `checkout_summer_bundle.js` - `updateClickEventInDB()` method
-
----
 
 ## After Payment
 
