@@ -76,7 +76,11 @@
               },
               {
                 "group": "Briefs",
-                "pages": []
+                "pages": [
+                  "bdc/checkout-systems/briefs/offerings-page",
+                  "bdc/checkout-systems/briefs/checkout-non-technical",
+                  "bdc/checkout-systems/briefs/checkout-technical"
+                ]
               },
               {
                 "group": "Upsells",
