@@ -19,6 +19,8 @@ If the class is full during checkout, the user will see an option to enroll in t
   TODO: The Waitlist system page on Retool is not showing the proper details on the "Students List". Please update this.
 </Danger>
 
+Users are shown the [Waitlist Jotform](https://form.jotform.com/231870526936160), which asks the user for basic student information. Through URL parameters, the form automatically collects `memberId`, parent details, and the selected class details.
+
 ## Admin Management
 
 Admin can view all users in waitlist for classes through the [Waitlist Center](https://bergendebate.retool.com/apps/6d587fde-b8a9-11f0-abcf-4f17f8e87830/Student%20Consolidation/Waitlist_Center_Speedup%20-%20SC). Only classes with users in the waitlist are shown here.
@@ -30,8 +32,6 @@ Admin can view all users in waitlist for classes through the [Waitlist Center](h
 </Note>
 
 ## Technical Details
-
-TODO: Give technical details of how waitlist collections and APIs. What happens after waitlist user purchases? Are they auto-removed from waitlist? Describe how leftSpots calculation changes according to waitlisted users...
 
 ### Database Collection: waitlist_details
 
@@ -56,11 +56,15 @@ We use the Jotform webhook **signupAndWaitlistHandler** to handle waitlist signu
 
 The handler then calls the **createAccount** API to create the parent and student accounts. If the accounts already exist, the API returns the existing **parentId** and **studentId**; otherwise, it creates new accounts and returns the newly generated IDs.
 
+<Note>
+  Future Work: Integrate Waitlist into CRM
+</Note>
+
 Finally, the user is added to the **waitlist_details** collection. If the user is already waitlisted, the process is skipped.
 
 **Lambda function (inviteUninviteUser)**
 
-This handles sending invites to waitlisted users when seats are available. It can also remove invites if needed. The invite status is updated in the **waitlist_details** collection, and emails are sent to inform users.
+This handles sending invites to waitlisted users when seats are available. It can also remove invites if needed. The invite status is updated in the **waitlist_details** collection, and emails are sent to inform users. **\<TODO: When is this function triggered? Via Retool?\>**
 
 ### Automatic Removal After Purchase
 
@@ -68,8 +72,12 @@ When a Stripe payment is marked as **Complete** or **Processing**, the system ch
 
 ### LeftSpots calculation changes for waitlisted users
 
-Normal users take confirmed seats in the class. **Invited and waitlisted users** temporarily hold seats even though they haven’t completed payment yet. If the person viewing the class is invited and on the waitlist, the system still shows one seat available for them. If they are not invited and waitlisted, all invited and waitlisted users reduce the number of seats shown as available.
+Normal users take confirmed seats in the class. **Invited users **(from the waitlist) temporarily hold seats even though they haven’t completed payment yet. If the person viewing the class is invited, the system still shows one seat available for them. If they are not invited, all other invited users users reduce the number of seats shown as available.
 
 ### Email Notifications
 
 Handled by `inviteUninviteUser`. and sent Invitation and Uninvitation emails
+
+<Note>
+  TODO: Shubham to look at these emails..
+</Note>
