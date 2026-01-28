@@ -4,6 +4,9 @@ title: "Waitlist System"
 
 ## How User Enrolls in Waitlist System
 
+The Waitlist System allows parents to register students for fully booked classes.\
+When a spot becomes available, waitlisted users can be invited. Once payment is completed, the user is automatically removed from the waitlist.
+
 If the class is full during checkout, the user will see an option to enroll in the class's "Waitlist".
 
 ![Image](/images/image-1.png)
@@ -31,3 +34,40 @@ Admin can view all users in waitlist for classes through the [Waitlist Center](h
 ## Technical Details
 
 TODO: Give technical details of how waitlist collections and APIs. What happens after waitlist user purchases? Are they auto-removed from waitlist? Describe how leftSpots calculation changes according to waitlisted users...
+
+### Database Collection: waitlist_details
+
+| Field         | Purpose                                        |
+| ------------- | ---------------------------------------------- |
+| \_id          | MongoDB unique document identifier             |
+| submissionId  | Jotform submission ID                          |
+| memberId      | Parent member ID                               |
+| formId        | Jotform form ID                                |
+| studentId     | Student member ID (MongoDB ObjectId as string) |
+| classId       | Class unique identifier (`classUniqueId`)      |
+| prevStudent   | ndicates previous student (`Yes` / `No`)       |
+| prevSemesters | Previous semesters attended                    |
+| created_on    | Timestamp when record was created              |
+| invite        | Invitation status (optional boolean)           |
+
+### APIs & Services
+
+**JotForm Webhook(** **signupAndWaitlistHandler.py)**
+
+We use the Jotform webhook **signupAndWaitlistHandler.py** to handle waitlist signups. It parses the Jotform submission and checks for duplicate waitlist entries using **classId + submissionId**.
+
+The handler then calls the **createAccount** API to create the parent and student accounts. If the accounts already exist, the API returns the existing **parentId** and **studentId**; otherwise, it creates new accounts and returns the newly generated IDs.
+
+Finally, the user is added to the **waitlist_details** collection. If the user is already waitlisted, the process is skipped.
+
+**Lambda function (inviteUninviteUser.py)**
+
+This handles sending invites to waitlisted users when seats are available. It can also remove invites if needed. The invite status is updated in the **waitlist_details** collection, and emails are sent to inform users.
+
+## Automatic Removal After Purchase
+
+When a Stripe payment is marked as **Complete** or **Processing**, the system checks if the user was on the waitlist. If so, the corresponding entry is automatically and permanently removed from the **waitlist_details** collection.
+
+## Email Notifications
+
+Handled by `inviteUninviteUser.py`. and sent Invitation and Uninvitation emails
