@@ -52,15 +52,15 @@ TODO: Give technical details of how waitlist collections and APIs. What happens 
 
 ### APIs & Services
 
-**JotForm Webhook(** **signupAndWaitlistHandler.py)**
+**JotForm Webhook(** **signupAndWaitlistHandler)**
 
-We use the Jotform webhook **signupAndWaitlistHandler.py** to handle waitlist signups. It parses the Jotform submission and checks for duplicate waitlist entries using **classId + submissionId**.
+We use the Jotform webhook **signupAndWaitlistHandler** to handle waitlist signups. It parses the Jotform submission and checks for duplicate waitlist entries using **classId + submissionId**.
 
 The handler then calls the **createAccount** API to create the parent and student accounts. If the accounts already exist, the API returns the existing **parentId** and **studentId**; otherwise, it creates new accounts and returns the newly generated IDs.
 
 Finally, the user is added to the **waitlist_details** collection. If the user is already waitlisted, the process is skipped.
 
-**Lambda function (inviteUninviteUser.py)**
+**Lambda function (inviteUninviteUser)**
 
 This handles sending invites to waitlisted users when seats are available. It can also remove invites if needed. The invite status is updated in the **waitlist_details** collection, and emails are sent to inform users.
 
@@ -70,7 +70,7 @@ When a Stripe payment is marked as **Complete** or **Processing**, the system ch
 
 ### LeftSpots calculation changes for waitlisted users
 
-Paid users take confirmed seats in the class. **Invited and waitlisted users** temporarily hold seats even though they haven’t completed payment yet. If the person viewing the class is invited and on the waitlist, the system still shows one seat available for them. If they are not invited and waitlisted, all invited and waitlisted users reduce the number of seats shown as available.
+Normal users take confirmed seats in the class. **Invited and waitlisted users** temporarily hold seats even though they haven’t completed payment yet. If the person viewing the class is invited and on the waitlist, the system still shows one seat available for them. If they are not invited and waitlisted, all invited and waitlisted users reduce the number of seats shown as available.
 
 ### Email Notifications
 
