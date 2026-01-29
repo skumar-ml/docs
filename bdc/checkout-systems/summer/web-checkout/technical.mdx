@@ -62,7 +62,7 @@ The spots calculation is retrieved from the `summer_inventory_caps` MongoDB coll
 
 The frontend filters sessions based on availability:
 
-- Sessions are hidden if both Fort Lee (locationId: 2) and Glen Rock (locationId: 1) have `leftSpot == 0` **\<TODO: Are we still doing this?? We have a Livingston location now..\>**
+- - Sessions are hidden only when **all** locations (e.g. Fort Lee, Glen Rock, Livingston) have `leftSpot == 0` for that session — i.e. a session is shown if at least one location has availability. **\<TODO: Are we still doing this?? We have a Livingston location now. SK: updated the code and description as well.\>**
 - Locations are only displayed if they have `leftSpot > 0` for the selected session
 
 **Session & Location Update:**
@@ -182,6 +182,8 @@ The API calls `updateSummerSessionAndLocation(checkoutId, summerSessionId, locat
 
 **Key Difference from Semester:** Calls `updateSummerPayment()` instead of `updateClassPayment()` for summer program purchases. **\<TODO: Explain how API knows the purchase is summer...?\>**
 
+**How the API knows it’s a summer purchase:** `stripePaymentListener` fetches the matching record from `stripe_checkout_customer` using the Stripe Checkout `sessionId`. If that record has `isNewProgram: "yes"` (this field is written when summer checkout sessions are created in `createNewProgramCheckoutUrls.py`), the webhook routes the event to `updateSummerPayment(...)`. If instead the record has `isClassPayment: true`, it routes to `updateClassPayment(...)`.
+
 See [Semester Post-Payment: stripePaymentListener](#) for more detailed implementation.
 
 ### `updateSummerPayment()`
@@ -198,22 +200,24 @@ See [Semester Post-Payment: stripePaymentListener](#) for more detailed implemen
   TODO: format below as a table
 </Note>
 
-- `payment_intent` (used as unique identifier for idempotency)
-- `submissionId` (same as payment_intent)
-- `programId`
-- `studentId`
-- `memberId`
-- `yearId`
-- `sessionId` (always `2` for summer)
-- `summerSessionId`
-- `locationId`
-- `paymentTotalChecksum` (amount in dollars)
-- `bankToken` (balance_transaction ID)
-- `myProducts` (product details)
-- `prevStudent`
-- `couponCode` (if any)
-- `utm_source`
-- `createdOn`
+| Field                | Purpose                                                                                       |
+| -------------------- | --------------------------------------------------------------------------------------------- |
+| payment_intent       | Unique identifier used for idempotency (prevents duplicate inserts across repeated webhooks). |
+| submissionId         | Alias of `payment_intent` (stored redundantly).                                               |
+| programId            | Purchased summer program.                                                                     |
+| studentId            | Student profile linked to the purchase.                                                       |
+| memberId             | Parent making the purchase.                                                                   |
+| yearId               | Current academic year.                                                                        |
+| sessionId            | BDC session identifier (always `2` for summer).                                               |
+| summerSessionId      | Selected summer session (e.g., Session 1/2/3/etc).                                            |
+| locationId           | Selected location for the summer session.                                                     |
+| paymentTotalChecksum | Total amount in dollars (used as a sanity check / record of amount).                          |
+| paymentTotalChecksum | Stripe `balance_transaction` id.                                                              |
+| myProducts           | Product/line-item details stored for reference/invoicing.                                     |
+| prevStudent          | Whether the student is marked as a previous student.                                          |
+| couponCode           | Applied coupon/promo code (if any).                                                           |
+| utm_source           | Attribution source captured at checkout.                                                      |
+| createdOn            | Record creation timestamp.                                                                    |
 
 **Update (subsequent webhook calls):**
 
