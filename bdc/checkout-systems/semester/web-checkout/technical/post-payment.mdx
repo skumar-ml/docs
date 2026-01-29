@@ -86,10 +86,6 @@ If the parent previously attended a trial class, the corresponding `trial_class_
 - **Upsell Programs** (if any): Inserted into `upsell_payment_details`
 - **Topic Purchases** (if any): Inserted into topic payment collection
 
-<Note>
-  TODO: We'll likely need a seperate note to more thoroughly explain how upsells work. I'll figure out the right structure.
-</Note>
-
 ## BDC Credit
 
 If a `discount_amount` is present in `stripe_checkout_customer`, we know the user applied BDC Credits, and the transaction is updated in `member_credit_amount`.
