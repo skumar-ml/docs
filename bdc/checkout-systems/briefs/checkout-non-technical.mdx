@@ -2,11 +2,7 @@
 title: "Checkout"
 ---
 
-## Non-Technical
-
-TODO: Explain non-technical process for checkout (stand-alone). This should be pretty simple.
-
-## Briefs Checkout Flow
+## (Non-Technical) Briefs Checkout Flow
 
 ### 1. Log-in or Sign-up
 
@@ -26,15 +22,7 @@ On clicking the **Next** button, a **credits popup** is displayed (if the user h
 
 Then, the user is redirected to the **Stripe checkout page** to complete payment.
 
-## Technical
-
-TODO: Explain the technical parts of checkout process. Explain what happens after payment. Explain the subscription vs. regular purchase, and how they are represented in db
-
-<Note>
-  In BDC, there is no subscription product for briefs; all briefs purchases are **one-time** (`mode='payment'`).
-</Note>
-
-### Checkout process
+## (Technical) Briefs Checkout Flow
 
 **Entry point:** The Briefs checkout page uses `brief-checkout.js`, which calls `POST checkoutUrlForUpsellProgram` when the user proceeds to payment (with only briefs selected — no `paymentId`).
 
@@ -45,10 +33,12 @@ TODO: Explain the technical parts of checkout process. Explain what happens afte
    - Resolves or creates a Stripe customer via `getCustomerId(parentEmail)`.
    - Loads prices from `topic_details` (e.g. `topic_details[topic['version']]['price']`) and builds Stripe line items.
    - Creates a Stripe Checkout Session with `mode='payment'` (one-time payment, not subscription).
-   - Inserts a record into `stripe_checkout_customer` with `isTopic: true`, `topicIds`, `topics`, `sessionId`, `checkoutUrl`, `memberId`, `customerId`, etc.
+   - Inserts a record into `stripe_checkout_customer` with `isTopic: true`, `topicIds`, `topics`, `sessionId`, `checkoutUrl`, `memberId`, `customerId`, `created_on`, `source`, `amount`, `paymentType`
 3. **Redirect** — Frontend redirects the user to the returned `cardUrl` (Stripe Checkout). No ACH for topic-only in the current implementation (only card).
 
-Data in stripe_checkout_customer for standalone briefs: memberId, topicIds, topics, sessionId, checkoutUrl, paymentType, amount, customerId, source, `isTopic: true,` created_on.
+<Note>
+  TODO: Can you explain why the request would have `topics` **and **`paymentId`? Is this in the case of an upsell...?
+</Note>
 
 ### After payment (webhook)
 
