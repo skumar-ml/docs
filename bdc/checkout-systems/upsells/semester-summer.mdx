@@ -8,30 +8,18 @@ TODO: Write a technical explanation of how bundle purchases are handled differen
 
 ## How bundle purchases are handled after payment
 
-When a user completes a checkout that includes one or more **bundle (upsell) programs**, the Stripe webhook (`stripePaymentListener`) calls `addUpsellToPaymentDetails(chargeObj, stripeCheckout)` once the main payment is Complete or Processing. For **each** selected bundle program (`upsellProgramIds`), the system inserts **two records**:
+When a user completes a checkout that includes one or more **bundle (upsell) programs**, the Stripe webhook (`stripePaymentListener`) calls `addUpsellToPaymentDetails(chargeObj, stripeCheckout)` once the main payment is Complete or Processing. For **each** selected bundle program (`upsellProgramIds`), the system inserts **a placeholder payment record.**
 
-1. **A placeholder payment record** — no specific class or program chosen yet. This record is used later when the user pre-registers or selects a class/session (see below).
-2. **An upsell program record** — identifies which bundle was purchased and links it to the main payment.
+**A placeholder payment record** — no specific class or program chosen yet. This record is used later when the user pre-registers or selects a class/session (see below).
 
-Both are written only when the main payment has a `paymentId` (i.e. the primary purchase is already stored in `payment_details` or `summer_payment_details`).
+This is written only when the main payment has a `paymentId` (i.e. the primary purchase is already stored in `payment_details` or `summer_payment_details`).
 
-### Two records per bundle, and why the placeholder has no program chosen
+###  Why the placeholder has no program chosen
 
 - **Placeholder record**
   - **Semester bundle:** One row per bundle program is inserted into `payment_details` with `classId: ""`, `payment_total_checksum: "0.0"`, `bundleId: stripeCheckout["paymentId"]`, plus `studentId`, `memberId`, `yearId`, `classSessionId` (from `upsell_program`), etc. The empty `classId` means “bundle purchased, class not yet selected.”
-  - **Summer bundle:** One row per bundle program is inserted into `summer_payment_details` with `programId: ""`, `locationId: ""`, `summerSessionId: ""`, `paymentTotalChecksum: "0.0"`, `bundleId: stripeCheckout["paymentId"]`, plus `studentId`, `memberId`, `yearId`, `sessionId: 2`, etc. The empty program/session/location mean “bundle purchased, summer session/location not yet chosen.”
-- **Upsell record**
-  - For **every** bundle (semester or summer), one row per bundle program is inserted into `upsell_payment_details` with `upsellProgramId`, `paymentId` (same as main payment), `bundleId: stripeCheckout["paymentId"]`, `yearId`, `classSessionId` (or session info from `upsell_program`), plus member/student identifiers. This table is the canonical “this member bought this upsell program” and is used for reporting, portal display, and pre-registration eligibility.
+  - **Summer bundle:** One row per bundle program is inserted into `summer_payment_details` with `programId: ""`, `locationId: ""`, `summerSessionId: ""`, `paymentTotalChecksum: "0.0"`, `bundleId: stripeCheckout["paymentId"]`, plus `studentId`, `memberId`, `yearId`, `sessionId: 2`, etc. The empty program/session/location means “bundle purchased, summer session/location not yet chosen.”
 
-The placeholder is what pre-registration (and class/session selection) use: the user already has a payment record for the bundle with no class/session yet; when they pre-register or select a class, that placeholder is updated or used to complete enrollment. See the [pre-registration docs](/bdc/checkout-systems/semester/pre-reg-system) for how bundle purchases are used during pre-reg (e.g. using `paymentId` / `bundleId` to look up the existing payment and add class selection without a new charge).
+The placeholder is what pre-registration (and class/session selection) use: the user already has a payment record for the bundle with no class/session yet; when they pre-register or select a class, that placeholder is updated or used to complete enrollment. See the [pre-registration docs](#) for how bundle purchases are used during pre-reg (e.g. using `paymentId` / `classId` to look up the existing payment and add class selection without a new charge).
 
-### Semester bundle vs summer bundle: DB distinction
-
-| Aspect                         | Semester bundle                                                                                            | Summer bundle                                                                                              |
-| :----------------------------- | :--------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------- |
-| **Placeholder stored in**      | `payment_details`                                                                                          | `summer_payment_details`                                                                                   |
-| **Placeholder “empty” fields** | `classId: ""` (no class chosen yet)                                                                        | `programId: ""`, `locationId: ""`, `summerSessionId: ""` (no program/session/location chosen yet)          |
-| **How bundle type is chosen**  | `upsell_program.sessionId !== 2` → semester; insert into `payment_details`.                                | `upsell_program.sessionId === 2` → summer; insert into `summer_payment_details`.                           |
-| **Upsell program record**      | Same: `upsell_payment_details` (one row per bundle with `upsellProgramId`, `paymentId`, `bundleId`, etc.). | Same: `upsell_payment_details` (one row per bundle with `upsellProgramId`, `paymentId`, `bundleId`, etc.). |
-
-So the only DB difference between semester and summer bundle **after purchase** is **where the placeholder lives** (`payment_details` vs `summer_payment_details`) and which fields are left empty until the user selects a class (semester) or session/location (summer). The `upsell_payment_details` collection is shared and stores the bundle purchase for both.
+So the only DB difference between semester and summer bundle **after purchase** is **where the placeholder lives** (`payment_details` vs `summer_payment_details`) and which fields are left empty until the user selects a class (semester) or session/location (summer). 
