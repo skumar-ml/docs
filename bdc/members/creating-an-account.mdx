@@ -5,11 +5,7 @@ title: "Creating an Account"
 ## How-To
 
 1. Navigate to the sign-up page.
-2. Fill in the required fields (and provide a valid email address)
-
-   <Danger>
-     KS: We can update the line to \*“Fill in the required fields (including a valid email address)” for better clarity.
-   </Danger>
+2. Fill in the required fields (including a valid email address)
 5. Create a password & submit the form to create your account.
 
 <Info>
@@ -38,11 +34,11 @@ The platform supports multiple account types to ensure proper role-based access 
 
 ## Technical Steps Involved in Account Creation
 
-### 1: Memberstack
+### 1. Memberstack
 
 The account creation flow **starts inside Memberstack**. After the user submits the **Sign Up** form (via the Webflow UI), Memberstack creates the user record in **Memberstack’s internal database**. On sign-up, Memberstack triggers Step 2.
 
-### 2: `POST /camp/createUserSignup `
+### 2. `POST /camp/createUserSignup `
 
 Entry point API to initiate account signup and synchronize data between Webflow and Memberstack.
 
@@ -50,83 +46,40 @@ Entry point API to initiate account signup and synchronize data between Webflow 
 
 - Accepts signup payload: `name`, `email`, `accountType` (student | parent | coach), `signUpRef`. For more details please have a look [at the API reference](https://developers.memberstack.com/admin-rest-api/member-actions#create-member).
   - TODO: Eventually, we'll just point to the OpenAPI reference for input payload signature
-- **Webflow Insertion:** Formats the payload into Webflow's CMS-compatible structure. Inserts into Webflow CMS's **Member** collection and publishes the CMS item.
-
-  <Danger>
-    KS: Webflow Insertion - We can update this to Webflow CMS Insertion Or "Webflow CMS Record Creation" for better understanding.
-
-    Also here, it might not be clear which payload is being used, so can we update this section with the content below for better clarity/readibility?
-
-    \
-    Converts the signup payload into **Webflow CMS–compatible fields**
-    - Creates a new item in the **Webflow Member CMS collection**
-    - Publishes the item to make it live on the website.
-  </Danger>
-- **Webflow ↔ Memberstack linkage:** Receives `itemId` from Webflow in the response. Finds member in Memberstack via the payload's `memberId`.  Updates Memberstack record with `webflow-member-id = itemId`.
-
-  <Danger>
-    KS: We can update the content in bullet points.
-    - Receives `itemId` from Webflow in the API response
-    - Identifies the corresponding member in Memberstack using `memberId` from the payload
-    - Updates the Memberstack record with `webflow-member-id = itemId`
-  </Danger>
+- **Webflow CMS Insertion:** Formats the Memberstack payload into a Webflow's CMS-compatible structure. Inserts into Webflow CMS's **Member** collection and publishes the item live to the website.
+- **Webflow ↔ Memberstack linkage:** Receives `itemId` from Webflow in the response. Finds the corresponding member in Memberstack via the payload's `memberId`.  Updates the Memberstack record with `webflow-member-id = itemId`.
 - Invokes `createAccount` service to persist data into MongoDB, with different arguments passed depending on if sign-up was from `student` or `parent`.
-- After data source sync, the signup flow performs **CRM lead synchronization, referral state updates, and automated email**.
 
-  **CRM Lead Creation / Update**
-  - Once `createAccount` succeeds, the API receives the created `student_id` and `parent_id`.
-  - The system invokes the internal CRM endpoint: POST /api/v1/external/create-lead
-  - A lead is created or updated in the CRM with:`parent_id` (always present),`student_id` (only if a student account was created),`tag_name = "account created"`, `ref_id = memberId` (Memberstack memberId for traceability)
+After data source sync, the signup flow performs **CRM lead synchronization, referral state updates, and automated email**.
 
-    <Danger>
-      KS: Can we update the content with the below for better clarity/visibility?\
-      \
-      CRM Lead Creation / Update
-      - After `createAccount` succeeds, the API receives:
-        - `student_id` (if a student account is created)
-        - `parent_id` (always present)
-      - The system then calls the internal CRM endpoint:\
-        \*\*POST \*\*`/api/v1/external/create-lead`
-        - If a lead already exists for the given `parent_id`, it is **updated**
-        - Otherwise, a **new lead is created**
+**CRM Lead Creation / Update**
 
-        The lead is created or updated in the CRM with:
-        - `parent_id` (always present)
-        - `student_id` (only if created)
-        - `tag_name`: `"account created"`
-        - `ref_id`: `memberId` (Memberstack memberId, used for traceability)
-    </Danger>
+- Once `createAccount` succeeds, the API receives the created `student_id` (if student account was created) and `parent_id` (always present).
+- The system invokes the internal CRM endpoint: `/api/v1/external/create-lead`
+- A lead is created or updated in the CRM with:`parent_id`,`student_id`, `tag_name = "account created"`, `ref_id = memberId` (Memberstack `memberId` used for traceability)
 
-  **Referral Status Update**
-  - The system checks the `referral_details` collection using the created parent’s MongoDB `_id` as `guestId`.
-  - If a referral record exists, the referral stage is updated: `referred_stage = "Signed_Up"`
-    - `updated_on` timestamp is set
-- This marks the referral lifecycle transition from **invited / referred → signed up**.
-- Purchase-based referral progression is handled later during payment completion (not at signup).
+**Referral Status Update**
 
-  <Danger>
-    KS : The list points should be more structured.
+- If a parent account is created, the system checks the `referral_details` collection using the created parent’s MongoDB `_id` as `guestId`.
+- If a referral record exists, the referral stage is updated: `referred_stage = "Signed_Up"` and `updated_on` timestamp is set
 
-    **Minor confusion**
-    - _When_ this happens (implicitly after account creation, but not stated). We can update with the below line if correct.
+<Note>
+  Purchase-based referral progression is handled later during payment completion (not at signup).
+</Note>
 
-      - After a parent account is successfully created, the system checks the `referral_details` collection using the newly created parent’s MongoDB `_id` as `guestId`.
-    - Whether a new referral record is ever created?
-    - Can add the last point in the Note.\
-      Note: Purchase-based referral progression is handled later during payment completion, not at signup.
-  </Danger>
-  **Invitation / Account-Exists Emails**
-  - When a signup email matches an existing invited user or a pre-existing account, SES is triggered via: `sendEmail.SendEmail.send_to_email(...)`
-  - This occurs within helper flows such as `setFamilyId()` when:
-    - The user was previously invited
-    - The system links the new signup to an existing family
-  - Email templates are fetched from the `email_content` collection and sent via SES.
+**Invitation / Account-Exists Emails**
+
+- When a signup email matches an existing invited user or a pre-existing account, SES is triggered via: `sendEmail.SendEmail.send_to_email(...)`
+- This occurs within helper flows such as `setFamilyId()` when:
+  - The user was previously invited
+  - The system links the new signup to an existing family
+- Email templates are fetched from the `email_content` collection and sent via SES.
 
 <Note>
   TODO: Shubham needs to review the Account-Exists Email more in-depth. ^^
 </Note>
 
-### 3: `POST /camp/createAccount`
+### 3. `POST /camp/createAccount`
 
 Creates or updates the user account record in MongoDB, based on if `student` or `parent` data was passed in.
 
@@ -136,14 +89,7 @@ Creates or updates the user account record in MongoDB, based on if `student` or 
   - Then, updates the existing record with: `memberId`, `itemId`, `name`, `email`
 - Else, creates a new record for the student or parent.
   - If record is a `student`, then link to the `parent` record (which is also created, if does not exist)
-  - `familyId` is updated as [described in this section](https://dca.mintlify.app/bdc/members/overview#family-architecture)
-
-    <Danger>
-      KS: "described in this section" link is not correct. Getting 404 page not found.
-    </Danger>
-    <Danger>
-      RS: We can use `1.` `2.` `3.` instead of `1:` `2:` for better documentation style.
-    </Danger>
+  - `familyId` is updated as [described in this doc.](/bdc/members/introduction)
 
 ## MongoDB Account Schema
 
