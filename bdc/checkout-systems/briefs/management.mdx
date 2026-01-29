@@ -43,7 +43,7 @@ The **left panel** displays a list of all added topics and the **right panel** s
 
 The dynamic behavior of the [Briefs](https://www.bergendebate.com/briefs) **listing page** is fully controlled by a single client-side JavaScript controller implemented as a class named `Briefs`.
 
-This JavaScript is added via \*\*Webflow Page Settings → Custom Code (Before `</body>`**tag)**  and is executed when the page fires the `DOMContentLoaded` event.
+This JavaScript is added via \*\*Webflow Page Settings \*\*→ Custom Code (Before `</body>`**tag)**  and is executed when the page fires the `DOMContentLoaded` event.
 
 ## API Integration
 
@@ -86,14 +86,14 @@ This function acts as a reusable API utility for the controller.
 
 - Dynamically constructs the request URL using `apiBaseURL`
 - Performs the network request using `fetch`
-- Handles non-OK responses and API errors
+- Handles non-successful HTTP responses and API errors
 - Returns parsed JSON data to the caller
 
 All API communication for the briefs page flows through this method.
 
 ### `getBriefs()`
 
-This is the primary orchestration function for page initialization.
+This is the **main initialization function** for page setup.
 
 - Displays the loading spinner before making the API call
 - Calls `fetchData("getTopicsDetails")`
@@ -101,7 +101,7 @@ This is the primary orchestration function for page initialization.
 - Triggers rendering and event binding on successful data retrieval
 - Ensures the spinner is hidden regardless of success or failure
 
-This function is invoked automatically from the class constructor.
+This function is invoked automatically from the class constructor .
 
 ### `renderBriefs(briefs)`
 
@@ -122,7 +122,7 @@ Handles the creation of a **single brief card**.
 - Generates the card’s HTML structure dynamically
 - Injects topic title, description, image, and pricing
 - Renders both Full and Light version pricing blocks
-- Attaches data attributes (`data-topic-id`) used later for interaction handling
+- Attaches data attributes (`data-topic-id`)  for interaction handling
 
 This function contains **no business logic**—only DOM construction based on provided data.
 
@@ -135,8 +135,6 @@ Manages user interaction for preview functionality.
 - Determines the correct preview PDF URL (Full preferred, fallback to Light)
 - Displays the modal and loads the PDF into an iframe
 - Shows and hides the spinner based on iframe load state
-
-No additional API calls are made during preview; PDFs are loaded directly via provided URLs.
 
 ## Data & Control Flow Summary
 
