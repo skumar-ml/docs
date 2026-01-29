@@ -60,6 +60,7 @@
               },
               {
                 "group": "Summer",
+                "icon": "sun-bright",
                 "pages": [
                   "bdc/checkout-systems/summer/overview",
                   "bdc/checkout-systems/summer/summer-overview",
@@ -76,6 +77,7 @@
               },
               {
                 "group": "Briefs",
+                "icon": "briefcase-blank",
                 "pages": [
                   "bdc/checkout-systems/briefs/management",
                   "bdc/checkout-systems/briefs/checkout-non-technical"
@@ -83,6 +85,7 @@
               },
               {
                 "group": "Upsells",
+                "icon": "money-bill-trend-up",
                 "pages": [
                   "bdc/checkout-systems/upsells/semester-summer",
                   "bdc/checkout-systems/upsells/briefs"
