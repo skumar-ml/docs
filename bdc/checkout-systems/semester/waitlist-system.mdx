@@ -64,7 +64,7 @@ Finally, the user is added to the **waitlist_details** collection. If the user i
 
 **Lambda function (inviteUninviteUser)**
 
-This handles sending invites to waitlisted users when seats are available. It can also remove invites if needed. The invite status is updated in the **waitlist_details** collection, and emails are sent to inform users. **\<TODO: When is this function triggered? Via Retool?\>**
+This handles sending invites to waitlisted users when seats are available. It can also remove invites if needed. The invite status is updated in the **waitlist_details** collection, and emails are sent to inform users. **\<TODO: When is this function triggered? Via Retool?\>\<SK: via retool, we call this lambda function when the user invites and uninvites \>**
 
 ### Automatic Removal After Purchase
 
@@ -72,7 +72,7 @@ When a Stripe payment is marked as **Complete** or **Processing**, the system ch
 
 ### LeftSpots calculation changes for waitlisted users
 
-Normal users take confirmed seats in the class. **Invited users **(from the waitlist) temporarily hold seats even though they haven’t completed payment yet. If the person viewing the class is invited, the system still shows one seat available for them. If they are not invited, all other invited users users reduce the number of seats shown as available.
+Normal users take confirmed seats in the class. \*\*Invited users \*\*(from the waitlist) temporarily hold seats even though they haven’t completed payment yet. If the person viewing the class is invited, the system still shows one seat available for them. If they are not invited, all other invited users users reduce the number of seats shown as available.
 
 ### Email Notifications
 
