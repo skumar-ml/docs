@@ -62,7 +62,7 @@ The spots calculation is retrieved from the `summer_inventory_caps` MongoDB coll
 
 The frontend filters sessions based on availability:
 
-- - Sessions are hidden only when **all** locations (e.g. Fort Lee, Glen Rock, Livingston) have `leftSpot == 0` for that session — i.e. a session is shown if at least one location has availability. **\<TODO: Are we still doing this?? We have a Livingston location now. SK: updated the code and description as well.\>**
+- - Sessions are hidden only when **all** locations (e.g. Fort Lee, Glen Rock, Livingston) have `leftSpot == 0` for that session — i.e. a session is shown if at least one location has availability.
 - Locations are only displayed if they have `leftSpot > 0` for the selected session
 
 **Session & Location Update:**
