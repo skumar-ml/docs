@@ -46,7 +46,7 @@ So **briefs selection** drives (1) what appears in the order summary and totals,
 
 **DB writes:**
 
-- `topic_payment_details` — One row per successful briefs purchase (idempotent on `payment_intent`):
+- `topic_payment_details` — One row per successful briefs purchase
   - **Class + briefs:** `addTopicPaymentDetails()` inserts a single row with `payment_intent`, `submissionId`, `bankToken`, `payment_total_checksum: "0.0"`, `topicIds`, `topics`, `paymentId` (main class payment `_id`), `memberId`, `yearId`, `source`, `createdOn`. So the briefs purchase is linked to the main `payment_details` row via `paymentId`.
   - **Standalone briefs:** `addPurchaseTopicDetails()` inserts a row with `payment_intent`, `payment_total_checksum` (from charge amount), `topicIds`, `topics`, `memberId`, `yearId`, `source`, `createdOn` (no `paymentId`).
 - `stripe_checkout_customer` — Updated with `payment_intent` and `status` (Complete / Processing / Failed) for the checkout session.
