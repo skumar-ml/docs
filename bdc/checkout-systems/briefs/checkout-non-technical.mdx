@@ -22,10 +22,50 @@ Any selected item is immediately added to the **Order Details** section on the r
 
 ### 3. Payment
 
-On clicking the **Next** button, a **credits popup** is displayed (if the user has Bergen credits available). There, they can opt to apply or save their BDC credits. \<TODO: SK link to where this has been described in detail\>. 
+On clicking the **Next** button, a **credits popup** is displayed (if the user has Bergen credits available). There, they can opt to apply or save their BDC credits. \<TODO: SK link to where this has been described in detail\>.
 
 Then, the user is redirected to the **Stripe checkout page** to complete payment.
 
 ## Technical
 
 TODO: Explain the technical parts of checkout process. Explain what happens after payment. Explain the subscription vs. regular purchase, and how they are represented in db
+
+### Checkout process (standalone briefs)
+
+**Entry point:** The Briefs checkout page uses `brief-checkout.js`, which calls `POST checkoutUrlForUpsellProgram` when the user proceeds to payment (with only briefs selected — no `paymentId`).
+
+**Flow:**
+
+1. **Topic selection** — Frontend collects selected topics with `topicId` and `version` (`full_version` or `light_version`) and sends them in the request body as `topics`.
+2. **Checkout URL creation** — If the request has `topics` and no `paymentId`, the API uses `createCheckoutSessionUrlForTopic()` (`checkoutUrlForUpsellProgram.py`). It:
+   - Resolves or creates a Stripe customer via `getCustomerId(parentEmail)`.
+   - Loads prices from `topic_details` (e.g. `topic_details[topic['version']]['price']`) and builds Stripe line items.
+   - Creates a Stripe Checkout Session with `mode='payment'` (one-time payment, not subscription).
+   - Inserts a record into `stripe_checkout_customer` with `isTopic: true`, `topicIds`, `topics`, `sessionId`, `checkoutUrl`, `memberId`, `customerId`, etc.
+3. **Redirect** — Frontend redirects the user to the returned `cardUrl` (Stripe Checkout). No ACH for topic-only in the current implementation (only card).
+
+Data in stripe_checkout_customer for standalone briefs: memberId, topicIds, topics, sessionId, checkoutUrl, paymentType, amount, customerId, source, isTopic: true, created_on.
+
+### After payment (webhook)
+
+**Stripe webhook:** `stripePaymentListener` receives the `charge` (or `checkout.session` for zero-amount) event, looks up `stripe_checkout_customer` by Stripe Checkout `sessionId`, and branches on type:
+
+- If `isTopic === true` → calls `addPurchaseTopicDetails(stripeCheckout, status, chargeObj, sessionId)`.
+
+`addPurchaseTopicDetails()` (in `stripePaymentListener.py`):
+
+- **Failed:** Deletes any existing `topic_payment_details` row for this `payment_intent` and updates `stripe_checkout_customer.status`.
+- **Complete (and topicIds present):** Inserts (or avoids duplicate via `payment_intent`) into `topic_payment_details` with: `payment_intent`, `submissionId`, `bankToken`, `payment_total_checksum`, `topicIds`, `topics`, `source`, `yearId`, `memberId`, `createdOn`. Optionally updates `receipt_url`. Ensures member has a `familyId` if missing, then sends admin email via `sendTopicSuccessEmailToAdmin()`. If there was a credit discount, calls `updateCreditBalance()`.
+
+So **after payment**, the purchase is represented in `topic_payment_details`; `stripe_checkout_customer` is updated with `payment_intent` and `status`.
+
+### Standalone briefs vs briefs with class (and how they are represented in the DB)
+
+There is no subscription product for briefs; all briefs purchases are **one-time** (`mode='payment'`).
+
+| Scenario                                  | How it’s triggered                                                                                                                                                                                                                                                                                           | Where it’s stored                                                                                                                                                                                                                                                                                                                            | How the webhook knows                                                                                                                                                                                                                                                                            |
+| :---------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Standalone briefs purchase**            | User buys only briefs on the Briefs checkout page. Frontend calls `checkoutUrlForUpsellProgram` with `topics` and **no** `paymentId`. API uses `createCheckoutSessionUrlForTopic()`.                                                                                                                         | `stripe_checkout_customer`: one row with `isTopic: true`, `topicIds`, `topics`. `topic_payment_details`: one row per successful payment with `payment_intent`, `topicIds`, `topics`, `memberId`, `yearId`, etc. No row in `payment_details` or `summer_payment_details`.                                                                     | Webhook reads `stripe_checkout_customer` by Stripe `sessionId`; if `isTopic === true` it calls `addPurchaseTopicDetails()` only.                                                                                                                                                                 |
+| **Briefs with class (combined purchase)** | User is in semester/academic checkout and adds briefs to a class. Frontend calls `updateDataToCheckoutUrl` (with class + topics) or `checkoutUrlForUpsellProgram` with `paymentId` + `classId` + `topics`. API uses `createCheckoutSessionUrl()` and stores `topicIds`/`topics` on the same checkout record. | `stripe_checkout_customer`: row has `classId`, `paymentId`, `topicIds`, `topics`, and `isClassPayment` (or equivalent), not `isTopic: true`. `payment_details`: main class payment. `topic_payment_details`: one row for the topic line items (written by `addTopicPaymentDetails()` from the class-payment branch when `topicIds` present). | Webhook branches on `isClassPayment` (or similar); for class payment it runs `updateClassPayment()` which, when `topicIds` is present, also calls `addTopicPaymentDetails()` so the same topic purchase is written to `topic_payment_details` while the main payment stays in `payment_details`. |
+
+**briefs **are represented in `topic_payment_details` (and in `topic_details` for catalog). The difference is whether there is an associated class payment in `payment_details` and whether the checkout record in `stripe_checkout_customer` is marked as topic-only (`isTopic: true`) or class+topics.
