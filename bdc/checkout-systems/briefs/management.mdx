@@ -39,33 +39,118 @@ The **left panel** displays a list of all added topics and the **right panel** s
   Anyone can look at the website and see the action buttons and elements in the card, so it's not important to describe in detail. **I think all of the below can be deleted**.
 </Note>
 
-### Briefs Listing
+## Briefs Page Controller
 
-The briefs page displays **all available Bergen Briefs** in a card-based layout.
+The dynamic behavior of the [Briefs](https://www.bergendebate.com/briefs) **listing page** is fully controlled by a single client-side JavaScript controller implemented as a class named `Briefs`.
 
-![Image](/images/image-8.png)
+This JavaScript is added via \*\*Webflow Page Settings → Custom Code (Before `</body>`**tag)**  and is executed when the page fires the `DOMContentLoaded` event.
 
-Each brief card includes:
+## API Integration
 
-- Brief title (e.g., Logical Fallacies, Cognitive Biases, Argumentation)
-- Short description of the brief content
-- Available versions:
-  - **Full Version** with pricing
-  - **Light Version** with pricing
-- Action buttons: **Preview** and **Purchase**
+### Primary API Used
 
-The pricing for both **Light** and **Full** versions is clearly shown on the page to help users compare options before purchasing.
+**GET** `/getTopicsDetails`
 
-### Preview Functionality
+**Full Endpoint**
 
-- Clicking the **Preview** button dynamically opens the **full-detail preview PDF** for the selected brief.
+```
+https://xkopkui840.execute-api.us-east-1.amazonaws.com/prod/camp/getTopicsDetails
+```
 
-  ![Image](/images/image-9.png)
-- The preview content is specific to the selected brief.
-- Users can **view and download** the preview PDF before making a purchase.
+### API Responsibility
 
-### Purchase Functionality
+This API returns all metadata required to render the briefs page, including:
 
-- Clicking the **Purchase** button redirects the user to the checkout page:\
-  `https://www.bergendebate.com/briefs-checkout`
-- The checkout process uses **Stripe payment integration** to securely complete the transaction.
+- `topicId`
+- `topicName`
+- `topic_order` (used for sorting)
+- Short description / headings
+- Topic image
+- Full version details:
+  - Price
+  - Description
+  - Preview PDF URL
+  - Full PDF URL
+- Light version details:
+  - Price
+  - Description
+  - Preview PDF URL
+
+No additional APIs are required for listing briefs or loading preview PDFs.
+
+## Core JavaScript Functions
+
+### `fetchData(endpoint, memberId = null)`
+
+This function acts as a reusable API utility for the controller.
+
+- Dynamically constructs the request URL using `apiBaseURL`
+- Performs the network request using `fetch`
+- Handles non-OK responses and API errors
+- Returns parsed JSON data to the caller
+
+All API communication for the briefs page flows through this method.
+
+### `getBriefs()`
+
+This is the primary orchestration function for page initialization.
+
+- Displays the loading spinner before making the API call
+- Calls `fetchData("getTopicsDetails")`
+- Validates the API response
+- Triggers rendering and event binding on successful data retrieval
+- Ensures the spinner is hidden regardless of success or failure
+
+This function is invoked automatically from the class constructor.
+
+### `renderBriefs(briefs)`
+
+Responsible for converting raw API data into rendered UI.
+
+- Locates the briefs grid container in the DOM
+- Clears any existing content
+- Sorts briefs using `topic_order`
+- Iterates over the sorted data set
+- Creates and appends DOM nodes using `createBriefCard()`
+
+This ensures display order is fully data-driven and backend-controlled.
+
+### `createBriefCard(brief)`
+
+Handles the creation of a **single brief card**.
+
+- Generates the card’s HTML structure dynamically
+- Injects topic title, description, image, and pricing
+- Renders both Full and Light version pricing blocks
+- Attaches data attributes (`data-topic-id`) used later for interaction handling
+
+This function contains **no business logic**—only DOM construction based on provided data.
+
+### `attachPreviewHandlers(briefs)`
+
+Manages user interaction for preview functionality.
+
+- Attaches click listeners to all Preview buttons
+- Identifies the selected brief using `data-topic-id`
+- Determines the correct preview PDF URL (Full preferred, fallback to Light)
+- Displays the modal and loads the PDF into an iframe
+- Shows and hides the spinner based on iframe load state
+
+No additional API calls are made during preview; PDFs are loaded directly via provided URLs.
+
+## Data & Control Flow Summary
+
+### End-to-End Flow
+
+1. **Page Load**
+   - `DOMContentLoaded` fires
+   - `Briefs` class is instantiated
+2. **Data Fetch**
+   - `getBriefs()` calls `GET /getTopicsDetails`
+3. **Data Processing**
+   - Response is validated and sorted
+4. **UI Generation**
+   - Cards are dynamically rendered via `renderBriefs()` → `createBriefCard()`
+5. **User Interaction**
+   - Preview clicks handled via `attachPreviewHandlers()`
+   - PDFs loaded into modal iframe
