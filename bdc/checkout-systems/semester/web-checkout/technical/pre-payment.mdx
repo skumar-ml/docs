@@ -61,7 +61,7 @@ Selecting an upsell program adds the program to `$selectedProgram`, a frontend s
 
 On page load (after member is logged in), the `getClassDetails `API, based on the selected `levelId`, gets class data, which populates the location options. Clicking a location shows the class time slot options in the format `{Day} {StartTime} - {EndTime}`.
 
-This API also returns the total available spots (`numberOfSpot`) for the class, and the remaining spots (`leftSpot`), which are calculated by subtracting the total number of registrations for the class from `numberOfSpot` (as well as some logic around waitlists, discussed in **\<TODO: SK link to section here\>**
+This API also returns the total available spots (`numberOfSpot`) for the class, and the remaining spots (`leftSpot`), which are calculated by subtracting the total number of registrations for the class from `numberOfSpot` (as well as some logic around waitlists, discussed [on this page](/bdc/checkout-systems/semester/waitlist-system)).
 
 ### Seat Availability (`getAlertMessage`)
 
