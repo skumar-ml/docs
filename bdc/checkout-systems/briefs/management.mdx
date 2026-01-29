@@ -41,9 +41,9 @@ The **left panel** displays a list of all added topics and the **right panel** s
 
 ## Briefs Page Controller
 
-The dynamic behavior of the [Briefs](https://www.bergendebate.com/briefs) **listing page** is fully controlled by a single client-side JavaScript controller implemented as a class named `Briefs`.
+The dynamic behavior of the [Briefs](https://www.bergendebate.com/briefs) **listing page** is managed by a single client-side JavaScript controller implemented as a `Briefs` class, responsible for data fetching, rendering briefs, and user interactions such as previews.
 
-This JavaScript is added via \*\*Webflow Page Settings \*\*→ Custom Code (Before `</body>`**tag)**  and is executed when the page fires the `DOMContentLoaded` event.
+This JavaScript is added via **Webflow Page Settings **→ Custom Code (Before `</body>`**tag)**  and is executed when the page fires the `DOMContentLoaded` event.
 
 ## API Integration
 
@@ -75,8 +75,6 @@ This API returns all metadata required to render the briefs page, including:
   - Price
   - Description
   - Preview PDF URL
-
-No additional APIs are required for listing briefs or loading preview PDFs.
 
 ## Core JavaScript Functions
 
