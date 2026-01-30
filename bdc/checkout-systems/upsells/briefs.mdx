@@ -1,4 +1,60 @@
 ---
-title: 'Briefs'
+title: "Briefs"
 ---
 
+## Checkout
+
+TODO:
+
+1. Explain (technologically) how briefs upsells are rendered during checkout
+2. Explain what briefs selection does
+3. Explain what happens post-purchase (in terms of DB writes and any other processes)
+
+Briefs (topics) can be purchased as an **upsell during semester/class checkout** or **standalone** on the Briefs checkout page. This section covers how briefs upsells are rendered and processed during class checkout, what selection does, and what happens after payment.
+
+### 1. How briefs upsells are rendered during checkout
+
+**Where:** On the **semester class-detail/checkout** flow, briefs are rendered by `class_details_stripe_bundle.js` (and the staging variant). Summer checkout does not currently offer briefs as an upsell.
+
+**API:** The frontend calls `GET getTopicsDetails` (class-service) to load all available topics. The API returns a list of topics with `topicId`, `topicName`, `topic_order`, `full_version` and `light_version` (each with `price`, `description`, `preview_pdf_url`). Topics are sorted by `topic_order`.
+
+**Rendering flow:**
+
+- `getBriefs()` — On load (or when the briefs step is shown), the controller calls `fetchData('getTopicsDetails')`, then passes `response.topics` to `renderBriefs()` and `attachPreviewHandlers()`.
+- `renderBriefs(topics)` — Finds all containers with `[data-briefs-checkout="select-briefs"]`, clears them, sorts topics by `topic_order`, and for each topic appends a card built by `createBriefCard(topic)`.
+- `createBriefCard(topic)` — Builds one brief card: topic name, “View Brief” preview button, and two pricing blocks (Full Version / Light Version) with radio inputs, description, and price. Each card has `data-topic-id` and blocks with `data-briefs-checkout="full-version"` and `data-briefs-checkout="light-version"`. Click handlers call `selectVersion(topic, 'full'|'light', card)`.
+- `attachPreviewHandlers(briefs)` — Binds “View Brief” buttons to open the preview modal and load the topic’s `full_version.preview_pdf_url` or `light_version.preview_pdf_url` in an iframe (no extra API call).
+
+**Data source:** Topic catalog and pricing come from `topic_details` (via `getTopicsDetails`). The frontend does not call a separate “briefs for checkout” API; the same topic list is used for display and for building the payload sent at payment.
+
+### 2. What briefs selection does
+
+**Selection state:** Choosing Full or Light on a card calls `selectVersion(topic, version, card)`, which updates the in-memory array `selectedBriefs` (add/remove/update by `topicId`) and toggles the “selected” styling on the Full/Light blocks. Each entry in `selectedBriefs` has `topicId`, `topicName`, `version` (`'full'` or `'light'`), `price`, and `description`.
+
+**Order details and totals:** `updateBriefsOrderDetails()` (and related total logic) copies `selectedBriefs` into the order summary containers (`[data-briefs-checkout="briefs-order-details"]`), showing topic name, Full/Light, and price, and recalculates the displayed total so that briefs are included with class and bundle amounts (e.g. `data-stripe="brief-price"` elements are summed).
+
+**When the user proceeds to payment:**
+
+- **Class checkout (no bundle pre-reg):** The request body to `POST updateDataToCheckoutUrl` includes `data.topics`: an array of `{ topicId, version: 'full_version' | 'light_version' }` derived from `selectedBriefs`. The API updates `stripe_checkout_customer` with `topicIds` and `topics`, and builds Stripe Checkout line items from `topic_details` (price per topic/version). The user is then sent to Stripe with class + briefs on the same session.
+- **Bundle pre-reg or portal purchase with briefs:** The same `data.topics` shape is sent to `POST checkoutUrlForUpsellProgram` via `initSupplementaryPayment(data, type)`. That API creates or updates the Stripe session and `stripe_checkout_customer` with `topicIds` and `topics`, and adds the corresponding line items.
+
+So **briefs selection** drives (1) what appears in the order summary and totals, and (2) the `topics` (and thus `topicIds`) sent to the backend and stored on `stripe_checkout_customer` and in the Stripe session.
+
+### 3. What happens post-purchase (DB writes and other processes)
+
+**Webhook entry:** `stripePaymentListener` looks up `stripe_checkout_customer` by Stripe Checkout `sessionId`. If the record has `topicIds` (and length \> 0), it calls either `addTopicPaymentDetails()` (class + briefs) or `addPurchaseTopicDetails()` (standalone briefs), depending on whether this is a class payment or a topic-only payment.
+
+**DB writes:**
+
+- `topic_payment_details` — One row per successful briefs purchase
+  - **Class + briefs:** `addTopicPaymentDetails()` inserts a single row with `payment_intent`, `submissionId`, `bankToken`, `payment_total_checksum: "0.0"`, `topicIds`, `topics`, `paymentId` (main class payment `_id`), `memberId`, `yearId`, `source`, `createdOn`. So the briefs purchase is linked to the main `payment_details` row via `paymentId`.
+  - **Standalone briefs:** `addPurchaseTopicDetails()` inserts a row with `payment_intent`, `payment_total_checksum` (from charge amount), `topicIds`, `topics`, `memberId`, `yearId`, `source`, `createdOn` (no `paymentId`).
+- `stripe_checkout_customer` — Updated with `payment_intent` and `status` (Complete / Processing / Failed) for the checkout session.
+- `topic_payment_details` — On later webhook events, `receipt_url` may be set from the charge object.
+
+**Other processes:**
+
+- **Failed payment:** Any existing `topic_payment_details` row for that `payment_intent` is deleted; `stripe_checkout_customer` is updated to Failed.
+- **Standalone only:** `addPurchaseTopicDetails()` ensures the member has a `familyId` (generates and writes to `members` if missing), sends an admin email via `sendTopicSuccessEmailToAdmin()`, and if the member used credits, calls `updateCreditBalance()` to debit `member_credit_amount`.
+
+So **post-purchase**, briefs are persisted in `topic_payment_details` (and optionally linked to the main class payment via `paymentId` when bought with a class); `stripe_checkout_customer` reflects the final payment state; and for standalone briefs, familyId, admin email, and credit balance are updated as above.

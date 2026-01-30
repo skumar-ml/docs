@@ -2,175 +2,77 @@
 title: "Pre-Reg System"
 ---
 
-## Admin Details
+Pre-registration allows eligible students to register earlier than the public enrollment so they can secure class spots before regular registration opens. This document explains: (1) the different pre-registration states; (2) what users see in each state; (3) how admins can control and manage these states using Retool.
 
-TODO: Give a non-technical explanation of all the different states for the pre-reg system, and how they can be controlled via Retool
-
-The pre-registration system controls how and when students with **year-long bundle programs** can register early for upcoming semesters at discounted rates.
-
-This document explains:
-
-- The different pre-registration states
-- What users see in each state
-- How admins can control and manage these states using Retool
-
----
-
-## Overview
-
-Pre-registration allows eligible students to:
-
-- Register earlier than general enrollment
-- Secure class spots before regular registration opens
-
-The system automatically places each user into the correct state based on **timing** and **bundle ownership**.
-
----
+Pre-registration typically runs **at least one-week** before the start of the general enrollment.
 
 ## The Three Pre-Registration States
 
 ### 1. Normal Registration State
 
-This is the default experience for most users.
-
-#### What This Means
-
-- Pre-registration is not currently active **or**
-- The user does not have a year-long bundle program
-
-#### What Users See
-
-- Standard registration and checkout flow
-- Regular pricing
-- No pre-registration messaging or banner
-
----
+**This is the default experience** for most users. In this state, pre-registration is not active _and_ the user is not pre-registered for the semester. **User's see** the standard registration and checkout flow.
 
 ### 2. Pre-Registration Information State
 
-This is an informational state that highlights pre-registration eligibility. 
+This state shows **when** pre-registration is currently active, but the user is _not_ pre-registered for the semester.
 
-#### What This Means
-
-- Pre-registration is currently active
-- The user is eligible (has pre-register a year-long bundle)
-- The user has **not yet completed** pre-registration
-
-#### What Users See
-
-- Banner message:
-
-  > “Registration is currently open only for Year-Long Bundle students”
-- Countdown timer showing when pre-registration ends
-- Information about discounts and early access
-
-#### When This Happens
-
-- Pre-registration window is open
-- User has not completed pre-registration
+The user **sees** (1) a banner message that "Registration is currently open only for Year-Long Bundle students"; (2) a countdown timer showing when pre-registration ends; (3) and some information explaining the benefits of pre-registering for future semesters.
 
 ### 3. Bundle Purchase State
 
-This state allows eligible users to complete pre registration  
+This state occurs **when** we recognize the student as having pre-registered for the semester, allowing for early enrollment.
 
-#### What This Means
+<Note>
+  If pre-registration is active, the user can only enroll pre-registered students (they cannot enroll a _different student_).
+</Note>
 
-- Pre-registration is active
-- The system recognizes the student as part of a bundle program
-
-#### What Users See
-
-- “Pre-Register” button instead of “Register”
-- Option to add Bundle programs or briefs
-
-#### When This Happens
-
-- Pre-registration window is active
-- Student has been matched to a bundle program
-
-#### What Users Can Do
-
-- Select class locations and times
-- Add optional programs or briefs
-- Secure class spots early
-
----
-
-## How the System Determines the State
-
-The system automatically checks:
-
-1. **Pre-Registration Dates**
-   - Has pre-registration started?
-   - Has it ended?
-2. **Bundle Ownership**
-   - Does the user have a year-long bundle?
-   - Has pre-registration already been completed?
-3. **Student Matching**
-   - Does the student name match a bundle record?
-   - Is the student eligible for early registration?
+Pre-registered users will see that the standard “Pay Now” button is replaced with a “Pre-Register” button. Users can select class locations and times and complete enrollment without payment. Payment is required only if additional programs are added.
 
 ## Common Scenarios
 
-| Scenario                         | State                 | User Experience                       |
-| :------------------------------- | :-------------------- | :------------------------------------ |
-| New user during pre-reg          | Pre-Registration Info | Sees upgrade and discount info        |
-| Bundle owner, not pre-registered | Pre-Registration Info | Prompted to complete pre-registration |
-| Bundle owner, pre-registered     | Bundle Purchase       | Can pre register                      |
-| After pre-reg ends               | Normal                | Standard registration                 |
-| Before pre-reg starts            | Normal                | Standard registration                 |
-
----
+| Scenario                             | State                 | User Experience                |
+| :----------------------------------- | :-------------------- | :----------------------------- |
+| New user during pre-registration     | Pre-Registration Info | Sees upgrade and discount info |
+| Bundle owner during pre-registration | Bundle Purchase       | Can pre register               |
+| After pre-reg ends                   | Normal                | Standard registration          |
 
 ## Retool: Admin Control & Management
 
 Admins manage pre-registration behavior through **Retool**.
 
-### Bundle Management Program Page
+### Bundle Management Program Retool Page
+
+Admins can view the list of bundle users on the [Bundle Management Retool page](https://bergendebate.retool.com/apps/54fa8214-ae56-11f0-a066-7f737d30b0d1/Bundle%20Management%20System). The page includes filters for **Year**, **Session**, **Parent**, and **Student**, allowing admins to quickly narrow down results.
+
+It displays **student details**, **parent details**, and **class information**, along with options to **switch programs** or **process refunds**.
+
+Additionally, admins can add a new student to a bundle program using the **“Add Bundle Program”** button.
+
+![Image](/images/image-5.png)
 
 In Retool, admins can:
 
-- Add new bundle programs
-- Switch students between bundle programs
-- Remove students from bundle programs
+- **Add** new students as pre-registered for any future semester
+- **Switch** a student's pre-registration to a different semester
+- **Remove** a student's pre-registration status
 
-These actions directly affect which pre-registration state a user sees.
+### Add / Edit Session Retool page
 
- Changes made in Retool take effect immediately and determine whether users see pre-registration messaging or discounted checkout.
+Admins can modify pre-registration availability by editing the session in **Manage Sessions** and updating the _Pre-Registration Start Date_ and _Pre-Registration End Date_. The frontend checks the current date against these values to enable or disable pre-registration dynamically.
 
-## Summary
-
-The pre-registration system has three clear states:
-
-1. **Normal Registration** – Standard experience for all users
-2. **Pre-Registration Information** – Awareness and upgrade opportunity
-3. **Bundle Purchase** – Discounted checkout and early access
-
-**In retool, we have a bundle management program page there user can add, switch, and delete the bundle program**
+![Image](/images/image-22.png)
 
 ## Technical Details
 
-TODO: Give a technical explanation of how these states are calculated for each user. How the user can "auto-enroll" without making a payment.
-
-### Pre-Registration & Auto-Enrollment State Logic 
+This section explains how the frontend determines a user’s pre-registration state and when payment is required.
 
 ### Overview
 
-The system determines a user’s **pre-registration and bundle state** by calling the backend API:
+The frontend determines a user’s state by calling the backend API `getYearLongBundleDetails/webflowMemberId`
 
-```
-GET getYearLongBundleDetails/{webflowMemberId}
-```
+Based on the API response (`message` and `data`), the frontend calculates the current **user state** and decides: (1) what UI to show; (2) whether the user can **auto-enroll**; (3) whether payment is required or not
 
-Based on the API response (`message` and `data`), the frontend calculates the current **user state** and decides:
-
-- What UI to show
-- Whether the user can **auto-enroll**
-- Whether payment is required or not
-
----
-
-## API Response Structure
+### API Response Structure
 
 The API returns the following fields:
 
@@ -182,51 +84,15 @@ The API returns the following fields:
 }
 ```
 
-### Key Fields
-
 | Field                    | Purpose                                                     |
 | :----------------------- | :---------------------------------------------------------- |
 | `message`                | Indicates the current phase of pre-registration             |
 | `data`                   | Contains bundle details if the user is eligible to purchase |
 | `preRegistrationEndDate` | Used for countdowns                                         |
 
----
+### State Determination Logic
 
-## State Determination Logic
-
-The frontend evaluates the response using the following logic:
-
-```
-var enrollmentState = "Normal"
-this.fetchData("getYearLongBundleDetails/" + this.webflowMemberId)
-  .then((data) => {
-    if (
-      data.message &&
-      data.data.length == 0 &&
-      data.message == "Either pre-registration not yet started or already ended"
-    ) {
-      enrollmentState = "Normal";
-    }
-    else if (
-      data.data &&
-      data.data.length == 0 &&
-      data.message == "Pre-registration is going on"
-    ) {
-      enrollmentState = "Pre-Registration-Info"; // Showing banner
-    }
-    else if (
-      data.data &&
-      data.data.length > 0 &&
-      data.message == "Pre-registration is going on"
-    ) {
-      enrollmentState = "Bundle-Purchase"; // Pre-registartion purchase
-    }
-  });
-```
-
----
-
-## Defined User States
+The frontend evaluates the response using the following logic
 
 ### 1. **Normal**
 
@@ -237,9 +103,7 @@ this.fetchData("getYearLongBundleDetails/" + this.webflowMemberId)
 
 **Meaning**
 
-- Pre-registration is not active
-- User proceeds with standard enrollment flow
-- Payment is required if applicable
+Pre-registration has not started or has already ended. Users proceed with standard enrollment and payment if applicable.
 
 ### 2. **Pre-Registration-Info**
 
@@ -250,9 +114,7 @@ this.fetchData("getYearLongBundleDetails/" + this.webflowMemberId)
 
 **Meaning**
 
-- Pre-registration window is active
-- Only pre-registartion window will display
-- User is **not eligible for bundle purchase**
+Pre-registration is active, but the user has no eligible bundle data. Only informational banners and countdowns are shown.
 
 ### 3. **Bundle-Purchase**
 
@@ -263,7 +125,16 @@ this.fetchData("getYearLongBundleDetails/" + this.webflowMemberId)
 
 **Meaning**
 
-- Pre-registration is active
-- User is eligible to pre-register for a **Year-Long Bundle**
-- user just needs to select the class and click on the  pre-register button. no need for payment
-- Payment is required to complete enrollment if they added bundle programs with pre-register
+Pre-registration is active and bundle data exists. The user can select classes and complete pre-registration. If no add-ons are selected, enrollment completes **without payment**. Payment is required only when optional bundle programs are added.
+
+## Pre-Reg Payment
+
+When a user clicks “**Pre-Register**”, the system initiates the payment using the same `initializeStripePayment()` method as the standard checkout flow. Along with the usual payment data, the request includes: (1) the bundle-specific `paymentId`, which references the original payment record stored in the `payment_details` collection when the user originally pre-registered. Based on this existing payment record, the system now uses the `paymentId` to pre-register the user for the bundled program without requiring a new payment. (2) There is a flag indicating a bundle purchase `(isBundleProgram: true)`, and the selected `classUniqueId`.
+
+For bundle purchases, the API endpoint is chosen based on whether the user has selected any upsell programs or briefs.
+
+If the pre-registration includes a **bundle or briefs**, the system routes the request to the `checkoutUrlForUpsellProgram` API. This API creates a **new Stripe Checkout Session** for the pre-registration with the selected bundle or briefs, inserts/updates the corresponding records in the `stripe_checkout_customer` collection, and returns the `cardUrl` and `achUrl` for redirecting the user to Stripe Checkout.
+
+**Upon successful payment of the bundle or brief, pre-registration will be completed by linking the classId to the corresponding paymentId.**
+
+If the pre-registration **does not include any bundle or briefs**, the system does **not** create a new checkout session. Instead, it updates only the `payment_details` collection using the existing `paymentId`, adding the pre-registration and class selection details. In this case, the `stripe_checkout_customer` collection is not modified, and no new Stripe URLs are returned.

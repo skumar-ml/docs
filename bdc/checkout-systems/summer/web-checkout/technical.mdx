@@ -1,0 +1,304 @@
+---
+title: "Technical: Checkout Flow"
+---
+
+The summer checkout system is implemented in `checkout_summer_bundle.js` and follows a multi-step flow similar to [semester checkout](/bdc/checkout-systems/semester/introduction). This documentation focuses on nuances specific to summer enrollment.
+
+<Warning>
+  TODO: Need to add the following(Future)
+
+  1. Saved student profiles (similar to semester)
+  2. Order session display numerically. This can be done now itself
+  3. **View student details in the payment screen**
+  4. **Brief upsell**
+</Warning>
+
+## Before Payment
+
+The pre-payment flow consists of **three main steps**: (1) student information collection; (2) session and location selection; and (3) optional bundle program selection. The implementation follows similar patterns to semester checkout but with summer-specific logic.
+
+The preliminary step is account log-in/sign-up. [The detailed implementation can be references in the semester checkout docs](/bdc/checkout-systems/semester/web-checkout/technical/pre-payment).
+
+### 1. Student Profile & Information Collection
+
+**Similar to Semester Checkout:** Student information is collected via a form with fields: First Name, Last Name, Email, Grade, School, Gender, and Previous Student status.
+
+**Key Difference:** Unlike semester checkout, summer checkout **does** **not** currently support saved student profiles. The system does not call `getAllPreviousStudents/{memberId}/all` to populate a dropdown of existing students. _This is a planned future enhancement_.
+
+When the user clicks **Next** on the student details form:
+
+- `storeBasicData()` saves form data to `localStorage` (used to pre-fill on future visits)
+- `initializeStripePayment()` is called, which triggers the `createNewProgramCheckoutUrls` API
+
+**API Call:** `POST createNewProgramCheckoutUrls`
+
+<Accordion title="What happens">
+  - Creates or retrieves a Stripe customer ID via `getCustomerId(email)`
+  - Creates or links the student profile via `checkAndCreateMembers()`
+  - Generates a unique `checkoutId` (16-character alphanumeric string)
+  - Creates two Stripe checkout sessions (one for card, one for ACH) via `createCheckoutSessionUrl()`
+  - Inserts two records into `stripe_checkout_customer` collection (one per payment type)
+  - Returns `checkoutId`, `cardUrl`, and `achUrl`
+</Accordion>
+
+### 2. Session & Location Selection
+
+**Unique to Summer:** Unlike semester checkout where users select specific class time slots, summer checkout requires users to select a **summer session** and a **location**.
+
+**Session Data Retrieval:**
+
+On page load, the `CheckOutWebflow` class calls `getSummerSessionDetails/{memberId}/{programId}` API, which:
+
+- Retrieves all summer program sessions for the given `programId` and current `yearId`
+- For each session, fetches inventory data from `summer_inventory_caps` collection
+- Returns session data with `leftSpot` and `numberOfSpots` for each location
+
+**Number of Spots Calculation:**
+
+The spots calculation is retrieved from the `summer_inventory_caps` MongoDB collection:
+
+- `numberOfSpots`: Total available spots for a program at a location for a specific session
+- `leftSpot`: Remaining spots (calculated as `numberOfSpots - registrations`)
+
+The frontend filters sessions based on availability:
+
+- - Sessions are hidden only when **all** locations (e.g. Fort Lee, Glen Rock, Livingston) have `leftSpot == 0` for that session — i.e. a session is shown if at least one location has availability.
+- Locations are only displayed if they have `leftSpot > 0` for the selected session
+
+**Session & Location Update:**
+
+After the user selects a session and location, clicking **Next** triggers `updateStudentDataInDB()`, which calls the `updateDataToCheckoutUrl` API with `checkoutId`, `summerSessionId`, and `locationId`. The API updates the existing `stripe_checkout_customer` records via `updateSummerSessionAndLocation()` to add the session and location metadata.
+
+### (Optional) ProgramId Specific Nuances
+
+We have specific logic to handle the case of PF Labs (which is restricted to specific users) and the MUN & YES full-day purchase (which represents a merged program of seperate classes of MUN and YES).
+
+<AccordionGroup>
+  <Accordion title="PF Labs ">
+    **Unique to Summer:** For PF Labs (`programId`: 101), an additional validation step occurs before allowing the user to proceed to session selection.
+
+    When the user clicks **Next** on the student details form:
+
+    - If `programId == '101'`, the frontend calls `validateUserForProgram` API via (`checkout_summer_bundle.js`'s `validateUserForProgram()` method.
+    - The API validates the student's eligibility based on first name, last name, and memberId
+    - If validation fails (`eligible: false`), the user is informed that that they are ineligible for this program. The user can continue to registration if they have a bypass code.
+    - If validation passes, the user continues to session selection
+  </Accordion>
+  <Accordion title="Model UN & Young Entrepreneurship Combination">
+    **Unique to Summer:** `programId 102` represents a combined program that includes both Model UN and Young Entrepreneurship (which can also be enrolled in individually).
+
+    **How It Works:**
+
+    In `getSummerSessionDetails` API, when `programId == 102`:
+
+    - The system queries `summer_inventory_caps` for **both** `programId` 103 and 104
+    - Inventory data from both programs is combined and returned together
+    - The frontend displays locations only if **both** programs have available spots at that location
+
+    **Frontend Logic:** `checkout_summer_bundle.js` - `updateLocation()` method checks that both programs have available spots before displaying a location.
+  </Accordion>
+</AccordionGroup>
+
+### 3. Optional Bundle Program Selection
+
+**Similar to Semester Checkout:** After session and location selection, users can optionally select bundle programs (future semester sessions) at a discounted rate.
+
+The implementation follows the same pattern as semester checkout, except that the `getUpsellProgramV2` API fetches summer upsell programs (filtered for `sessionId == 2` which represents summer). See the docs for the detailed implementation. \<TODO: SK link to correct docs\>.
+
+## Payment
+
+The summer checkout supports **two payment methods**, which are shown on the payment step after all required selections (for summer session & location) are completed. The payment flow is similar to semester checkout, with dynamic pricing updates handled on the frontend.
+
+### How Checkout Links Are Created
+
+Checkout links are created and updated in stages as the user progresses through the checkout flow. This ensures Stripe always has the most up-to-date information.
+
+**Similar to Semester Checkout:** The checkout link creation follows a similar pattern, but with key differences in when and how sessions are updated.
+
+### Step 1: Initial Checkout Creation
+
+**When this happens:** After the user completes the student information form and clicks **Next**.
+
+**API Call:** `POST createNewProgramCheckoutUrls`
+
+<Accordion title="What happens:">
+  - Student details are collected (name, email, grade, school, gender, previous participation)
+  - `checkAndCreateMembers()` creates or links the student profile
+  - A unique `checkoutId` is generated (16-character alphanumeric string)
+  - Two Stripe checkout sessions are created (one for card, one for ACH) via `createCheckoutSessionUrl()`
+  - Two records are inserted into `stripe_checkout_customer` collection:
+    - One for `paymentType: "Card"`
+    - One for `paymentType: "Bank Transfer"`
+  - Each record contains: `checkoutId`, `sessionId`, `customerId`, `checkoutUrl`, `studentId`, `memberId`, `programId`, `yearId`, `utmSource`
+  - Returns `checkoutId`, `cardUrl`, and `achUrl`
+</Accordion>
+
+**Key Difference from Semester:** At this stage, `summerSessionId` and `locationId` are **not** included. They are added in Step 2.
+
+**Implementation:** `createNewProgramCheckoutUrls.py` - `createCheckoutSessionUrl()` function
+
+### Step 2: Updating Session and Location
+
+**When this happens:** After the user selects a summer session and location, then clicks **Next**.
+
+**API Call:** `POST updateDataToCheckoutUrl` with body: `{checkoutId, summerSessionId, locationId}`
+
+The API calls `updateSummerSessionAndLocation(checkoutId, summerSessionId, locationId)`, which updates  **both** `stripe_checkout_customer` records (card and ACH) with `summerSessionId` and `locationId`. **No new Stripe checkout sessions are created** — only metadata is updated in MongoDB, and the existing Stripe checkout URLs remain valid
+
+**Key Difference from Semester:** Semester checkout updates the Stripe session with class details at this stage. Summer checkout only updates MongoDB metadata; Stripe sessions are updated later when payment is clicked.
+
+**Implementation:** `bcdc_aws-main/payment-checkout-service/api/updateDataToCheckoutUrl.py` - `updateSummerSessionAndLocation()` function
+
+**Frontend:** `bcdc/checkout_summer_bundle.js` - `updateStudentDataInDB()` method
+
+### Step 3: Final Update Before Redirecting to Stripe
+
+**When this happens:** When the user clicks either the **ACH** or **Card** payment button.
+
+**API Call:** `POST updateDataToCheckoutUrl` with body: `{checkoutId, isSummerData: true, upsellProgramIds, successUrl, cancelUrl}`
+
+<Accordion title="What happens">
+  - The API calls `updateSummerCheckoutUrl()`
+  - Sets `checkoutClicked: true` in `stripe_checkout_customer`
+  - If `upsellProgramIds` are provided, calls `createCheckoutSessionUrlForSummer()` to:
+    - Create new Stripe checkout sessions with bundle programs included
+    - Update `stripe_checkout_customer` records with new `sessionId` and `checkoutUrl`
+    - Include upsell program line items in the Stripe session
+  - Returns updated `cardUrl` and `achUrl`
+  - Frontend redirects user to the selected payment URL
+</Accordion>
+
+**Key Difference from Semester:** Summer checkout creates new Stripe sessions at payment click time (if upsells are selected), whereas semester checkout may update existing sessions.
+
+**Implementation:** `updateDataToCheckoutUrl.py` - `updateSummerCheckoutUrl()` and `createCheckoutSessionUrlForSummer()` functions
+
+**Frontend:** `checkout_summer_bundle.js` - `updateClickEventInDB()` method
+
+## After Payment
+
+**Similar to Semester Checkout:** The post-payment flow follows the same webhook-driven pattern as semester checkout, with summer-specific database collections and logic.
+
+### `stripePaymentListener` (Stripe Webhook)
+
+**Key Difference from Semester:** Calls `updateSummerPayment()` instead of `updateClassPayment()` for summer program purchases.
+
+**How the API knows it’s a summer purchase:** `stripePaymentListener` fetches the matching record from `stripe_checkout_customer` using the Stripe Checkout `sessionId`. If that record has `isNewProgram: "yes"` (this field is written when summer checkout sessions are created in `createNewProgramCheckoutUrls.py`), the webhook routes the event to `updateSummerPayment(...)`. If instead the record has `isClassPayment: true`, it routes to `updateClassPayment(...)`.
+
+See [Semester Post-Payment: stripePaymentListener](#) for more detailed implementation.
+
+### `updateSummerPayment()`
+
+`updateSummerPayment()` is handles all post summer-payment logic. This includes database writes, inventory caps, referral coupons, credits, and automated emails. All sections below execute under this function unless explicitly skipped due to failure or pending status.
+
+### Database Writes & Updates
+
+#### A. `summer_payment_details`
+
+**Insert (first successful payment):**
+
+| Field                | Purpose                                                                                       |
+| -------------------- | --------------------------------------------------------------------------------------------- |
+| payment_intent       | Unique identifier used for idempotency (prevents duplicate inserts across repeated webhooks). |
+| submissionId         | Alias of `payment_intent` (stored redundantly).                                               |
+| programId            | Purchased summer program.                                                                     |
+| studentId            | Student profile linked to the purchase.                                                       |
+| memberId             | Parent making the purchase.                                                                   |
+| yearId               | Current academic year.                                                                        |
+| sessionId            | BDC session identifier (always `2` for summer).                                               |
+| summerSessionId      | Selected summer session (e.g., Session 1/2/3/etc).                                            |
+| locationId           | Selected location for the summer session.                                                     |
+| paymentTotalChecksum | Total amount in dollars (used as a sanity check / record of amount).                          |
+| paymentTotalChecksum | Stripe `balance_transaction` id.                                                              |
+| myProducts           | Product/line-item details stored for reference/invoicing.                                     |
+| prevStudent          | Whether the student is marked as a previous student.                                          |
+| couponCode           | Applied coupon/promo code (if any).                                                           |
+| utm_source           | Attribution source captured at checkout.                                                      |
+| createdOn            | Record creation timestamp.                                                                    |
+
+**Update (subsequent webhook calls):**
+
+- `status` (Complete / Processing / Failed)
+- `receipt_url` (from Stripe charge object)
+
+**Delete (on Failed payment):**
+
+- Existing `summer_payment_details` record is removed via `delete_one()`
+
+**Idempotency:** Uses `payment_intent` to ensure duplicate webhooks don't create multiple records. Checks `find_one({"payment_intent": chargeObj["payment_intent"]})` before insert.
+
+**Implementation:** `stripePaymentListener.py` - `updateSummerPayment()` function
+
+#### B.  `stripe_checkout_customer`
+
+**Updated on every webhook event:**
+
+- `payment_intent` (from charge object)
+- `status` (`Complete`, `Processing`, `Failed`)
+
+**Lookup:** Uses `sessionId` (Stripe Checkout Session ID) as the unique identifier, not `payment_intent`. All updates use `update_one({'sessionId': sessionId}, ...)`.
+
+**Key Difference from Semester:** Same structure and update pattern as semester checkout.
+
+**Implementation:** `stripePaymentListener.py` - `updateSummerPayment()` function
+
+### Inventory Management (`updateSummerInventoryCaps`)
+
+**Unique to Summer:** Summer programs use `summer_inventory_caps` collection instead of class-based inventory.
+
+**Function:** `updateSummerInventoryCaps(yearId, programId, summerSessionId, locationId, eventType)`
+
+**Logic:**
+
+- **On Failed payment:** Inventory is **released** (`eventType = "add"`), which increments `leftSpot` in `summer_inventory_caps` collection
+- **On Complete / Processing:** Inventory is **consumed** (`eventType = "minus"`), which decrements `leftSpot` in `summer_inventory_caps` collection.
+  - Only triggers for: (1) Card payments with `status == "Complete"`; (2) Bank Transfer payments with `status == "Processing"`
+
+**Collection:** `summer_inventory_caps` with fields: `yearId`, `programId`, `summerSessionId`, `locationId`, `numberOfSpots`, `leftSpot`
+
+**Reference:** See [Summer MongoDB: summer_inventory_caps](#) for collection structure.
+
+### Referral & Coupon Handling
+
+**Similar to Semester Checkout:** Follows the same referral and coupon logic as semester checkout. See [Semester Post-Payment: Referral & Coupon Processing](#) for detailed logic.
+
+### Upsell Programs
+
+**Similar to Semester Checkout:** Same upsell processing logic.
+
+If upsell programs were purchased (and payment is Complete/Processing):
+
+- Records inserted via `addUpsellToPaymentDetails(chargeObj, stripeCheckout)`
+- Upsell data is stored in `upsell_payment_details` collection
+- Links to the main payment via `payment_intent`
+
+**Implementation:** `stripePaymentListener.py` - `updateSummerPayment()` function
+
+**Reference:** See [Semester Post-Payment: Enrollment & Cleanup](#) for upsell details.
+
+<Note>
+  TODO: Shubham to check if this is duplicated and can be removed.
+</Note>
+
+### Credit Balance Updates
+
+**Similar to Semester Checkout:** Same credit balance update logic. See [Semester Post-Payment: BDC Credit](#) for credit system details.
+
+## Automated Emails
+
+### Admin Emails
+
+- **Sent on:**
+  - Card payment → `status == "Complete"`
+  - Bank transfer → `status == "Processing"`
+- **Triggered via:** `sendSuccessEmailToAdmin(stripeCheckout, yearId)`
+- Includes order and enrollment details for admin review
+
+**Implementation:**`stripePaymentListener.py` - `updateSummerPayment()` function
+
+### User Emails
+
+A Stripe receipt is generated automatically by Stripe, stored as `receipt_url` in `summer_payment_details` collection. The user receives receipt email directly from Stripe
+
+## User Redirection After Payment
+
+**Similar to Semester Checkout:** Same redirection logic based on payment type: URL: `payment-confirmation?type=Summer&programName={programName}&transactionID={CHECKOUT_SESSION_ID}`

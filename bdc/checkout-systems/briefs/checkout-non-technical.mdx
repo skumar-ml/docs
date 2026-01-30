@@ -1,0 +1,54 @@
+---
+title: "Checkout"
+---
+
+## (Non-Technical) Briefs Checkout Flow
+
+### 1. Log-in or Sign-up
+
+If the user is not logged in, the user is shown the **account signup form** on the Briefs Checkout page and must complete signup before continuing. This is the same as all of our other checkout flows.
+
+### 2. Brief Selection
+
+Once the user logs in successfully, the user is taken to the **Select Briefs** section. They can select multiple briefs, but must choose between the **Full** and **Light** version.
+
+Any selected item is immediately added to the **Order Details** section on the right, and the **total price** updates dynamically based on selections.
+
+![Image](/images/image-15.png)
+
+### 3. Payment
+
+On clicking the **Next** button, a **credits popup** is displayed (if the user has Bergen credits available). There, they can opt to apply or save their BDC credits. \<TODO: SK link to where this has been described in detail\>.
+
+Then, the user is redirected to the **Stripe checkout page** to complete payment.
+
+## (Technical) Briefs Checkout Flow
+
+**Entry point:** The Briefs checkout page uses `brief-checkout.js`, which calls `POST checkoutUrlForUpsellProgram` when the user proceeds to payment (with only briefs selected — no `paymentId`).
+
+**Flow:**
+
+1. **Briefs(Topic) selection** — Frontend collects selected briefs with `topicId` and `version` (`full_version` or `light_version`) and sends them in the request body as `topics`.
+2. **Checkout URL creation** — If the request has `topics` and no `paymentId`, the API uses `createCheckoutSessionUrlForTopic()` (`checkoutUrlForUpsellProgram.py`). It:
+   - Resolves or creates a Stripe customer via `getCustomerId(parentEmail)`.
+   - Loads prices from `topic_details` (e.g. `topic_details[topic['version']]['price']`) and builds Stripe line items.
+   - Creates a Stripe Checkout Session with `mode='payment'` (one-time payment, not subscription).
+   - Inserts a record into `stripe_checkout_customer` with `isTopic: true`, `topicIds`, `topics`, `sessionId`, `checkoutUrl`, `memberId`, `customerId`, `created_on`, `source`, `amount`, `paymentType`
+3. **Redirect** — Frontend redirects the user to the returned `cardUrl` (Stripe Checkout). No ACH for topic-only in the current implementation (only card).
+
+<Note>
+  TODO: Can you explain why the request would have `topics` **and **`paymentId`? Is this in the case of an upsell...?
+</Note>
+
+### After payment (webhook)
+
+**Stripe webhook:** `stripePaymentListener` receives the `charge` (or `checkout.session` for zero-amount) event, looks up `stripe_checkout_customer` by Stripe Checkout `sessionId`, and branches on type:
+
+- If `isTopic === true` → calls `addPurchaseTopicDetails(stripeCheckout, status, chargeObj, sessionId)`.
+
+`addPurchaseTopicDetails()` (in `stripePaymentListener.py`):
+
+- **Failed:** Deletes any existing `topic_payment_details` row for this `payment_intent` and updates `stripe_checkout_customer.status`.
+- **Complete (and topicIds present):** Inserts (or avoids duplicate via `payment_intent`) into `topic_payment_details` with: `payment_intent`, `submissionId`, `bankToken`, `payment_total_checksum`, `topicIds`, `topics`, `source`, `yearId`, `memberId`, `createdOn`. Optionally updates `receipt_url`. Ensures member has a `familyId` if missing, then sends admin email via `sendTopicSuccessEmailToAdmin()`. If there was a credit discount, calls `updateCreditBalance()`.
+
+So **after payment**, the purchase is represented in `topic_payment_details`; `stripe_checkout_customer` is updated with `payment_intent` and `status`.

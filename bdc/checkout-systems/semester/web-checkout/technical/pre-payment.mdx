@@ -35,10 +35,6 @@ When the user clicks the **Next** button, our onClickListener calls `storeBasicD
 
 Then, our onClickListener calls `AddStudentData()`, which validates and submits student details to the `checkoutUrlForClasses` API. The API initializes a checkout session by creating or linking the student profile and returns a unique `checkoutId`. This `checkoutId` controls the entire checkout flow, including bundle selection, class selection, briefs, seat validation, and payment.
 
-<Info>
-  TODO: Note, we'll need to explain checkoutId in more detail on the Payment page. Not critical to do now.
-</Info>
-
 ## 3. Optional Bundle Program
 
 ### Data & Rendering
@@ -59,24 +55,14 @@ The modal opens when the user clicks **Next** (on the Student Details Form), unl
 
 ### Selection Logic
 
-Selecting an upsell program adds the program to `$selectedProgram`, a frontend state array that stores all bundle programs currently selected by the user for the active checkout session. We keep track of upsell state (selected or not) via their `programDetailId`, which is used to control the UI state in various locations (banner vs. modal). On each selection change, the checkout pricing logic is triggered **\<TODO: what function is this?\>**, recalculating the total amount and updating the cart UI based on the programs stored in `$selectedProgram`.
+Selecting an upsell program adds the program to `$selectedProgram`, a frontend state array that stores all bundle programs currently selected by the user for the active checkout session. We keep track of upsell state (selected or not) via their `programDetailId`, which is used to control the UI state in various locations (banner vs. modal). On each selection change, the checkout pricing logic is triggered method **updateAmount()**, recalculating the total amount and updating the cart UI based on the programs stored in `$selectedProgram`.
 
-<Note>
-  TODO: For future, I think we'll need a little more detail on Upsell, and I think we should probably break it out onto it's own page. \
-  \
-  Specifically, how do we update the core program pricing when bundle is selected? How do we store in payment_details?
-</Note>
+## 4. Class Selection
 
-## 4. Class Selection & Payment
+On page load (after member is logged in), the `getClassDetails `API, based on the selected `levelId`, gets class data, which populates the location options. Clicking a location shows the class time slot options in the format `{Day} {StartTime} - {EndTime}`.
 
-On page load (after member is logged in), the `getClassDetailByMemberIdAndLevelId` API, based on the selected `levelId`, gets class data, which populates the location options. Clicking a location shows the class time slot options in the format `{Day} {StartTime} - {EndTime}`.
-
-This API also returns the total available spots (`numberOfSpot`) for the class, and the remaining spots (`leftSpot`), which are calculated by subtracting the total number of registrations for the class from `numberOfSpot` (as well as some logic around waitlists, discussed in **\<TODO: SK link to section here\>**
+This API also returns the total available spots (`numberOfSpot`) for the class, and the remaining spots (`leftSpot`), which are calculated by subtracting the total number of registrations for the class from `numberOfSpot` (as well as some logic around waitlists, discussed [on this page](/bdc/checkout-systems/semester/waitlist-system)).
 
 ### Seat Availability (`getAlertMessage`)
 
 The frontend calculates `leftSpotsPercentage = (leftSpots / numberOfSpots) * 100`. If **≤ 25% spots** are remaining, show a message “Hurry! Only X spots left”. If **no spots** are left, show that "Seats are full" and allow the user to sign-up for the waitlist (no payment allowed)
-
-<Note>
-  **TODO: In the future, we need a separate page/section discussing the waitlist system**
-</Note>

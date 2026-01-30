@@ -91,34 +91,51 @@ The following data is collected before generating the checkout link:
 | successUrl       | Redirect after payment success                                |
 | cancelUrl        | Redirect if payment is cancelled                              |
 
-### stripeCheckoutCustomer Collection
+### **Stripe Checkout – Customer Data Flow for Class Registrations**
 
-When does a record inserted. When is it used (for what purposes). What information does it store. When is it updated...
-
-**checkoutId**:  We generate a checkout ID when the user submits the student details form. We then update the checkout session after the user selects a class, bundle program, or briefs, based on the checkout ID.
-
-<Note>
-  TODO: I think we need a separate section altogether for checkoutId (perhaps, at the top). We need to explain that checkoutId is the unique key for the specific checkout section. We need to explain when a new record in this collection is created (and the name of the collection).
-</Note>
-
-There are additional fields for bundle purchases:
-
-- `paymentId` – Bundle payment identifier
-- `isBundleProgram` – Boolean flag
-- `topics` – Selected brief topics (if applicable)
+When the student form is submitted, the API `checkoutUrlForClasses` is called. This API generates a `checkoutId` and inserts two initial records (one for the **card** and one for **bank transfer**) into the `stripe_checkout_customer` collection. At this stage, the system stores the `checkoutId`, `customerId`, `paymentType`, `memberId`, `studentId`, and `parentEmail`.
 
 ### API Call and Response
 
+After this, the user selects the class details along with optional upsells. These selections are sent to the API `updateDataToCheckoutUrl` or `checkoutUrlForUpsellProgram` (difference discussed below) with the `classId`, `bundleId`, and `briefsId`. These APIs create a Stripe checkout session for payment and update the existing records in the `stripe_checkout_customer` collection via the `checkoutId`. The updated data includes the `checkoutUrl` option for card or bank transfer. `classId`, `sessionId`, a readable label such as “Fort Lee | Level 2A | Saturday 2:15 PM – 4:15 PM”, `topicIds`, `upsellProgramIds` for bundle programs, and any applied discount amount.
+
+| Field            | Purpose                                                   | Step Added                                                                           |
+| ---------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| checkoutId       | Internal unique identifier for a checkout flow            | Created when `checkoutUrlForClasses` is first called                                 |
+| customerId       | Stripe Customer ID representing the parent/user in Stripe | Created once on first checkout; reused for future checkouts                          |
+| paymentType      | Indicates payment method (`card` or `bank_transfer`       | Two records are created initially — one per payment type                             |
+| memberId         | Internal member reference                                 | Added during initial `checkoutUrlForClasses` call                                    |
+| studentId        | Registered student identifier                             | Added during initial `checkoutUrlForClasses` call                                    |
+| parentEmail      | Parent’s email address                                    | Added during initial `checkoutUrlForClasses` call                                    |
+| checkoutUrl      | Stripe-hosted payment page URL                            | Updated when `updateDataToCheckoutUrl` or `checkoutUrlForUpsellProgram` is called    |
+| classId          | Selected class                                            | Added after class selection                                                          |
+| sessionId        | Stripe Checkout Session ID                                | Returned by Stripe during session creation                                           |
+| Label            | Human-readable class summary                              | Created when `checkoutUrlForClasses` is first called                                 |
+| topicIds         | Selected briefs program (optional)                        | Updated when `updateDataToCheckoutUrl` or `checkoutUrlForUpsellProgram` is called    |
+| upsellProgramIds | Selected bundle program (optional)                        | Updated when `updateDataToCheckoutUrl` or `checkoutUrlForUpsellProgram` is called    |
+| discountAmount   | Applied discount value                                    | Calculated during checkout session creation                                          |
+| isClassPayment   | Flag indicating this is a class registration              | Added during initial `checkoutUrlForClasses` call                                    |
+| device           | Device type (Mobile/Desktop)                              | Captured from frontend, added during initial `checkoutUrlForClasses` call            |
+| deviceUserAgent  | Browser + OS fingerprint                                  | Captured from frontend, added during initial `checkoutUrlForClasses` call            |
+| utmSource        | Marketing attribution source                              | Passed from frontend if available, added during initial `checkoutUrlForClasses` call |
+| source           | Entry point (`cart_page`, etc.)                           | Added during initial `checkoutUrlForClasses` call                                    |
+| status           | Checkout/payment state (`Pending`, `Complete`, `Failed`)  | Updated via Stripe webhook                                                           |
+
 Depending on the purchase type, one of two APIs is called:
 
-#### Standard Checkout (`updateDataToCheckoutUrl`)
+#### 1. Standard Checkout (`updateDataToCheckoutUrl`)
 
-This API endpoint is used for normal class registration OR bundled (e.g., pre-registered) purchases.
+This API endpoint is used for normal class registration OR Pre-registration (e.g., pre-registered) purchases.
 
-#### Standard Checkout with any Upsell (`checkoutUrlForUpsellProgram`)
+#### 2. Standard Checkout with any Bundle or Briefs (`checkoutUrlForUpsellProgram`)
 
-- This API endpoint is used for upsells with bundled semesters or briefs
+- This API endpoint is used for Pre-regstration with the bundled Program or briefs
+- Pre-registration will be finalised once the bundle purchase or a brief payment has been made.
 - **_We are using this API on the portal purchase as well._**
+
+<Note>
+  **TODO: The above needs to be updated. The APIs don't function like this anymore, as best I can tell. @Dev needs to confirm.**
+</Note>
 
 Regardless of which API is used, the return signature is:
 
@@ -129,6 +146,11 @@ Regardless of which API is used, the return signature is:
   "achUrl": "https://checkout.stripe.com/..."
 }
 ```
+
+> There are additional fields for **Pre-registration** purchases [(discussed here)](/bdc/checkout-systems/semester/pre-reg-system):
+>
+> - `paymentId` – **Pre-registration** payment identifier,
+> - `isBundleProgram` – Boolean flag, We mantain flag for the **pre-registration**, If it's true
 
 ### Redirect to Stripe
 
@@ -150,13 +172,9 @@ During the checkout session creation, we provide Stripe the success URL and canc
 - **programName**: Class or Program Name: This will be displayed on the payment confirmation page.
 - **Type**: Payment mode(Card | Bank Transfer). We use this for tracking purposes and (Google)  analytics.
 
-At this point, the payment is confirmed and the registration is completed.
+At this point, the payment is confirmed and the registration is completed. The system updates the payment status in the `stripe_checkout_customer` collection to either `Processing` or `Completed` using the `sessionId` that was created during the checkout session. At the same time, a new record is inserted into the `payment_details` collection to store the transaction information. Post payment, several other operations take place, [all described here](/bdc/checkout-systems/semester/web-checkout/technical/post-payment).
 
-<Note>
-  TODO: Discuss deletion logic of localStorage
-</Note>
-
-Post payment, several other operations take place, all described here **\<TODO: SK to link to doc when ready\>**.
+After successful payment, **we delete the local data** cached during the checkout process, like `checkoutData` and `referralData`.
 
 ### 2. Cancelled Payment
 
