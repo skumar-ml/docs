@@ -95,6 +95,7 @@
           },
           {
             "group": "Customer Portal",
+            "icon": "person-to-portal",
             "pages": [
               "bdc/portal/overview",
               "bdc/portal/dashboard",
@@ -110,11 +111,34 @@
           },
           {
             "group": "Coach Portal",
+            "icon": "whistle",
             "pages": [
               "bdc/coach-portal/overview",
               "bdc/coach-portal/attendance",
               "bdc/coach-portal/millions",
               "bdc/coach-portal/trial-classes"
+            ]
+          },
+          {
+            "group": "Trial Classes",
+            "icon": "bell-on",
+            "pages": [
+              "bdc/trial-classes/overview",
+              "bdc/trial-classes/technical"
+            ]
+          },
+          {
+            "group": "Homework Checker",
+            "icon": "page",
+            "pages": [
+              "bdc/homework-checker/overview",
+              "bdc/homework-checker/technical"
+            ]
+          },
+          {
+            "group": "Admin Guides",
+            "pages": [
+              "bdc/admin-guides/academic-semester-checklist"
             ]
           }
         ]
