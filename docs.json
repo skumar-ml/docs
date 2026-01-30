@@ -94,7 +94,7 @@
             ]
           },
           {
-            "group": "Portal",
+            "group": "Customer Portal",
             "pages": [
               "bdc/portal/overview",
               "bdc/portal/dashboard",
@@ -106,6 +106,15 @@
               "bdc/portal/returner-conversion",
               "bdc/portal/briefs",
               "bdc/portal/announcements"
+            ]
+          },
+          {
+            "group": "Coach Portal",
+            "pages": [
+              "bdc/coach-portal/overview",
+              "bdc/coach-portal/attendance",
+              "bdc/coach-portal/millions",
+              "bdc/coach-portal/trial-classes"
             ]
           }
         ]
