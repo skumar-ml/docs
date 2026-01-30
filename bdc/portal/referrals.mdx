@@ -94,11 +94,13 @@ The referral system lets a **referrer**  share a **referral link** and **coupon 
   - `referral_details.find({ couponId: couponId })`. For each referral, `members.find_one({ _id: ObjectId(referral.guestId) })` → **name**, **email**. Build list with **name**, **email**, **date_referred**, **purchased_date**, **referred_stage**.
   - Response: `{ referrals (array), coupon_code }`.
 - **POST addReferralData** (referral-promotion-service, **addReferralData.py**).
-  - Body: **email**, **name**, **memberId** (referrer’s memberId).
-  - If **members** has existing member with **familyId** set →  "Member already exists".
-  - If **referral_details, members** has exist with that **email** →  "Member already referred".
-  - **guestId:** if **member** is already referred by **email**, use that **\_id**; else call **createAccount** API (parent sign-up, source "referral") and use returned **parent_id**.
-  - 
+
+  This API handles the referral flow when a parent refers someone by email.\
+  It first checks whether the referred person already exists or was already referred.\
+  If the person is new, it creates a guest parent account automatically.\
+  The referral is then linked to the referrer’s family and an available coupon is assigned.\
+  A referral email with the coupon code is sent immediately to the guest.\
+  Follow-up reminder emails are scheduled automatically, and the referral is tracked in the CRM.
 
 ### DB collections and relations
 
@@ -107,7 +109,7 @@ The referral system lets a **referrer**  share a **referral link** and **coupon 
 | **referral_details** | One document per referred person; links referrer (memberId/familyId) to guest (guestId). | **memberId**, **referral_familyId**, **guestId**, **date_referred**, **purchased_date**, **referred_stage** ("None" / "Signed_Up" / "Purchased"), **couponId**, **email_sent** |
 | **coupon_details**   | One per family; stores coupon code for referral rewards.                                 | **familyId**, **coupon_code** (and others; creation/lifecycle is in checkout/post-payment docs)                                                                                |
 
-- **Relation:** **getReferralData** joins **referral_details** to **members** (guest) by **guestId** and to **coupon_details** by **couponId** (via referrer’s **familyId**). **referred_stage** is updated to **Signed_Up** when the guest signs up (see sign-up flow) and to **Purchased** when they complete a purchase (see [post-payment](#)). **coupon_details** is created for a family on first payment when none exists (see checkout/webhook docs).
+- **Relation:** **getReferralData** joins **referral_details** to **members** (guest) by **guestId** and to **coupon_details** by **couponId** (via referrer’s **familyId**). **referred_stage** is updated to **Signed_Up** when the guest signs up (see sign-up flow) and to **Purchased** when they complete a purchase (see [post-payment](#)).
 
 ### Portal rendering (referrals page)
 
@@ -117,13 +119,15 @@ The referral system lets a **referrer**  share a **referral link** and **coupon 
 
 ### What a referred user sees (referral link)
 
-- **Landing:** Referral link is [**https://www.bergendebate.com?code=...&id=...**](https://www.bergendebate.com?code=...&id=) (query params are base64-encoded **coupon_code** and referrer **memberId**).
-- **JS:** **referrals_modal.js**, **ReferralModal** class. On **init()**, **processReferralFlow()** runs: reads **code** and **id** from URL.
-- **If user has referral params (code and id):** **handleReferralLinkVisit** decodes **code** and **id** (base64), sets **utm_source** in **localStorage**, updates discount code display (**.discount-code-red**), fetches referrer name via **getMemberDetails/** and sets **[data-referral="referrer-name"]**. Referral data (code, memberId, timestamp) is saved to **localStorage** (key **referralCode**). If the user had already submitted the claim form before (name/email in **localStorage**), the modal is not shown (only timestamp updated). Otherwise **showReferralModal()** runs: **#referral-modal** gets class **show**; form **#referral-form-modal** with **[data-name='referral-name']**, **[data-name='referral-email']**; submit **[data-referral="claim-discount"]**.
-- **Modal form submit:** **handleFormSubmit** → **POST addReferralData** with **name**, **email**, **memberId** (the referrer’s memberId from the link). On success, referral data in **localStorage** is updated with name, email, **formSubmittedAt**; success message shown; modal closes after 3s. On error, API response (e.g. "Member already referred") is shown in **.w-form-fail**.
-- **Suppression:** If the user dismisses the modal (close button, overlay, or “No thanks”), **setModalSuppression()** stores current time in **localStorage** (**referralModalSuppressed**). **shouldSuppressModal()** returns true for 1 hour after that; if the user returns without **code**/ **id** in the URL, the modal is not shown again within that hour.
-- **Without referral params:** If there is existing **referralCode** in **localStorage** but no **code**/ **id** in URL, **handleNonReferralVisit** may still show the modal (e.g. if they had code/memberId saved but never submitted name/email). Otherwise no modal.
+Checks URL parameters for referral code and ID, displays modal when user arrives via referral link or based on suppression rules, handles form submission to claim referral discount, manages modal suppression for 1 hour after dismissal, and processes referral flow.
 
-### Summary
+The referral modal is triggered when a user lands on the website using a referral link\
+(`https://www.bergendebate.com?code=...&id=...`, where both values are base64-encoded).
 
-**Referrer:** Referrals page uses **getReferralData/** for coupon code and referral list; **addReferralData** to add a referred person (name, email); **referrals.js** renders code, link, table, progress, and form. Sidebar referral link is shown only when **checkReferralsAccess** sees a current session. **Referred user:** Clicking the referral link opens the site with **?code=...&id=...**; **referrals_modal.js** shows a pop-up with discount code, referrer name, and a “claim discount” form; submit calls **addReferralData** (creates **referral_details**, sends email, schedules follow-ups). Status updates (Signed_Up, Purchased) and coupon creation are documented in the [checkout](/bdc/checkout-systems) and [post-payment](/bdc/checkout-systems/semester/web-checkout/technical/post-payment) docs.
+On page load, the `ReferralModal` class reads the `code` and `id` from the URL. If present, it decodes them, stores referral details in `localStorage`, updates the discount code on the page, and fetches the referrer’s name to display in the modal. If the user has not already submitted their name and email, the referral modal is shown.
+
+When the user submits the form, the details are sent to the `addReferralData` API. On success, the referral is saved, a confirmation message is shown, and the modal closes automatically. If the referral already exists or fails, an error message is displayed.
+
+If the modal is dismissed (close button, background click, or “No thanks”), it is suppressed for 1 hour using `localStorage`. During this time, the modal will not reappear unless the user visits again using a referral link.
+
+If the user returns without referral parameters but has incomplete referral data saved locally, the modal may still appear to complete the process. Otherwise, no modal is shown.
