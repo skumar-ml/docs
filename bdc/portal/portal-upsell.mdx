@@ -33,8 +33,6 @@ The response is an array of objects, each with:
 - **upsellPrograms** — array of programs (label, **portal_amount**, **portal_disc_amount**, sessionId, yearId, upsellProgramId, desc)
 - **yearId**, **sessionId**
 
-The same lookup is done for summer (sessionId 2); the frontend then filters out summer (sessionId === 2) and only shows academic bundle programs. For each academic session, it further filters **upsellPrograms** to those whose **sessionId** is not the current session (future sessions only), so the options shown are "bundle" programs for other semesters (e.g. next Winter/Spring when the user is in Fall).
-
 ### What options get shown (rendering)
 
 **DisplaySuppProgram** hides all **.bundle-sem-rounded-red-div** elements initially, then calls **displaySupplementaryProgram()**, which fetches **getUpsellProgramV2?type=portal** and stores the result. If the response has items, it calls **createBundleProgram()**, which:
@@ -55,8 +53,4 @@ That method:
 2. Sends a **POST** request to **checkoutUrlForUpsellProgram** with **paymentId**, **upsellProgramIds**, **successUrl** (portal/dashboard?success=true), **cancelUrl** (portal/dashboard), **label**, **amount** (selected programs' **portal_amount** sum plus **memberData.amount**), **source: "portal_page"**, **memberId**, and **applyCredit**.
 3. Receives **cardUrl** (and optionally **achUrl**) from the API; sets **window.location.href** to **cardUrl** so the user is redirected to Stripe to complete payment.
 
-After payment, the webhook (same as for semester/summer upsells) inserts the bundle placeholder and upsell records as described in [Semester/Summer upsells](/bdc/checkout-systems/upsells/semester-summer).
-
-### Summary
-
-In short: one API (**getUpsellProgramV2?type=portal**) supplies the list of portal upsell programs (from **portal_program_ids**); one JS file (**portal_upsell_program.js**) and **DisplaySuppProgram** render only academic, future-session bundle options, handle selection and total, and on Pay Now call **checkoutUrlForUpsellProgram** with the selected student's **paymentId** and **upsellProgramIds**, then redirect to Stripe. Post-payment behavior (two records per bundle, placeholder in **payment_details** or **summer_payment_details**, row in **upsell_payment_details**) is the same as in the semester/summer upsell doc.
+After payment, the webhook (same as for semester/summer upsells) inserts the bundle placeholder and upsell records as described in [Semester/Summer upsells](#).
