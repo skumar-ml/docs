@@ -81,3 +81,49 @@ This section shows detailed information for the selected referrer, helping admin
 ## Technical
 
 TODO: Explain in detail how referral system works (from Retool updates to rendering here). Include DB collections and relations. Do not explain how purchase or sign-up gets changed in status, or how new coupon code gets created (just link to respective docs). Also, explain what a referred user sees when they click a referral link.
+
+### Overview
+
+The referral system lets a **referrer**  share a **referral link** and **coupon code**, and submit referred people’s **name** and **email** via **POST addReferralData** (referral-promotion-service). The API creates a **referral_details** record, sends an email to the referred person with the coupon code, and schedules follow-up emails. The **referrals page** (portal) fetches **GET getReferralData/** to show the referrer’s **coupon_code**, **referrals** list (name, email, date_referred, purchased_date, referred_stage), and a form to add new referrals. **Referral link visibility** in the portal sidebar is controlled by **checkReferralsAccess** (only if the member has at least one **currentSession**). When a **referred user** lands on the site via the referral link (**?code=...&id=...**), **referrals_modal.js** shows a **pop-up** with the discount code, referrer name, and a form to claim the discount (name/email → **addReferralData**). How **referred_stage** is set to **Signed_Up** or **Purchased**, and how **coupon_details** are created, is not covered here; see the [checkout](/bdc/checkout-systems) and [post-payment](/bdc/checkout-systems/semester/web-checkout/technical/post-payment) docs.
+
+### API and data source (referrer)
+
+- **GET getReferralData/** (referral-promotion-service, **getReferralData.py**).
+  - Look up **members** by **memberId**. If member has no **familyId** (or empty/null), return .
+  - `coupon_details.find_one({ familyId: familyId })` → **coupon_code**, **couponId** (as string). If no coupon, return `**{}**`.
+  - `referral_details.find({ couponId: couponId })`. For each referral, `members.find_one({ _id: ObjectId(referral.guestId) })` → **name**, **email**. Build list with **name**, **email**, **date_referred**, **purchased_date**, **referred_stage**.
+  - Response: `{ referrals** (array), **coupon_code** }`.
+- **POST addReferralData** (referral-promotion-service, **addReferralData.py**).
+  - Body: **email**, **name**, **memberId** (referrer’s memberId).
+  - If **members** has existing member with that **email** and **familyId** set → 422 "Member already exists".
+  - If **referral_details** has doc with that **email** → 422 "Member already referred".
+  - **guestId:** if **members** has guest by **email**, use that **\_id**; else call **createAccount** API (parent sign-up, source "referral") and use returned **parent_id**.
+  - **members.find_one()** → **familyId**. **coupon_details.find_one()** → **couponId**. Insert **referral_details**: **memberId**, **referral_familyId**, **guestId**, **date_referred** (now), **purchased_date** (None), **referred_stage** ("None"), **couponId**, **email_sent** (1). Create lead in CRM; send email (immediately_after_referral) with **coupon_code** and referrer name; schedule follow-up emails (e.g. 24h, 72h, 240h). Return 200.
+
+### DB collections and relations
+
+| Collection           | Role                                                                                     | Key fields                                                                                                                                                                     |
+| -------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **referral_details** | One document per referred person; links referrer (memberId/familyId) to guest (guestId). | **memberId**, **referral_familyId**, **guestId**, **date_referred**, **purchased_date**, **referred_stage** ("None" / "Signed_Up" / "Purchased"), **couponId**, **email_sent** |
+| **coupon_details**   | One per family; stores coupon code for referral rewards.                                 | **familyId**, **coupon_code** (and others; creation/lifecycle is in checkout/post-payment docs)                                                                                |
+
+- **Relation:** **getReferralData** joins **referral_details** to **members** (guest) by **guestId** and to **coupon_details** by **couponId** (via referrer’s **familyId**). **referred_stage** is updated to **Signed_Up** when the guest signs up (see sign-up flow) and to **Purchased** when they complete a purchase (see [post-payment](/bdc/checkout-systems/semester/web-checkout/technical/post-payment)). **coupon_details** is created for a family on first payment when none exists (see checkout/webhook docs).
+
+### Portal rendering (referrals page)
+
+- **JS:** **referrals.js**, **ReferralProgram** class. The page is instantiated with **data** (memberId, baseUrl, referralCount, maxReferrals, rewards, icons).
+- **Flow:** **loadReferralData()** → **GET getReferralData/**. If no **coupon_code**, alert and redirect to homepage. Set **#referralCode** to **coupon_code**; set **[data-referral='referral-link-input']** to [**https://www.bergendebate.com?code=\${btoa(coupon_code)}&id=\${btoa(memberId)}**](https://www.bergendebate.com?code=${btoa\(coupon_code\)}&id=${btoa\(memberId\)}). Copy buttons: **[data-referrals='copy']** (code), **[data-referrals='copy-link']** (link). **referrals** table: **#referralList**; each row has name (from API), status (Enrolled / Pending / Signed Up from **referred_stage**), date_referred, purchased_date. Count of “enrolled” referrals (referred_stage not None/Signed_Up) is shown in **[data-referrals='count']**. **createTracker** / **createMobileTracker** render progress (desktop/mobile) from **maxReferrals**, **rewards**, **icons**. Form **#referralForm** (name, email) → **handleFormSubmit** → **POST addReferralData** with **name**, **email**, **memberId**; on success, hide form, show success, reload **loadReferralData()**. **.no-record-div** shown when no coupon or no referrals.
+- **Sidebar visibility:** **portal_new_ui.js** (or **portal_staging.js**) calls **checkReferralsAccess(data)** after **setupTabs**. If any student has **currentSession** (length \> 0), **hasCurrentSession** is true; all **[sidebar-menu="referrals"]** elements are set to **display: flex**, else **display: none**. **hasReferralSession** (and memberId) is stored in **localStorage** for use elsewhere.
+
+### What a referred user sees (referral link)
+
+- **Landing:** Referral link is [**https://www.bergendebate.com?code=...&id=...**](https://www.bergendebate.com?code=...&id=) (query params are base64-encoded **coupon_code** and referrer **memberId**).
+- **JS:** **referrals_modal.js**, **ReferralModal** class. On **init()**, **processReferralFlow()** runs: reads **code** and **id** from URL.
+- **If user has referral params (code and id):** **handleReferralLinkVisit** decodes **code** and **id** (base64), sets **utm_source** in **localStorage**, updates discount code display (**.discount-code-red**), fetches referrer name via **getMemberDetails/** and sets **[data-referral="referrer-name"]**. Referral data (code, memberId, timestamp) is saved to **localStorage** (key **referralCode**). If the user had already submitted the claim form before (name/email in **localStorage**), the modal is not shown (only timestamp updated). Otherwise **showReferralModal()** runs: **#referral-modal** gets class **show**; form **#referral-form-modal** with **[data-name='referral-name']**, **[data-name='referral-email']**; submit **[data-referral="claim-discount"]**.
+- **Modal form submit:** **handleFormSubmit** → **POST addReferralData** with **name**, **email**, **memberId** (the referrer’s memberId from the link). On success, referral data in **localStorage** is updated with name, email, **formSubmittedAt**; success message shown; modal closes after 3s. On error, API response (e.g. "Member already referred") is shown in **.w-form-fail**.
+- **Suppression:** If the user dismisses the modal (close button, overlay, or “No thanks”), **setModalSuppression()** stores current time in **localStorage** (**referralModalSuppressed**). **shouldSuppressModal()** returns true for 1 hour after that; if the user returns without **code**/ **id** in the URL, the modal is not shown again within that hour.
+- **Without referral params:** If there is existing **referralCode** in **localStorage** but no **code**/ **id** in URL, **handleNonReferralVisit** may still show the modal (e.g. if they had code/memberId saved but never submitted name/email). Otherwise no modal.
+
+### Summary
+
+**Referrer:** Referrals page uses **getReferralData/** for coupon code and referral list; **addReferralData** to add a referred person (name, email); **referrals.js** renders code, link, table, progress, and form. Sidebar referral link is shown only when **checkReferralsAccess** sees a current session. **Referred user:** Clicking the referral link opens the site with **?code=...&id=...**; **referrals_modal.js** shows a pop-up with discount code, referrer name, and a “claim discount” form; submit calls **addReferralData** (creates **referral_details**, sends email, schedules follow-ups). Status updates (Signed_Up, Purchased) and coupon creation are documented in the [checkout](/bdc/checkout-systems) and [post-payment](/bdc/checkout-systems/semester/web-checkout/technical/post-payment) docs.
