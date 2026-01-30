@@ -40,7 +40,7 @@ TODO: Explain in detail how the invoice system works (from Retool to rendering h
 
 ### Overview
 
-The invoice system flows from **Retool (admin)** creating and linking invoice data, through **member-service** aggregating it per student/session, to the **portal** rendering an accordion and handling Stripe payment. After payment, **scheduler_service** (Stripe webhook) writes **invoice_responses** and updates credits. Separate APIs support **payment history / itemized receipts** (e.g. **getSemesterInvoiceDataV2**, **generateItemizedInvoice** / **generateInvoicePDF**).
+The invoice system flows from **Retool (admin)** creating and linking invoice data, through **member-service** aggregating it per student/session, to the **portal** rendering an accordion and handling Stripe payment. After payment, **scheduler_service** (Stripe webhook) writes **invoice_responses** and updates credits. Separate APIs support **payment history / itemized receipts** 
 
 ### API and data source for the portal
 
@@ -59,25 +59,16 @@ The invoice system flows from **Retool (admin)** creating and linking invoice da
 | **invoice_responses**        | One per successful (or attempted) invoice payment. Written by Stripe webhook. | **invoiceId**, **paymentId**, **paymentLinkId**, **memberId**, **amount**, **payment_intent**, **status**; after completion also **credit_amount**, **basePrice**, **newStudent**, **sibling**, **earlyBird** (for itemized) |
 | **stripe_checkout_customer** | Created when user starts Stripe checkout for an invoice.                      | **invoiceId**, **paymentId**, **paymentLinkId**, **memberId**, **status**, **payment_intent**                                                                                                                                |
 
-- **getInvoiceListScript** aggregates: **invoice_notifications** (match **paymentId**) → lookup **invoice_records** by **invoice_id** → lookup **invoice_payment_link** by **invoice_id** → lookup **invoice_responses** by **invoice_id** + **paymentId** → lookup **stripe_checkout_customer** by **invoice_id** + **paymentId**. So portal invoice list is “all notifications for this payment” with joined record, links, responses, and checkout status.
-
 ### Itemized invoice logic (bucket breakdown)
 
 - **breakDownList** shown on the portal for each invoice is computed by **calculatebucketAmount(invoiceRecord)** (in **getPortalDetails.py** / **validatePortalAPIs.py**). It uses **invoice_rates** for the invoice’s **currentYear** and **classSessionId**.
 - Logic:
-  - If **invoiceRecord** has no **returner**, a default `{"Deposit": 300.0}` can be used (scheduler_service variant); otherwise, rates apply.
   - **Semester Tuition** = **invoice_rates.basePrice**.
   - **New Student Fee** = **invoice_rates.newStudent** if the student is not a **returner**.
   - **Sibling Discount** = −(basePrice × **siblingDiscPercentage** / 100) if **sibling** is true.
   - **Early Bird** = −**earlyBirdsDiscount** if **earlyBirds** is true.
-  - **Deposit** = 300 (fixed) in the member-service version.
+  - **Deposit** = 300 (fixed).
 - This **breakDownList** is returned in **getInvoiceList** so the portal can show a line-item breakdown when needed. The same bucket logic is used in **stripePaymentListener** when completing an invoice payment: it writes **basePrice**, **newStudent**, **sibling**, **earlyBird**, **credit_amount** onto **invoice_responses** for use in itemized receipts and PDFs.
-
-### Invoice breakdowns (line items)
-
-- **Breakdown keys** returned by **calculatebucketAmount** (and stored on **invoice_responses** after payment) are: **Semester Tuition**, **New Student Fee**, **Sibling Discount**, **Early Bird**, **Deposit**, and optionally **credit_amount** (credits applied).
-- For **payment history / PDF receipts**, **getSemesterInvoiceDataV2** (payment-checkout-service, **invoiceScript.getSemesterInvoiceDataV2**) aggregates **invoice_responses** with **invoice_records**, **invoice_payment_link**, **payment_details**, **class_details**, **class_location**, **class_level**, **class_session**, **members** to produce per-invoice line items (studentName, location, session, basePrice, newStudentFee, siblingDisc, earlyBirdsDiscount, credit_amount, amount, etc.).
-- **generateItemizedInvoice** / **generateInvoicePDF** (payment-checkout-service) build itemized receipts and PDFs from **invoice_responses** and related payment/class data, including bundle/pre-reg logic (e.g. **get_root_payments**, **get_bundle_children** over **payment_details**, **summer_payment_details**, **topic_payment_details**).
 
 ### Portal rendering (JS)
 
@@ -89,4 +80,4 @@ The invoice system flows from **Retool (admin)** creating and linking invoice da
 
 ### Pre-reg / bundled students
 
-- **invoiceList** is attached per **paymentId** for both `**currentSession**` and **futureSession** in **getPortalDetails**. So pre-reg or bundled students see invoices for their placeholder/future payment in the same way; **getInvoiceList** is called with that payment’s **paymentId** and parent **email**. Bucket breakdown and payment links are the same as for regular semester invoices.
+- **invoiceList** is attached per **paymentId** for both `currentSession` and **futureSession** in **getPortalDetails**. So pre-reg or bundled students see invoices for their placeholder/future payment in the same way; **getInvoiceList** is called with that payment’s **paymentId** and parent **email**. Bucket breakdown and payment links are the same as for regular semester invoices.
