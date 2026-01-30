@@ -58,12 +58,6 @@ On every webhook event, we use the Webhook's `payment_intent` to retrieve the co
 
 On every webhook event, we update the `payment_intent` & `status` (Complete / Processing / Failed).
 
-<Note>
-  TODO: Looking at stripe_checkout_customer, there is no `payment_intent` field. Do we just update `status`?
-
-  \<No, we are updating payment_intent and status while payment is complete or processing\> for other cases, it will not be added or updated.
-</Note>
-
 The unique identifier for stripe_checkout_customer is `sessionId` (Stripe Checkout Session ID), not `payment_intent`. All lookups use `db.stripe_checkout_customer.find_one({"sessionId": sessionId})`, and all updates use `db.stripe_checkout_customer.update_one({'sessionId': sessionId}, ...)`. The `payment_intent` is a field that gets updated on each webhook event (along with `status`), but `sessionId` is the primary key that uniquely identifies each checkout session record. This makes sense because a single checkout session can have multiple webhook events, so the `sessionId` remains constant while `payment_intent` and `status` can change over time.
 
 ### C. Failure Handling
