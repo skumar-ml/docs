@@ -155,6 +155,28 @@
           {
             "group": "Introduction",
             "pages": []
+          },
+          {
+            "group": "Members",
+            "pages": [
+              "nsd/members/introduction"
+            ]
+          },
+          {
+            "group": "Camp Checkout",
+            "pages": []
+          },
+          {
+            "group": "Briefs Checkout",
+            "pages": []
+          },
+          {
+            "group": "Customer Portal",
+            "pages": []
+          },
+          {
+            "group": "Coach Portal",
+            "pages": []
           }
         ]
       }
