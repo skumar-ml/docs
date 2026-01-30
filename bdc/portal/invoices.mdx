@@ -4,7 +4,7 @@ title: "Invoices"
 
 ## Non-Technical
 
-TODO: What users get to see & how they can use Invoices page. 
+TODO: What users get to see & how they can use Invoices page.
 
 ## Admins (Retool)
 
@@ -20,20 +20,20 @@ The invoice system flows from **Retool (admin)** creating and linking invoice da
 
 ### API and data source for the portal
 
-- **Portal invoice list:** The portal does **not** call a dedicated invoice API. It calls **GET getPortalDetail/{memberId}** (member-service, **getPortalDetails.py**). The response is built per student and per session (current, future, past); for each relevant payment the API calls **getInvoiceList(paymentId, email)**.
+- **Portal invoice list:** The portal does **not** call a dedicated invoice API. It calls **GET getPortalDetail/** (member-service, **getPortalDetails.py**). The response is built per student and per session (current, future, past); for each relevant payment the API calls **getInvoiceList(paymentId, email)**.
 - **getInvoiceList** uses **getInvoiceListScript(emailId, paymentId)** (in **memberScript.py** / **invoiceScript.py**), which runs a MongoDB aggregation on **invoice_notifications** (matched by **paymentId**), then joins **invoice_records**, **invoice_payment_link**, **invoice_responses**, and **stripe_checkout_customer**.
 - Each item in **invoiceList** includes: **invoice_id**, **invoiceName** (from invoice_records.title), **is_completed** (true if there is at least one invoice_response for that invoice + paymentId), **breakDownList** (bucket breakdown, see below), **jotFormUrlLink** (array of payment links with **paymentLinkId**, **title**, **amount**, **paymentType**, **jotFormUrl**, **formid**), **status**, **paymentProcessMsg**, **paymentId**, **created_on**.
 
 ### DB collections and relations
 
-| Collection | Role | Key relations |
-|------------|------|----------------|
-| **invoice_notifications** | Links a payment to an invoice. Created/updated by admin (Retool). | **paymentId**, **invoice_id**, **emailId**, **created_on** |
-| **invoice_records** | One document per invoice (e.g. semester bucket). | **_id** = invoice_id; **title**, **returner**, **sibling**, **earlyBirds**, **currentYear**, **classSessionId**, **payment_type** (e.g. `"bucket"`) |
-| **invoice_rates** | Pricing and discounts by year/session. | **yearId**, **classSessionId** → **basePrice**, **newStudent**, **siblingDiscPercentage**, **earlyBirdsDiscount** |
-| **invoice_payment_link** | One or more payment options per invoice (card, ACH, form, etc.). | **invoice_id**, **paymentType**, **amount**, **title**, **jotFormUrl**, **formid** |
-| **invoice_responses** | One per successful (or attempted) invoice payment. Written by Stripe webhook. | **invoiceId**, **paymentId**, **paymentLinkId**, **memberId**, **amount**, **payment_intent**, **status**; after completion also **credit_amount**, **basePrice**, **newStudent**, **sibling**, **earlyBird** (for itemized) |
-| **stripe_checkout_customer** | Created when user starts Stripe checkout for an invoice. | **invoiceId**, **paymentId**, **paymentLinkId**, **memberId**, **status**, **payment_intent** |
+| Collection                   | Role                                                                          | Key relations                                                                                                                                                                                                                |
+| ---------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **invoice_notifications**    | Links a payment to an invoice. Created/updated by admin (Retool).             | **paymentId**, **invoice_id**, **emailId**, **created_on**                                                                                                                                                                   |
+| **invoice_records**          | One document per invoice (e.g. semester bucket).                              | **\_id** = invoice_id; **title**, **returner**, **sibling**, **earlyBirds**, **currentYear**, **classSessionId**, **payment_type** (e.g. `"bucket"`)                                                                         |
+| **invoice_rates**            | Pricing and discounts by year/session.                                        | **yearId**, **classSessionId** → **basePrice**, **newStudent**, **siblingDiscPercentage**, **earlyBirdsDiscount**                                                                                                            |
+| **invoice_payment_link**     | One or more payment options per invoice (card, ACH, form, etc.).              | **invoice_id**, **paymentType**, **amount**, **title**, **jotFormUrl**, **formid**                                                                                                                                           |
+| **invoice_responses**        | One per successful (or attempted) invoice payment. Written by Stripe webhook. | **invoiceId**, **paymentId**, **paymentLinkId**, **memberId**, **amount**, **payment_intent**, **status**; after completion also **credit_amount**, **basePrice**, **newStudent**, **sibling**, **earlyBird** (for itemized) |
+| **stripe_checkout_customer** | Created when user starts Stripe checkout for an invoice.                      | **invoiceId**, **paymentId**, **paymentLinkId**, **memberId**, **status**, **payment_intent**                                                                                                                                |
 
 - **getInvoiceListScript** aggregates: **invoice_notifications** (match **paymentId**) → lookup **invoice_records** by **invoice_id** → lookup **invoice_payment_link** by **invoice_id** → lookup **invoice_responses** by **invoice_id** + **paymentId** → lookup **stripe_checkout_customer** by **invoice_id** + **paymentId**. So portal invoice list is “all notifications for this payment” with joined record, links, responses, and checkout status.
 
@@ -41,6 +41,7 @@ The invoice system flows from **Retool (admin)** creating and linking invoice da
 
 - **breakDownList** shown on the portal for each invoice is computed by **calculatebucketAmount(invoiceRecord)** (in **getPortalDetails.py** / **validatePortalAPIs.py**). It uses **invoice_rates** for the invoice’s **currentYear** and **classSessionId**.
 - Logic:
+  - If **invoiceRecord** has no **returner**, a default `{"Deposit": 300.0}` can be used (scheduler_service variant); otherwise, rates apply.
   - **Semester Tuition** = **invoice_rates.basePrice**.
   - **New Student Fee** = **invoice_rates.newStudent** if the student is not a **returner**.
   - **Sibling Discount** = −(basePrice × **siblingDiscPercentage** / 100) if **sibling** is true.
@@ -57,7 +58,7 @@ The invoice system flows from **Retool (admin)** creating and linking invoice da
 ### Portal rendering (JS)
 
 - **JS file:** **portal_new_ui.js** (or **portal_staging.js**), **Portal** class.
-- **Flow:** **fetchData()** calls **getPortalDetail/{memberId}**. **render()** then calls **setupTabs(data, …)** which, for each student tab, gets **student** from **data** (keyed by student name) with **pastSession**, **currentSession**, **futureSession**. Invoices come from **student.invoiceList** and **studentData.futureSession[].invoiceList**; these are merged and passed to **renderInvoiceAccordionStyled(tabPane, student, studentData)**.
+- **Flow:** **fetchData()** calls **getPortalDetail/**. **render()** then calls **setupTabs(data, …)** which, for each student tab, gets **student** from **data** (keyed by student name) with **pastSession**, **currentSession**, **futureSession**. Invoices come from **student.invoiceList** and **studentData.futureSession[].invoiceList**; these are merged and passed to **renderInvoiceAccordionStyled(tabPane, student, studentData)**.
 - **renderInvoiceAccordionStyled** finds **[data-portal="invoice-form-accordian"]** in the tab pane, clears it, and builds the accordion: header (“Invoices”, “Needs to be completed” / “All Paid”), completion progress (X of Y invoices complete, %), then one block per invoice with **invoiceName**, status (Paid/Pending), and action links. For unpaid invoices, **jotFormUrlLink** is used: if **paymentType** is card or us_bank_account, a “Pay” link calls **initializeStripePayment(invoice_id, invoiceName, amount, paymentLinkId, …)**; otherwise a link opens **jotFormUrl**.
 - **initializeStripePayment** sends a request to create a Stripe Checkout session (invoiceId, paymentId, paymentLinkId, etc.); the user is redirected to Stripe. On success, the webhook (**stripePaymentListener.updateInvoiceResponses**) inserts/updates **invoice_responses** and updates **member_credit_amount** when credits are applied. **renderFailedInvoiceNotification** shows a banner if any **invoiceList** item has **status === 'Failed'**.
 - **initializeInvoiceAccordion** wires click handlers so only one invoice accordion is open at a time.
