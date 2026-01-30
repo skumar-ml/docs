@@ -39,7 +39,7 @@ Then, our onClickListener calls `AddStudentData()`, which validates and submits 
 
 ### Data & Rendering
 
-After a member logs in, the `classDetailsStripe`**class**  (defined in `class_details_stripe_bundle.js`) is initialised on page load. This class triggers the `getUpsellProgramV2` API, which fetches upsell programs for **both** current session and summer session. The frontend filters out `sessionId !== 2`, where `sessionId = 2` represents the summer session, and the filtered upsells are then rendered in both the **banner CTA** and \*\*bundle selection modal \*\*using `class_details_stripe_bundle.js`.
+After a member has logged in, the `classDetailsStripe` instance is created on page load (from **\<TODO: What is classDetailsStripe? I think it's the first time it's mentioned\>)**. This triggers the `getUpsellProgramV2` API, which fetches upsell programs for **both** current session and summer session. The frontend filters out `sessionId !== 2`, where `sessionId = 2` represents the summer session, and the filtered upsells are then rendered in both the **banner CTA** and **bundle selection modal \<TODO: by which JS file?\>**. 
 
 ### Logic Bundle Modal Open and Skip
 

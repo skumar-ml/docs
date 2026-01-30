@@ -18,10 +18,9 @@ The most important distinction between accounts is the `accountType`, which can 
 
 These distinctions control the following:
 
-- Only `parent` accounts can register for BDC classes. A `student` or `coach` account will be asked to log out and sign-in to a `parent` account during the checkout process.
-- A `student` account _must_ be linked to a `parent` account (cannot exist in isolation). This link is controlled by the `familyId` (more below)
+- Only `parent` accounts can register for BDC classes. A `student` account will be asked to log out and sign-in to a `parent` account during the checkout process.
   - `student` and `parent` accounts see the same portal.
-- Only `coach` accounts can access the BDC Coach Portal, which (upon verification) allows them to access functionality like class & trial class attendance and the millions.
+- Only `coach` accounts can access the BDC Coach Portal, which (upon verification) allows them to access functionality like semester class attendance & trial class attendance and the millions.
 
 There currently does not exist any mechanism for the admin or user to change the `accountType`. If a need arises, please inform the tech team, and we'll do it manually.
 
@@ -58,7 +57,7 @@ The logic is centralized in the `createAccount` flow and behaves as follows:
 
 - If no existing parent is found:
   - A new `familyId` is generated using a random, non-guessable string derived from the parent email and digits.
-  - This `familyId` is assigned at parent creation time.
+  - This `familyId` is assigned at parent account creation time.
 - If an existing parent is found:
   - If the parent already has a valid `familyId`, it is reused.
   - If the parent exists but has an empty or `"null"` familyId, a new one is generated and backfilled.
@@ -68,7 +67,7 @@ The logic is centralized in the `createAccount` flow and behaves as follows:
 - Students are always linked to a parent via their `familyId`.
 - Student lookup follows this order:
   - By `studentEmail` (if provided and different from parent email)
-  - Else by `(studentName + familyId)`
+  - Else by `studentName + familyId`
 - If a student record exists without a `familyId`, it is updated to inherit the parent’s `familyId`.
 - If no student record exists, a new student is created with the inherited `familyId`.
 
