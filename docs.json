@@ -14,12 +14,6 @@
         "tab": "BDC",
         "groups": [
           {
-            "group": "Other Technical Things",
-            "pages": [
-              "bdc/other-technical-things/abandoned-cart"
-            ]
-          },
-          {
             "group": "Introduction",
             "icon": "rocket-launch",
             "pages": [
@@ -146,6 +140,21 @@
             "pages": [
               "bdc/admin-guides/academic-semester-checklist"
             ]
+          },
+          {
+            "group": "Other Technical Things",
+            "pages": [
+              "bdc/other-technical-things/abandoned-cart"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "NSD",
+        "groups": [
+          {
+            "group": "Introduction",
+            "pages": []
           }
         ]
       }
