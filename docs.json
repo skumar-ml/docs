@@ -129,7 +129,7 @@
           },
           {
             "group": "Homework Checker",
-            "icon": "page",
+            "icon": "files",
             "pages": [
               "bdc/homework-checker/overview",
               "bdc/homework-checker/technical"
