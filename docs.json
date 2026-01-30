@@ -92,6 +92,21 @@
                 ]
               }
             ]
+          },
+          {
+            "group": "Portal",
+            "pages": [
+              "bdc/portal/overview",
+              "bdc/portal/dashboard",
+              "bdc/portal/millions",
+              "bdc/portal/credit-center",
+              "bdc/portal/referrals",
+              "bdc/portal/invoices",
+              "bdc/portal/portal-upsell",
+              "bdc/portal/returner-conversion",
+              "bdc/portal/briefs",
+              "bdc/portal/announcements"
+            ]
           }
         ]
       }
