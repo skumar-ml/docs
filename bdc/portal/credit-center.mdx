@@ -60,12 +60,12 @@ TODO: Explain in detail how credit works (from Retool update to render here). In
 
 ### Overview
 
-Credits are stored per parent (member) in **member_credit_amount**. Admins add credits via **Retool** (which updates this collection). Deductions happen when a parent applies credit during **invoice payment** or **checkout**; the Stripe webhook (**stripePaymentListener**) updates **member_credit_amount** and appends a **debit** entry to **credit_history**. The Credit Center page fetches **GET getCreditBalance/** (referral-promotion-service) and renders balance and transaction history via **credit_points.js** (**CreditBalance** class). For the **modal shown during checkout** when the user chooses whether to apply credit, see the [checkout](/bdc/checkout-systems) and [invoices](/bdc/portal/invoices) docs; this section does not detail that modal.
+Credits are stored per parent (member) in **member_credit_amount**. Admins add credits via **Retool** (which updates this collection). Deductions happen when a parent applies credit during **invoice payment** or **checkout**; the Stripe webhook (**stripePaymentListener**) updates **member_credit_amount** and appends a **debit** entry to **credit_history**. The Credit  page fetches **GET getCreditBalance/** (referral-promotion-service) and renders balance and transaction history via **credit_points.js** (**CreditBalance** class). For the **modal shown during checkout** when the user chooses whether to apply credit, see the [checkout](#) and [invoices ](#)docs; this section does not detail that modal.
 
 ### API and data source
 
 - **API:** **GET getCreditBalance/** (referral-promotion-service, **getCreditBalance.py**).
-- **Logic:** Look up **members** by **memberId**; if not found, return 400. Look up **member_credit_amount** by **memberId**; if not found, return 400. Build **session_map** from **class_session** (sessionId → classSessionName). For each entry in **creditBalance.credit_history**, build a log with **amount**, **description**, **type**, **sessionName** (from session_map using **sessionId**), **year**, **date** (from **createdOn**). Response: **creditBalance** object with **name**, **email**, **memberId**, **creditBalance** (number), **creditHistory** (array of logs), **createdOn**, **updatedOn**.
+- **Logic:** Look up **members** by **memberId**; Build **session_map** from **class_session** (sessionId → classSessionName). For each entry in **creditBalance.credit_history**, build a log with **amount**, **description**, **type**, **sessionName** (from session_map using **sessionId**), **year**, **date** (from **createdOn**). Response: **creditBalance** object with **name**, **email**, **memberId**, **creditBalance** (number), **creditHistory** (array of logs), **createdOn**, **updatedOn**.
 
 ### DB collection and structure
 
@@ -80,7 +80,7 @@ Credits are stored per parent (member) in **member_credit_amount**. Admins add c
 ### Portal rendering (Credit Center page)
 
 - **JS file:** **credit_points.js**, **CreditBalance** class.
-- **Entry:** The Credit Center page (e.g. `/portal/credit-balance`) instantiates **CreditBalance** with a **data** object that includes **apiBaseURL** and **memberId**.
+- **Entry:** The Credit Center page instantiates **CreditBalance** with a **data** object that includes **apiBaseURL** and **memberId**.
 - **Flow:** **init()** shows spinner, hides balance/table/no-record divs; calls **fetchCreditData()** → **GET getCreditBalance/**. On success, sets **this.creditData.creditBalance**, **this.transactions = this.\$creditData.creditHistory**; then **updateCreditBalanceDisplay()** and **updateTransactionTable()**; finally hides spinner and shows balance, table, and portal wrapper. On error or no data, shows **noRecordDiv**.
 - **updateCreditBalanceDisplay():** Sets **this.balanceElement** text to `$${this.balance.toFixed(2)}`; then calls **updateTransactionTable()**.
 - **updateTransactionTable():** Clears table, sorts **this.transactions** by **date** descending; for each transaction appends a row with date (formatted), **type** (displayed as Credit/Debit; **RemovedAdmin** shown as Debit), **sessionName** + **year**, **description**, and amount (`+amount` for credit, `-amount` for debit).
