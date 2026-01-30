@@ -8,8 +8,55 @@ TODO: What users get to see & their checkout flow
 
 ## Admins (Retool)
 
-TODO: How can admin manage this on Retool. 
+TODO: How can admin manage this on Retool.
 
 ## Technical
 
 TODO: Explain in detail how the portal upsells work. Explain what options get shown to bundle. Explain how checkout flow works.
+
+### Overview
+
+Portal upsells (supplementary programs) are driven by **portal_upsell_program.js** and one API. The page that hosts the supplementary programs section must instantiate **DisplaySuppProgram** with a **memberData** object that includes:
+
+- **baseUrl** — API base URL
+- **memberId** — current member ID
+- **site_url** — site base URL (e.g. for success/cancel URLs)
+
+The class fetches upsell programs, renders them as selectable cards, and when the user clicks Pay Now it calls the checkout API and redirects to Stripe.
+
+### API
+
+The API used is **GET getUpsellProgramV2?type=portal** (referral-promotion-service, **getUpsellProgramV2.py**). When **type=portal** is present, the API reads **upsell_program_mapping** for the current year and session and uses **portal_program_ids** (instead of **upsell_program_ids**) to decide which programs to return.
+
+The response is an array of objects, each with:
+
+- **upsellPrograms** — array of programs (label, **portal_amount**, **portal_disc_amount**, sessionId, yearId, upsellProgramId, desc)
+- **yearId**, **sessionId**
+
+The same lookup is done for summer (sessionId 2); the frontend then filters out summer (sessionId === 2) and only shows academic bundle programs. For each academic session, it further filters **upsellPrograms** to those whose **sessionId** is not the current session (future sessions only), so the options shown are "bundle" programs for other semesters (e.g. next Winter/Spring when the user is in Fall).
+
+### What options get shown (rendering)
+
+**DisplaySuppProgram** hides all **.bundle-sem-rounded-red-div** elements initially, then calls **displaySupplementaryProgram()**, which fetches **getUpsellProgramV2?type=portal** and stores the result. If the response has items, it calls **createBundleProgram()**, which:
+
+- Clears **[data-upSell='card-container']** and **[data-upSell='modal-card-container']**
+- Filters to academic-only and future-session programs (as above)
+- For each program, appends a card from **createBundleCard()** to the card container and a card from **createModelBundleCard()** to the modal container
+
+Each card shows label, year, **portal_amount** (discount price), **portal_disc_amount** (original price), and description. The user selects programs via checkboxes; the running total is shown in **[data-cart-total='cart-total-price']**. **displayTotalDiscount()** shows the total discount (portal_disc_amount − portal_amount) in **[data-addon="discount"]**. **disableEnableBuyNowButton()** enables or disables **.add-to-cart** and **.bundle-add-to-cart** based on whether any program is selected.
+
+### Checkout flow
+
+The checkout flow is triggered when the user clicks **#pay-supp-program** (Pay Now). **handlePaymentEvents()** ensures a student is selected in **#portal-students** (the value is used as **paymentId**, the existing payment record the bundle will be attached to). It then calls **initSupplementaryPayment(paymentId, upsellProgramIds, programName, amount)**.
+
+That method:
+
+1. Opens the Bergen credits modal via **Utils.waitForCreditApplicationChoice(memberId)** and waits for the user to choose apply or no (**applyCredit**).
+2. Sends a **POST** request to **checkoutUrlForUpsellProgram** with **paymentId**, **upsellProgramIds**, **successUrl** (portal/dashboard?success=true), **cancelUrl** (portal/dashboard), **label**, **amount** (selected programs' **portal_amount** sum plus **memberData.amount**), **source: "portal_page"**, **memberId**, and **applyCredit**.
+3. Receives **cardUrl** (and optionally **achUrl**) from the API; sets **window.location.href** to **cardUrl** so the user is redirected to Stripe to complete payment.
+
+After payment, the webhook (same as for semester/summer upsells) inserts the bundle placeholder and upsell records as described in [Semester/Summer upsells](/bdc/checkout-systems/upsells/semester-summer).
+
+### Summary
+
+In short: one API (**getUpsellProgramV2?type=portal**) supplies the list of portal upsell programs (from **portal_program_ids**); one JS file (**portal_upsell_program.js**) and **DisplaySuppProgram** render only academic, future-session bundle options, handle selection and total, and on Pay Now call **checkoutUrlForUpsellProgram** with the selected student's **paymentId** and **upsellProgramIds**, then redirect to Stripe. Post-payment behavior (two records per bundle, placeholder in **payment_details** or **summer_payment_details**, row in **upsell_payment_details**) is the same as in the semester/summer upsell doc.
