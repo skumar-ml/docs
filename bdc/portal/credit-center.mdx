@@ -57,3 +57,35 @@ Clicking **Send** applies the credit to all selected parents.
 ## Technical
 
 TODO: Explain in detail how credit works (from Retool update to render here). Include DB. Do not details on the modal that gets rendered during front-end checkout (just link to docs)
+
+### Overview
+
+Credits are stored per parent (member) in **member_credit_amount**. Admins add credits via **Retool** (which updates this collection). Deductions happen when a parent applies credit during **invoice payment** or **checkout**; the Stripe webhook (**stripePaymentListener**) updates **member_credit_amount** and appends a **debit** entry to **credit_history**. The Credit Center page fetches **GET getCreditBalance/{memberId}** (referral-promotion-service) and renders balance and transaction history via **credit_points.js** (**CreditBalance** class). For the **modal shown during checkout** when the user chooses whether to apply credit, see the [checkout](/bdc/checkout-systems) and [invoices](/bdc/portal/invoices) docs; this section does not detail that modal.
+
+### API and data source
+
+- **API:** **GET getCreditBalance/{memberId}** (referral-promotion-service, **getCreditBalance.py**).
+- **Logic:** Look up **members** by **memberId**; if not found, return 400. Look up **member_credit_amount** by **memberId**; if not found, return 400. Build **session_map** from **class_session** (sessionId → classSessionName). For each entry in **creditBalance.credit_history**, build a log with **amount**, **description**, **type**, **sessionName** (from session_map using **sessionId**), **year**, **date** (from **createdOn**). Response: **creditBalance** object with **name**, **email**, **memberId**, **creditBalance** (number), **creditHistory** (array of logs), **createdOn**, **updatedOn**.
+
+### DB collection and structure
+
+| Collection | Role | Key fields |
+|------------|------|------------|
+| **member_credit_amount** | One document per parent; holds current balance and full history. | **memberId**, **credit_balance** (number), **credit_history** (array), **createdOn**, **updatedOn** |
+| **credit_history** (embedded) | One entry per credit add or debit. | **amount**, **type** (e.g. `"credit"`, `"debit"`, `"RemovedAdmin"`), **description**, **createdOn**; for debits often **invoiceId**, **paymentId**, **year**, **sessionId** |
+
+- **Credits added:** Admins add credits via Retool (filter by class, location, session, year, parent; select parents; enter amount and description; Send). Retool updates **member_credit_amount**: sets **credit_balance** (increased) and pushes to **credit_history** an entry with **type** `"credit"` (or similar) and the **description**. The exact Retool → DB path (direct MongoDB or internal API) is outside this repo.
+- **Credits deducted:** When a parent pays an invoice or completes checkout and applies credit, **stripePaymentListener** (scheduler_service) runs after successful payment. It calls **calculateInvoiceAmount** (or equivalent) to get the new **credit_balance** and amount applied; then **member_credit_amount.update_one** with `$set { **updatedOn**, **credit_balance** }` and **$push** to **credit_history** an entry with **type** `"debit"`, **description** (e.g. `"used in invoice payment"` or `"applied during checkout"`), **amount**, **invoiceId** / **paymentId**, **year**, **sessionId**, **createdOn**.
+
+### Portal rendering (Credit Center page)
+
+- **JS file:** **credit_points.js**, **CreditBalance** class.
+- **Entry:** The Credit Center page (e.g. `/portal/credit-balance`) instantiates **CreditBalance** with a **data** object that includes **apiBaseURL** and **memberId**.
+- **Flow:** **init()** shows spinner, hides balance/table/no-record divs; calls **fetchCreditData()** → **GET getCreditBalance/{memberId}**. On success, sets **this.$creditData = apiData.creditBalance**, **this.balance = this.$creditData.creditBalance**, **this.transactions = this.$creditData.creditHistory**; then **updateCreditBalanceDisplay()** and **updateTransactionTable()**; finally hides spinner and shows balance, table, and portal wrapper. On error or no data, shows **noRecordDiv**.
+- **updateCreditBalanceDisplay():** Sets **this.balanceElement** text to `$${this.balance.toFixed(2)}`; then calls **updateTransactionTable()**.
+- **updateTransactionTable():** Clears table, sorts **this.transactions** by **date** descending; for each transaction appends a row with date (formatted), **type** (displayed as Credit/Debit; **RemovedAdmin** shown as Debit), **sessionName** + **year**, **description**, and amount (`+amount` for credit, `-amount` for debit).
+- **DOM:** Balance: **\[data-credit="balance"]**. Table container: **\[data-credit="table"]**. No-record state: **\[data-container="no-record-found"]**. Wrapper: **.portal-info-wrapper**. Spinner: **#half-circle-spinner**.
+
+### Summary
+
+Credits are stored in **member_credit_amount** (balance + **credit_history**). Retool adds credits (updates balance and pushes **credit** entries); Stripe webhook deducts on invoice/checkout (pushes **debit** entries). Credit Center uses **getCreditBalance/{memberId}** and **credit_points.js** to show balance and sorted transaction history. The checkout-time “apply credit” modal is documented in the checkout and invoice docs.
