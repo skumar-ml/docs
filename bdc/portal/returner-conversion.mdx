@@ -17,21 +17,24 @@ TODO: Explain in detail how this works (APIs, JS files/methods needed to render)
 Returner conversion and pre-registration on the portal are driven by **one API** and the **Portal** class in the portal JS. The API returns **recommendedLevel** (when published) and **futureSession** (with pre-registration dates); the frontend shows/hides the “Next Recommended Program” and pre-reg blocks and buttons based on that data and the current date.
 
 **API**
+
 - **`GET getPortalDetail/{memberId}`** (member-service, **getPortalDetails.py**).
 - For each student in the **current** session, the API returns **`recommendedLevel`** from **`getRecommended(row)`**.
 - **`getRecommended(row)`** runs only when **`row['publish'] == True`**; it reads **attendance_session**, **class_session**, **student_grades**, **class_level** and returns **session**, **grade**, **level**, **year**, **pre-registrationDates**, **earlyBirdDeadlineDate**, **registrationStartDate**, **registrationEndDate**. If not published, returns `{}`.
 - **futureSession** (from payment/upsell data) includes **pre-registrationDates**, **programDates**, **earlyBirdDeadlineDate**, **classId** (empty when bundle not yet converted). Used for pre-reg timing and “has bundle” logic.
 
 **JS**
-- File: **`portal_new_ui.js`** (or **`portal_staging.js`**); class: **Portal**.
-- Portal fetches **getPortalDetail/{memberId}** once; then for each student tab it calls **renderRecommendedLevel(tabPane, student, studentData)**.
+
+- File: **`portal_new_ui.js`**  class: **Portal**.
+- Portal fetches **getPortalDetail/** once; then for each student tab it calls **renderRecommendedLevel(tabPane, student, studentData)**.
 
 **Returner conversion**
+
 - **Returner conversion** = “Next Recommended Program” is shown when the API returns a non-empty **recommendedLevel** (i.e. **recommendedLevel.level** is set), i.e. when **publish** is true and **getRecommended** has level/session/year/dates.
-- **checkReturnerConversion(recommendedLevel)** returns **true** when **recommendedLevel && recommendedLevel.level**.
 - **renderRecommendedLevel** uses **recommendedLevel** to fill the “Next Recommended Program” line (session/year | level) and to drive **updateButtonVisibility** and **getTimeBasedVisibility**.
 
 **Pre-registration (portal)**
+
 - **checkHasBundle(studentData)** = student has a future-session bundle (no **classId** yet, non-Summer) so they can pre-register. Uses **studentData.futureSession**.
 - **getTimeBasedVisibility(recommendedLevel, studentData)** compares current date to **pre-registrationDates** (from futureSession) and to **recommendedLevel.pre-registrationDates** / **registrationEndDate**; returns **showPreRegistration** and **showRegistration**.
 - **updateButtonVisibility(recommendedSection, recommendedLevel, timeBasedVisibility, studentData)** shows/hides **#enroll-now-btn-2** and **[data-portal="next-recomm-learn-more"]** based on:
@@ -40,11 +43,9 @@ Returner conversion and pre-registration on the portal are driven by **one API**
   - Both active → both buttons; otherwise both hidden and section hidden.
 
 **DOM**
+
 - **`[data-pre-registration="container"]`** — wrapper for “Next Recommended Program” + pre-reg.
 - **`.next-recomm-prog-container`** — “Next Recommended Program” block; **`.pre-reg-container`** — pre-reg block.
-- **`[data-portal="next-recomm-prog-text"]`** — session/year | level line; **`.next-recomm-prog-title`** — “Next Recommended Program for {name}”.
-- **`#enroll-now-btn-2`**, **`[data-portal="next-recomm-learn-more"]`** — Register Now and Learn More. **updateEnrollNowLinks** sets Register Now href to programs/{level} when returner conversion is active and within registration window, else classes-overview.
+- **`[data-portal="next-recomm-prog-text"]`** — session/year | level line; **`.next-recomm-prog-title`** — “Next Recommended Program for name”.
+- **`#enroll-now-btn-2`**, **`[data-portal="next-recomm-learn-more"]`** — Register Now and Learn More. **updateEnrollNowLinks** sets Register Now href to programs/level when returner conversion is active and within registration window, else classes-overview.
 - **Learn More** opens **#next-recomm-modal**; **updateModalContent** fills it from **recommendedLevel**.
-
-**Summary**
-- One API (**getPortalDetail/{memberId}**) supplies **recommendedLevel** (returner conversion) and **futureSession** (pre-reg + bundle). One JS file (**portal_new_ui.js** or **portal_staging.js**) uses **renderRecommendedLevel**, **checkReturnerConversion**, **checkHasBundle**, **getTimeBasedVisibility**, and **updateButtonVisibility** to show/hide the blocks and buttons. Pre-registration states and admin control are described in the [Pre-Reg System](/bdc/checkout-systems/semester/pre-reg-system) doc.
