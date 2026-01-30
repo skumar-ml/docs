@@ -60,12 +60,12 @@ TODO: Explain in detail how credit works (from Retool update to render here). In
 
 ### Overview
 
-Credits are stored per parent (member) in **member_credit_amount**. Admins add credits via **Retool** (which updates this collection). Deductions happen when a parent applies credit during **invoice payment** or **checkout**; the Stripe webhook (**stripePaymentListener**) updates **member_credit_amount** and appends a **debit** entry to **credit_history**. The Credit  page fetches **GET getCreditBalance/** (referral-promotion-service) and renders balance and transaction history via **credit_points.js** (**CreditBalance** class). For the **modal shown during checkout** when the user chooses whether to apply credit, see the [checkout](#) and [invoices ](#)docs; this section does not detail that modal.
+Credits are stored per parent (member) in **member_credit_amount**. Admins add credits via **Retool** (which updates this collection). Deductions happen when a parent applies credit during **invoice payment** or **checkout**; the Stripe webhook (**stripePaymentListener**) updates **member_credit_amount** and appends a **debit** entry to **credit_history**. The Credit  page fetches **GET getCreditBalance/** and renders balance and transaction history via **credit_points.js** (**CreditBalance** class). For the **modal shown during checkout** when the user chooses whether to apply credit, see the [checkout](#) and [invoices ](#)docs; this section does not detail that modal.
 
 ### API and data source
 
-- **API:** **GET getCreditBalance/** (referral-promotion-service, **getCreditBalance.py**).
-- **Logic:** Look up **members** by **memberId**; Build **session_map** from **class_session** (sessionId → classSessionName). For each entry in **creditBalance.credit_history**, build a log with **amount**, **description**, **type**, **sessionName** (from session_map using **sessionId**), **year**, **date** (from **createdOn**). Response: **creditBalance** object with **name**, **email**, **memberId**, **creditBalance** (number), **creditHistory** (array of logs), **createdOn**, **updatedOn**.
+- **API:** **GET getCreditBalance/** (**getCreditBalance.py**).
+- **Response**: **creditBalance** object with **name**, **email**, **memberId**, **creditBalance** (number), **creditHistory** (array of logs), **createdOn**, **updatedOn**.
 
 ### DB collection and structure
 
@@ -88,4 +88,4 @@ Credits are stored per parent (member) in **member_credit_amount**. Admins add c
 
 ### Summary
 
-Credits are stored in **member_credit_amount** (balance + **credit_history**). Retool adds credits (updates balance and pushes **credit** entries); Stripe webhook deducts on invoice/checkout (pushes **debit** entries). Credit Center uses **getCreditBalance/** and **credit_points.js** to show balance and sorted transaction history. The checkout-time “apply credit” modal is documented in the checkout and invoice docs.
+Credits are stored in **member_credit_amount** (balance + **credit_history**). Retool adds credits (updates balance and pushes **credit** entries); Stripe webhook deducts on invoice/checkout (pushes **debit** entries). Credit pages uses **getCreditBalance/** and **credit_points.js** to show balance and sorted transaction history. The checkout-time “apply credit” modal is documented in the checkout and invoice docs.
