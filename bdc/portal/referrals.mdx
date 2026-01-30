@@ -95,10 +95,10 @@ The referral system lets a **referrer**  share a **referral link** and **coupon 
   - Response: `{ referrals (array), coupon_code }`.
 - **POST addReferralData** (referral-promotion-service, **addReferralData.py**).
   - Body: **email**, **name**, **memberId** (referrer’s memberId).
-  - If **members** has existing member with that **email** and **familyId** set →  "Member already exists".\<**@DEV; Need to confirm**\>
-  - If **referral_details** has doc with that **email** →  "Member already referred". \<**@DEV; Need to confirm**\>
-  - **guestId:** if **members** has guest by **email**, use that **\_id**; else call **createAccount** API (parent sign-up, source "referral") and use returned **parent_id**.
-  - **members.find_one()** → **familyId**. **coupon_details.find_one()** → **couponId**. Insert **referral_details**: **memberId**, **referral_familyId**, **guestId**, **date_referred** (now), **purchased_date** (None), **referred_stage** ("None"), **couponId**, **email_sent** (1). Create lead in CRM; send email (immediately_after_referral) with **coupon_code** and referrer name; schedule follow-up emails (e.g. 24h, 72h, 240h). Return 200.
+  - If **members** has existing member with **familyId** set →  "Member already exists".
+  - If **referral_details, members** has exist with that **email** →  "Member already referred".
+  - **guestId:** if **member** is already referred by **email**, use that **\_id**; else call **createAccount** API (parent sign-up, source "referral") and use returned **parent_id**.
+  - 
 
 ### DB collections and relations
 
