@@ -79,3 +79,46 @@ TODO: Explain in detail how millions works (from Retool update to render here). 
 
   SK -- let's get BDC admin to populate this
 </Warning>
+
+### Overview
+
+Millions are **per-student** “earn” amounts (e.g. points or rewards) tied to the current academic year/session. Data is stored in **millions_transactions** (keyed by **studentId**). Admins or coaches update amounts via **POST updatePortalMillions** (member-service) or via Retool (which may call that API or write to the DB). The **portal** and **payment history** pages fetch **GET getMillionsTransactionData/{memberId}** (member-service), which joins **payment_details** (current year/session) with **millions_transactions** by **studentId** and returns one entry per student with **earnAmount** and **transactions**. The portal (**portal_new_ui.js**) displays the millions count in the sidebar (**[data-millions="sidebarCount"]**) as “XM” for the active student tab. The **Millions store** (redeeming items) is out of scope per the warning above.
+
+### API and data source
+
+- **GET getMillionsTransactionData/{memberId}** (member-service, **getMillionsTransactionData.py**).
+  - Resolve **memberId** to family: if **members.familyId** is set, get all **memberId**s in that family; otherwise use the single **memberId**.
+  - **currentYear**, **sessionId** = **getCurrentYearAndSessionId()**. Get **class_details** for that year/session; build **classIdDict** (list of **classUniqueId**).
+  - **getMillionTransactionDetails(classIdDict, ids)** (**memberScript.py**): aggregates **payment_details** with **classId** in **classIdDict**, **memberId** in **ids**, non-refunded; joins **members** (parent email), **members** (student name, **studentGrade**), and **millions_transactions** (match **studentId**). Returns list of payments with **memberId**, **studentId**, **parentEmail**, **studentData** (name, studentGrade), **millions_transactions** (array: **earnAmount**, **_id**, **transactions**, **studentId**).
+  - Build **millions_transactions** response: for each payment, one object per **studentId** (deduplicated) with **memberId**, **studentId**, **parentEmail**, **studentName**, **studentGrade**, **earnAmount** (from the joined millions_transactions or 0), **transactions** (array from millions_transactions). Also **items** = **db.millions_items_details.find()** (store catalog; see warning).
+  - Response: **{ items, millions_transactions }**.
+
+- **POST updatePortalMillions** (member-service, **updatePortalMillions.py**).
+  - Body: **_id** (optional, existing millions_transactions doc id), **studentId**, **amount**, **description**, **prevAmount** (optional).
+  - If no **_id**: **insert_one** into **millions_transactions** with **studentId**, **earnAmount**: **amount**, **createdOn**, **transactions**: **[{ amount, description, lastEarnDate }]**.
+  - If **_id**: **update_one** on **millions_transactions** with **$set** `{ **earnAmount**: **amount** }`, **$push** to **transactions** `{ **amount**: **amount - prevAmount**, **description**, **lastEarnDate** }`.
+  - Returns **{ _id, message }**. Used by Retool/coach UI to add or update a student’s millions balance.
+
+### DB collections
+
+| Collection | Role | Key fields |
+|------------|------|------------|
+| **millions_transactions** | One document per student (per program); running total and history. | **studentId**, **earnAmount** (number), **createdOn**, **transactions** (array of **{ amount, description, lastEarnDate }**) |
+| **millions_items_details** | Catalog of items (e.g. for store). | Used by API as **items**; **not** documented here (store skipped). |
+
+- **Relation:** **millions_transactions** is joined to **payment_details** by **studentId** (same **studentId** as on the payment). **getMillionTransactionDetails** only includes payments whose **classId** is in the current year/session **class_details**, so portal millions data is scoped to current academic session.
+
+### Portal rendering (sidebar count)
+
+- **JS:** **portal_new_ui.js** (or **portal_staging.js**) and **payment_history.js** (**PaymentHistory** class). Both fetch **getMillionsTransactionData/{memberId}** and pass **millions_transactions** into tab setup.
+- **portal_new_ui.js:** **render()** calls **fetchMillionsData()** → **getMillionsTransactionData/{memberId}**; **millions_transactions** = **millionsData.millions_transactions**. **setupTabs(data, millions_transactions, announcements)** passes millions into **renderStudentTab**. The **.millions-balance-flex-wrapper** block is shown only when the tab has a **currentSession** (same block that shows invoice accordion, calendar, etc.). **updateSidebarMillionsCount(millionsData, studentName)** finds the entry in **millionsData** where **studentName** matches, gets **earnAmount** (default 0), and sets all **[data-millions="sidebarCount"]** elements to **`${millionsCount}M`** and displays their parent. Called after render and on each tab click so the sidebar always shows the active student’s millions count.
+- **payment_history.js:** Same pattern—**fetchMillionsData()**, **updateSidebarMillionsCount(millions_transactions, getCurrentStudentName())** on load and on tab change.
+- **DOM:** Sidebar count: **[data-millions="sidebarCount"]**. Millions section wrapper: **.millions-balance-flex-wrapper** (visibility toggled per tab based on **currentSession**).
+
+### Coach / admin updates
+
+- **updatePortalMillions** is the API used to create or update a student’s millions record (insert new doc or update **earnAmount** and append to **transactions**). Retool or a coach-facing page (e.g. **millions-coach.js**) can call **POST camp/updatePortalMillions** with **studentId**, **amount**, **description**, and optionally **_id** and **prevAmount** to add or adjust millions. Retool may alternatively write directly to **millions_transactions**; the API is the supported path from the codebase.
+
+### Summary
+
+Millions are stored in **millions_transactions** (per **studentId**; **earnAmount** + **transactions** array). **getMillionsTransactionData/{memberId}** returns per-student millions for the current year/session by joining **payment_details** and **millions_transactions**. **updatePortalMillions** creates or updates **millions_transactions**. The portal shows the active student’s **earnAmount** in the sidebar as “XM” via **updateSidebarMillionsCount**. The Millions store and **millions_items_details** are out of scope.
