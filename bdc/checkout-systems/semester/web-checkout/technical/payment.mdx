@@ -93,37 +93,37 @@ The following data is collected before generating the checkout link:
 
 ### **Stripe Checkout – Customer Data Flow for Class Registrations**
 
-When the student form is submitted, the API `checkoutUrlForClasses` is called. This API generates a `checkoutId` and inserts two initial records (one for the **card** and one for **bank transfer**) into the `stripe_checkout_customer` collection. At this stage, the system stores the `checkoutId`, `customerId`, `paymentType`, `memberId`, `studentId`, and `parentEmail`.
+When the student form is submitted, the API `createCheckoutId` is called. This API generates a `checkoutId` and inserts two initial records (one for the **card** and one for **bank transfer**) into the `stripe_checkout_customer` collection. At this stage, the system stores the `checkoutId`, `customerId`, `paymentType`, `memberId`, `studentId`, and `parentEmail`.
 
 ### API Call and Response
 
-After this, the user selects the class details along with optional upsells. These selections are sent to the API `updateDataToCheckoutUrl` or `checkoutUrlForUpsellProgram` (difference discussed below) with the `classId`, `bundleId`, and `briefsId`. These APIs create a Stripe checkout session for payment and update the existing records in the `stripe_checkout_customer` collection via the `checkoutId`. The updated data includes the `checkoutUrl` option for card or bank transfer. `classId`, `sessionId`, a readable label such as “Fort Lee | Level 2A | Saturday 2:15 PM – 4:15 PM”, `topicIds`, `upsellProgramIds` for bundle programs, and any applied discount amount.
+After this, the user selects the class details along with optional upsells. These selections are sent to the API `checkoutUrlForStandard` or `checkoutUrlForUpsellProgram` (difference discussed below) with the `classId`, `bundleId`, and `briefsId`. These APIs create a Stripe checkout session for payment and update the existing records in the `stripe_checkout_customer` collection via the `checkoutId`. The updated data includes the `checkoutUrl` option for card or bank transfer. `classId`, `sessionId`, a readable label such as “Fort Lee | Level 2A | Saturday 2:15 PM – 4:15 PM”, `topicIds`, `upsellProgramIds` for bundle programs, and any applied discount amount.
 
-| Field            | Purpose                                                   | Step Added                                                                           |
-| ---------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| checkoutId       | Internal unique identifier for a checkout flow            | Created when `checkoutUrlForClasses` is first called                                 |
-| customerId       | Stripe Customer ID representing the parent/user in Stripe | Created once on first checkout; reused for future checkouts                          |
-| paymentType      | Indicates payment method (`card` or `bank_transfer`       | Two records are created initially — one per payment type                             |
-| memberId         | Internal member reference                                 | Added during initial `checkoutUrlForClasses` call                                    |
-| studentId        | Registered student identifier                             | Added during initial `checkoutUrlForClasses` call                                    |
-| parentEmail      | Parent’s email address                                    | Added during initial `checkoutUrlForClasses` call                                    |
-| checkoutUrl      | Stripe-hosted payment page URL                            | Updated when `updateDataToCheckoutUrl` or `checkoutUrlForUpsellProgram` is called    |
-| classId          | Selected class                                            | Added after class selection                                                          |
-| sessionId        | Stripe Checkout Session ID                                | Returned by Stripe during session creation                                           |
-| Label            | Human-readable class summary                              | Created when `checkoutUrlForClasses` is first called                                 |
-| topicIds         | Selected briefs program (optional)                        | Updated when `updateDataToCheckoutUrl` or `checkoutUrlForUpsellProgram` is called    |
-| upsellProgramIds | Selected bundle program (optional)                        | Updated when `updateDataToCheckoutUrl` or `checkoutUrlForUpsellProgram` is called    |
-| discountAmount   | Applied discount value                                    | Calculated during checkout session creation                                          |
-| isClassPayment   | Flag indicating this is a class registration              | Added during initial `checkoutUrlForClasses` call                                    |
-| device           | Device type (Mobile/Desktop)                              | Captured from frontend, added during initial `checkoutUrlForClasses` call            |
-| deviceUserAgent  | Browser + OS fingerprint                                  | Captured from frontend, added during initial `checkoutUrlForClasses` call            |
-| utmSource        | Marketing attribution source                              | Passed from frontend if available, added during initial `checkoutUrlForClasses` call |
-| source           | Entry point (`cart_page`, etc.)                           | Added during initial `checkoutUrlForClasses` call                                    |
-| status           | Checkout/payment state (`Pending`, `Complete`, `Failed`)  | Updated via Stripe webhook                                                           |
+| Field            | Purpose                                                   | Step Added                                                                       |
+| ---------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| checkoutId       | Internal unique identifier for a checkout flow            | Created when `createCheckoutId` is first called                                  |
+| customerId       | Stripe Customer ID representing the parent/user in Stripe | Created once on first checkout; reused for future checkouts                      |
+| paymentType      | Indicates payment method (`card` or `bank_transfer`       | Two records are created initially — one per payment type                         |
+| memberId         | Internal member reference                                 | Added during initial `createCheckoutId` call                                     |
+| studentId        | Registered student identifier                             | Added during initial `createCheckoutId` call                                     |
+| parentEmail      | Parent’s email address                                    | Added during initial `createCheckoutId` call                                     |
+| checkoutUrl      | Stripe-hosted payment page URL                            | Updated when `checkoutUrlForStandard` or `checkoutUrlForUpsellProgram` is called |
+| classId          | Selected class                                            | Added after class selection                                                      |
+| sessionId        | Stripe Checkout Session ID                                | Returned by Stripe during session creation                                       |
+| Label            | Human-readable class summary                              | Created when `createCheckoutId` is first called                                  |
+| topicIds         | Selected briefs program (optional)                        | Updated when `checkoutUrlForStandard` or `checkoutUrlForUpsellProgram` is called |
+| upsellProgramIds | Selected bundle program (optional)                        | Updated when `checkoutUrlForStandard` or `checkoutUrlForUpsellProgram` is called |
+| discountAmount   | Applied discount value                                    | Calculated during checkout session creation                                      |
+| isClassPayment   | Flag indicating this is a class registration              | Added during initial `createCheckoutId` call                                     |
+| device           | Device type (Mobile/Desktop)                              | Captured from frontend, added during initial `createCheckoutId` call             |
+| deviceUserAgent  | Browser + OS fingerprint                                  | Captured from frontend, added during initial `createCheckoutId` call             |
+| utmSource        | Marketing attribution source                              | Passed from frontend if available, added during initial `createCheckoutId` call  |
+| source           | Entry point (`cart_page`, etc.)                           | Added during initial `createCheckoutId` call                                     |
+| status           | Checkout/payment state (`Pending`, `Complete`, `Failed`)  | Updated via Stripe webhook                                                       |
 
 Depending on the purchase type, one of two APIs is called:
 
-#### 1. Standard Checkout (`updateDataToCheckoutUrl`)
+#### 1. Standard Checkout (`checkoutUrlForStandard`)
 
 This API endpoint is used for normal class registration OR Pre-registration (e.g., pre-registered) purchases.
 
