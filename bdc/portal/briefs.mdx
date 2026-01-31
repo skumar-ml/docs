@@ -13,3 +13,24 @@ TODO: What Retool pages can admin use for briefs. Link to doc that describes man
 ## Technical
 
 TODO: Explain in detail how this works (APIs, JS files/methods needed to render).
+
+Portal Briefs shows only briefs the member has already purchased (one JS file, one API).
+
+**JS**
+
+- File: **`portal-briefs.js`**; class: **`BriefManager`**.
+- Parent page must pass **`baseUrl`** and **`memberId`**: `new BriefManager({ baseUrl: '...', memberId: '...' });`.
+
+**API**
+
+- **`GET getTopicsDetails?memberId={memberId}`** (class-service, **`getTopicsDetails.py`**).
+- With **memberId**: returns only purchased topics from **`topic_payment_details`** + **`topic_details`** (topicName, topic_order, version, pdf_url, preview_pdf_url, purchase_date).
+- Without memberId: returns full catalog (checkout; see [Briefs upsells](#)).
+
+**Flow**
+
+- **BriefManager** caches DOM: **`[data-brief="select-brief"]`**, **`[data-brief="download-pdf"]`**, **`[data-brief="pdf-preview"]`**, **`.pdf-briefs-main-container`**, **`#half-circle-spinner`**.
+- Fetches **`getTopicsDetails?memberId=...`** → stores result as **`$briefs`**.
+- Shows or hides the main container depending on whether **`$briefs`** has items.
+- Fills the dropdown from **`$briefs`**; on **change**, sets the download link and iframe **src** to the selected brief's **pdf_url**.
+- All rendering is client-side from that one API response.
