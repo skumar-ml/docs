@@ -67,7 +67,7 @@ The frontend filters sessions based on availability:
 
 **Session & Location Update:**
 
-After the user selects a session and location, clicking **Next** triggers `updateStudentDataInDB()`, which calls the `updateDataToCheckoutUrl` API with `checkoutId`, `summerSessionId`, and `locationId`. The API updates the existing `stripe_checkout_customer` records via `updateSummerSessionAndLocation()` to add the session and location metadata.
+After the user selects a session and location, clicking **Next** triggers `updateStudentDataInDB()`, which calls the `checkoutUrlForStandard` API with `checkoutId`, `summerSessionId`, and `locationId`. The API updates the existing `stripe_checkout_customer` records via `updateSummerSessionAndLocation()` to add the session and location metadata.
 
 ### (Optional) ProgramId Specific Nuances
 
@@ -141,13 +141,13 @@ Checkout links are created and updated in stages as the user progresses through 
 
 **When this happens:** After the user selects a summer session and location, then clicks **Next**.
 
-**API Call:** `POST updateDataToCheckoutUrl` with body: `{checkoutId, summerSessionId, locationId}`
+**API Call:** `POST checkoutUrlForStandard` with body: `{checkoutId, summerSessionId, locationId}`
 
 The API calls `updateSummerSessionAndLocation(checkoutId, summerSessionId, locationId)`, which updates  **both** `stripe_checkout_customer` records (card and ACH) with `summerSessionId` and `locationId`. **No new Stripe checkout sessions are created** — only metadata is updated in MongoDB, and the existing Stripe checkout URLs remain valid
 
 **Key Difference from Semester:** Semester checkout updates the Stripe session with class details at this stage. Summer checkout only updates MongoDB metadata; Stripe sessions are updated later when payment is clicked.
 
-**Implementation:** `bcdc_aws-main/payment-checkout-service/api/updateDataToCheckoutUrl.py` - `updateSummerSessionAndLocation()` function
+**Implementation:** `bcdc_aws-main/payment-checkout-service/api/checkoutUrlForStandard.py` - `updateSummerSessionAndLocation()` function
 
 **Frontend:** `bcdc/checkout_summer_bundle.js` - `updateStudentDataInDB()` method
 
@@ -155,7 +155,7 @@ The API calls `updateSummerSessionAndLocation(checkoutId, summerSessionId, locat
 
 **When this happens:** When the user clicks either the **ACH** or **Card** payment button.
 
-**API Call:** `POST updateDataToCheckoutUrl` with body: `{checkoutId, isSummerData: true, upsellProgramIds, successUrl, cancelUrl}`
+**API Call:** `POST checkoutUrlForStandard` with body: `{checkoutId, isSummerData: true, upsellProgramIds, successUrl, cancelUrl}`
 
 <Accordion title="What happens">
   - The API calls `updateSummerCheckoutUrl()`
@@ -170,7 +170,7 @@ The API calls `updateSummerSessionAndLocation(checkoutId, summerSessionId, locat
 
 **Key Difference from Semester:** Summer checkout creates new Stripe sessions at payment click time (if upsells are selected), whereas semester checkout may update existing sessions.
 
-**Implementation:** `updateDataToCheckoutUrl.py` - `updateSummerCheckoutUrl()` and `createCheckoutSessionUrlForSummer()` functions
+**Implementation:** `checkoutUrlForStandard.py` - `updateSummerCheckoutUrl()` and `createCheckoutSessionUrlForSummer()` functions
 
 **Frontend:** `checkout_summer_bundle.js` - `updateClickEventInDB()` method
 
