@@ -16,41 +16,60 @@ TODO: Explain in detail how the portal upsells work. Explain what options get sh
 
 ### Overview
 
-Portal upsells (supplementary programs) are driven by **portal_upsell_program.js** and one API. The page that hosts the supplementary programs section must instantiate **DisplaySuppProgram** with a **memberData** object that includes:
+Portal upsells (supplementary programs) are driven by `portal_upsell_program.js` and one API. The page that hosts the supplementary programs section must instantiate `DisplaySuppProgram` with a `memberData` object that includes:
 
-- **baseUrl** — API base URL
-- **memberId** — current member ID
-- **site_url** — site base URL (e.g. for success/cancel URLs)
+- `baseUrl` — API base URL
+- `memberId` — current member ID
+- `site_url` — site base URL (e.g. for success/cancel URLs)
 
 The class fetches upsell programs, renders them as selectable cards, and when the user clicks Pay Now it calls the checkout API and redirects to Stripe.
 
 ### API
 
-The API used is **GET getUpsellProgramV2?type=portal** (referral-promotion-service, **getUpsellProgramV2.py**). When **type=portal** is present, the API reads **upsell_program_mapping** for the current year and session and uses **portal_program_ids** (instead of **upsell_program_ids**) to decide which programs to return.
+The API used is **GET **`getUpsellProgramV2?type=portal` (referral-promotion-service). When `type=portal` is present, the API reads `upsell_program_mapping` for the current year and session and uses `portal_program_ids` (instead of `upsell_program_ids`, which is used for checkout) to decide which programs to return.
 
 The response is an array of objects, each with:
 
-- **upsellPrograms** — array of programs (label, **portal_amount**, **portal_disc_amount**, sessionId, yearId, upsellProgramId, desc)
-- **yearId**, **sessionId**
+- `upsellPrograms` — array of programs (`label`, `portal_amount`, `portal_disc_amount`, `sessionId`, `yearId`, `upsellProgramId`, `desc`)
+- `yearId`, `sessionId` (of current year/session)
 
 ### What options get shown (rendering)
 
-**DisplaySuppProgram** hides all **.bundle-sem-rounded-red-div** elements initially, then calls **displaySupplementaryProgram()**, which fetches **getUpsellProgramV2?type=portal** and stores the result. If the response has items, it calls **createBundleProgram()**, which:
+`DisplaySuppProgram` hides all `.bundle-sem-rounded-red-div` elements initially, then calls `displaySupplementaryProgram()`, which fetches `getUpsellProgramV2?type=portal` and stores the result. If the response has items, it calls `createBundleProgram()`, which:
 
-- Clears **[data-upSell='card-container']** and **[data-upSell='modal-card-container']**
+- Clears `[data-upSell='card-container']` and `[data-upSell='modal-card-container']`
 - Filters to academic-only and future-session programs (as above)
-- For each program, appends a card from **createBundleCard()** to the card container and a card from **createModelBundleCard()** to the modal container
+- For each program, appends a card from `createBundleCard()` to the card container and a card from `createModelBundleCard()` to the modal container
 
-Each card shows label, year, **portal_amount** (discount price), **portal_disc_amount** (original price), and description. The user selects programs via checkboxes; the running total is shown in **[data-cart-total='cart-total-price']**. **displayTotalDiscount()** shows the total discount (portal_disc_amount − portal_amount) in **[data-addon="discount"]**. **disableEnableBuyNowButton()** enables or disables **.add-to-cart** and **.bundle-add-to-cart** based on whether any program is selected.
+<Note>
+  TODO: Can you explain the "academic-only" filter. How is future programs determined?
+</Note>
+
+Each card shows `label`, `year`, **portal_amount** (discount price), **portal_disc_amount** (original price), and `description`. The user selects programs via checkboxes; the running total is shown in `[data-cart-total='cart-total-price']`. **displayTotalDiscount()** shows the total discount (portal_disc_amount − portal_amount) in **[data-addon="discount"]**. **disableEnableBuyNowButton()** enables or disables **.add-to-cart** and **.bundle-add-to-cart** based on whether any program is selected.
+
+<Note>
+  TODO: The last three sentences are confusing..
+
+  1. The total discount & total payment amount seems to only display in the checkout modal, right?
+  2. You need to explain the last line better
+</Note>
 
 ### Checkout flow
 
-The checkout flow is triggered when the user clicks **#pay-supp-program** (Pay Now). **handlePaymentEvents()** ensures a student is selected in **#portal-students** (the value is used as **paymentId**, the existing payment record the bundle will be attached to). It then calls **initSupplementaryPayment(paymentId, upsellProgramIds, programName, amount)**.
+The checkout flow is triggered when the user clicks the **Pay Now** button (`#pay-supp-program`). `handlePaymentEvents()` ensures a student is selected in **#portal-students** (the value is used as **paymentId**, the existing payment record the bundle will be attached to). It then calls `initSupplementaryPayment(paymentId, upsellProgramIds, programName, amount)`.
+
+<Note>
+  In general, using something like `#portal-students` is not helpful. You need to describe what that is. Otherwise, I need to look at the website or code to determine what that is, which defeats the purpose of the docs...
+</Note>
 
 That method:
 
 1. Opens the Bergen credits modal via **Utils.waitForCreditApplicationChoice(memberId)** and waits for the user to choose apply or no (**applyCredit**).
 2. Sends a **POST** request to **checkoutUrlForUpsellProgram** with **paymentId**, **upsellProgramIds**, **successUrl** (portal/dashboard?success=true), **cancelUrl** (portal/dashboard), **label**, **amount** (selected programs' **portal_amount** sum plus **memberData.amount**), **source: "portal_page"**, **memberId**, and **applyCredit**.
 3. Receives **cardUrl** (and optionally **achUrl**) from the API; sets **window.location.href** to **cardUrl** so the user is redirected to Stripe to complete payment.
+
+<Note>
+  TODO: Specifying all the input params for an API is usually not that useful. That's what we have python docstrings for
+</Note>
 
 After payment, the webhook (same as for semester/summer upsells) inserts the bundle placeholder and upsell records as described in [Semester/Summer upsells](#).
