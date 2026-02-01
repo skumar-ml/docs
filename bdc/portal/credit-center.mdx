@@ -14,6 +14,8 @@ TODO: Shubham, provide some overview of BDC credits here
 
 The [Credit Center](https://www.bergendebate.com/portal/credit-balance) web page shows the user how much credit they currently have and how it has been used over time.
 
+![Image](/images/image-35.png)
+
 - **Credit Balance** at the top displays the total available credit amount that can be applied toward payments.
 - The **Credit Transaction History** section lists all credit activity in a table:
   - **Type** – indicates whether the credit was added (**Credit**) or deducted (**Debit**).
@@ -24,14 +26,26 @@ There are two Retool pages for managing credits. The [Credit Center](https://ber
 
 ### Credit Center
 
-The [Credit Center](https://bergendebate.retool.com/apps/2cdaaa88-6f1f-11ef-b711-f7b5e1b8821c/2024%20phase%202/Credit%20Center) Retool page allows admins to **bulk add** monetary credits to parent accounts. 
+The [Credit Center](https://bergendebate.retool.com/apps/2cdaaa88-6f1f-11ef-b711-f7b5e1b8821c/2024%20phase%202/Credit%20Center) Retool page allows admins to **bulk add** monetary credits to parent accounts.
 
 1. **Select Parents:** admin should set filters to narrow down the parents. Select parents (they will move to table on the right)
-2. **Add Credits:** Enter the **Credit Amount (\$) **and **Description** (reason for the credit)
+2. **Add Credits:** Enter the \*\*Credit Amount (\$) \*\*and **Description** (reason for the credit)
 
 ### View Credits
 
 TODO: Katyayani, please fill this out.
+
+The [View Credit](https://bergendebate.retool.com/apps/1e8644de-6f55-11ef-a73b-6f14815b8360/2024%20phase%202/View%20Credit)  Retool page allows admins to view existing parent credit balances, review transaction history, and update credits.
+
+**Update Credit**\
+This feature allows to update the credit amount for a parent account and add a short description.
+
+![Image](/images/image-37.png)
+
+**View Credit History**\
+This shows the complete credit transaction history for a parent, including debit/credit entries, amount, session, and year.
+
+![Image](/images/image-36.png)
 
 ## Technical
 
@@ -39,11 +53,11 @@ TODO: Explain in detail how credit works (from Retool update to render here). In
 
 ### Overview
 
-Credits are stored per parent (member) in `member_credit_amount`. Admins add credits via **Retool** (which updates this collection). Deductions happen when a parent applies credit during an **invoice payment** or **checkout**; the Stripe webhook (`stripePaymentListener`) updates `member_credit_amount` and appends a **debit** entry to `credit_history`. The Credit page fetches **GET **`getCreditBalance` and renders balance and transaction history via `credit_points.js` (`CreditBalance` class). For the **BDC Credits modal shown during checkout**, see the [checkout](#) and [invoices ](#)docs; this section does not detail that modal.
+Credits are stored per parent (member) in `member_credit_amount`. Admins add credits via **Retool** (which updates this collection). Deductions happen when a parent applies credit during an **invoice payment** or **checkout**; the Stripe webhook (`stripePaymentListener`) updates `member_credit_amount` and appends a **debit** entry to `credit_history`. The Credit page fetches \*\*GET \*\*`getCreditBalance` and renders balance and transaction history via `credit_points.js` (`CreditBalance` class). For the **BDC Credits modal shown during checkout**, see the [checkout](#) and [invoices ](#)docs; this section does not detail that modal.
 
 ### API and data source
 
-- **API:** **GET **`getCreditBalance`**/** (**getCreditBalance.py**).
+- **API:** ****`GET getCreditBalance/`**** (**getCreditBalance.py**).
 - **Response**: `creditBalance` object with `name`, `email`, `memberId`, `creditBalance` (number), `creditHistory` (array of logs), `createdOn`, `updatedOn`.
 
 ### DB collection and structure
@@ -56,17 +70,16 @@ Credits are stored per parent (member) in `member_credit_amount`. Admins add cre
 - **Credits:** Admins add credits via Retool. Retool updates `member_credit_amount`: sets `credit_balance` (increased) and pushes an entry to `credit_history` with `type` "credit" (or similar) and the `description`. The exact Retool → DB path (direct MongoDB or internal API) is outside this repo.
 
 <Note>
-  TODO: 
+  TODO:
 
   1. What do you mean "(or similar)"
   2. Can we explain what type == "RemovedAdmin" means
 </Note>
 
-
 - **Debits:** After any successful payment (invoice or checkout), the `stripePaymentListener` runs. It calls `calculateInvoiceAmount` (or equivalent) to get the new `credit_balance` and amount applied; then the balance of the appropriate `member_credit_amount` record is updated, and we **\$push** to **credit_history** an entry with **type** `"debit"`, `description` (e.g. "used in invoice payment" or "applied during checkout"), `amount`, `invoiceId` / `paymentId`, `year`, `sessionId`, `createdOn`.
 
 <Note>
-  TODO: 
+  TODO:
 
   1. What is "(or equivalent)" -- in general, we should be specific, not vague.
 </Note>
@@ -75,7 +88,7 @@ Credits are stored per parent (member) in `member_credit_amount`. Admins add cre
 
 - **JS file:** `credit_points.js`, `CreditBalance` class.
 - **Entry:** The Credit Center page instantiates `CreditBalance` with a `data` object that includes `apiBaseURL` and `memberId`.
-- **Flow:** **init()** shows spinner, hides balance/table/no-record divs; calls `fetchCreditData()` → **GET **`getCreditBalance`. On success, sets `this.creditData.creditBalance` and  `this.transactions = this.$creditData.creditHistory`; then, calls:
+- **Flow:** **init()** shows spinner, hides balance/table/no-record divs; calls `fetchCreditData()` → \*\*GET \*\*`getCreditBalance`. On success, sets `this.creditData.creditBalance` and  `this.transactions = this.$creditData.creditHistory`; then, calls:
 - **updateCreditBalanceDisplay()** and **updateTransactionTable()**; finally hides spinner and shows balance, table, and portal wrapper. On error or no data, shows **noRecordDiv**.
 - `updateCreditBalanceDisplay()`**:** Sets `this.balanceElement` text to `$${this.balance.toFixed(2)}`; then calls
 - `updateTransactionTable()`**:** Clears table, sorts `this.transactions` by **date** descending; for each transaction, appends a row with date (formatted), type (displayed as Credit/Debit; RemovedAdmin shown as Debit), sessionName + year, description, and amount (`+amount` for credit, `-amount` for debit).
