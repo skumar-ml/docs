@@ -10,62 +10,23 @@ This [Millions](https://www.bergendebate.com/portal/millions) page allows users 
 
 ![Image](/images/image-23.png)
 
-#### Million Logs - Student Selection
+**Current Balance: **This section shows the **current available Millions balance** for the selected student.
 
-- At the top, all associated **student names** are displayed as selectable cards.
-- The user can click on any student to view that student’s **Millions activity and balance**.
-- The currently selected student is visually highlighted.
-
-#### Current Balance
-
-- This section shows the **current available Millions balance** for the selected student.
-- The balance is displayed prominently for easy visibility.
-- Clicking **“View Store”** opens the [Reward Store](https://www.bergendebate.com/portal/reward-store), where all available reward items along with their required Millions are displayed.
-
-  If no reward items are available, the page will show a **“No Record Found”** state to indicate that the store is currently empty.
-
-#### Transactions
-
-- The **Transactions table** displays the history of Millions activity for the selected student.
-- Each entry shows the transaction **date, description,** and the **amount** added or deducted (± Millions).
-- Positive values (green) indicate Millions added, while negative values (red) indicate deductions.
+**Transactions:**  displays the history of Millions activity for the selected student. Each entry shows the transaction **date, description,** and the **amount** added or deducted (± Millions).
 
 ## Admins (Retool)
 
-TODO: How can admin manage this on Retool
+### Manage “Million Items” in Retool
 
-### **Manage “Million Items” in Retool**
+[This page](https://bergendebate.retool.com/apps/65bce3c6-5749-11f0-93e7-5bde07f21a93/Q2%6025/Millions%20Items/page1) allows you to update the millions store (view/edit existing items, add new ones).
 
-#### 1. View Items
-
-- Go to **Retool Dashboard → Million Items**.
-- All existing items are displayed in a table with:
-
-  Item Name, Description, Amount, Image URL, Created On
-- If no records are available, the table shows **“No rows found.”**
-
-  ![Image](/images/image-25.png)
-
-#### 2. Add a New Item
-
-- Click the **Add Item** button.
-- Fill in the following details: Item Name, Description, Amount, Image
-
-  ![Image](/images/image-25.png)
-- Submit the form to save the item.
-- The newly added item appears immediately in the list.
-
-#### 3. Edit an Existing Item
-
-- Select an item from the list.
-- Update required fields such as name, description or amount.
-- Save changes to update the item details.
+<Info>
+  Currently, we are not making use of the Millions Store
+</Info>
 
 ### Millions Dashboard Retool
 
-The [Millions Dashboard ](https://bergendebate.retool.com/apps/95b9c6b4-ed69-11f0-98f8-e7d3bb45fb10/Q1%6026/Millions_Dashboard%20Q1%6026/page1)page displays a list of students **based on the selected filters** such as year, session, location, class level, or student name.
-
-For each student, the page shows the parent email, student grade, and current Millions balance, making it easy to review balances at a glance.
+The [Millions Dashboard](https://bergendebate.retool.com/apps/95b9c6b4-ed69-11f0-98f8-e7d3bb45fb10/Q1%6026/Millions_Dashboard%20Q1%6026/page1) displays a list of students **based on the selected filters** such as year, session, location, class level, or student name. For each student record, you can view their million balance.
 
 **Available actions include:**
 
@@ -86,36 +47,40 @@ TODO: Explain in detail how millions works (from Retool update to render here). 
   SK -- let's get BDC admin to populate this
 </Warning>
 
-This section describes only the **Millions page** ([portal/millions](https://www.bergendebate.com/portal/millions)): how it loads data, where the data lives, and how **millions.js** renders it.
+This section describes only the **Millions page** ([portal/millions](https://www.bergendebate.com/portal/millions)): how it loads data, where the data lives, and how `millions.js` renders it.
 
 ### What the page shows
 
-The Millions page displays **per-student** reward amounts (points). Each student has a single balance and transaction history stored in **millions_transactions** (keyed by **studentId**). The page lists students (tabs), shows **Current Balance** and a **Transactions** table per student, and updates the sidebar count (**[data-millions="sidebarCount"]**) with the selected student's balance as "XM".
+The Millions page displays **per-student** reward amounts (points). Each student has a single balance and transaction history stored in **millions_transactions** (keyed by **studentId**). The page lists students (tabs), shows **Current Balance** and a **Transactions** table per student, and updates the sidebar count (`[data-millions="sidebarCount"]`) with the selected student's balance as "XM".
 
 ### Where the data lives (DB)
 
-- **millions_transactions:** One document per student. Fields: **studentId**, **earnAmount** (current total), **createdOn**, **transactions** (array of  amount, description, lastEarnDate ).
-- **millions_items_details:** Catalog for the Millions store (out of scope here).
+- `millions_transactions:` One document per student. Fields: `studentId`, `earnAmount` (current total), `createdOn`, `transactions` (array of  `amount`, `description`, `lastEarnDate` ). 
+- `millions_items_details`**:** Catalog for the Millions store (out of scope here).
 
 The read API filters **which students** appear using current year/session (students with a payment in that term); each student's balance is their total (not per-session).
 
 ### How the page gets data (API)
 
-- **GET getMillionsTransactionData/** (member-service, **getMillionsTransactionData.py**).
-- Resolves **memberId** to family **memberId**s; uses current year/session to find students with a payment in that term; for each, looks up **millions_transactions** by **studentId** and returns **studentName**, **studentGrade**, **earnAmount**, **transactions**.
-- Response: . The page uses **millions_transactions**; **items** is for the store (skipped here).
+- **GET **`getMillionsTransactionData` (member-service)
+- Resolves `memberId` to family `memberIds`; uses current year/session to find students with a payment in that term; for each, looks up `millions_transactions` by `studentId` and returns `studentName`, `studentGrade`, `earnAmount`, `transactions`.
+- Response: The page uses `millions_transactions`; **items** is for the store (skipped here).
 
-### millions.js (page logic)
+<Note>
+  **TODO: Are we still filtering by current year/session? I think we should be showing student millions for all students, regardless of if they have a payment in the term...**
+</Note>
 
-- **Class:** **MillionsRenderer**. Used only on the Millions page.
-- **Entry:** **constructor(data)** with **apiBaseURL**, **memberId**; calls **init()**.
-- **init():** Shows **#half-circle-spinner**; hides **.portal-tab** and **.portal-info-wrapper**; calls **fetchData()** → **GET getMillionsTransactionData/**. If no **millions_transactions** or empty, shows **[data-container="no-record-found"]** and exits. Otherwise shows tab and wrapper, then **renderTabMenu(millions_transactions)**, **renderTabContent(millions_transactions)**, **renderTab(idx, student)** for each, **setupTabSwitching(millions_transactions)**.
-- **renderTabMenu(students):** Clears **.portal-tab-menus**; for each student appends **.portal-tab-link** with student name (Webflow tab structure).
-- **renderTabContent(students):** Clears **.portal-tab-content**; for each student creates **.w-tab-pane** with balance (**.million-price-text**) and **.transactions-table-div** (header + **.transactions-row-wrapper** for rows).
-- **renderTab(tabIndex, student, link):** Sets **.million-price-text** to **earnAmount**; fills transaction rows (date, description, amount; **green-semi-bold** / **red-semi-bold**). Sorts **student.transactions** by **lastEarnDate** descending. Calls **updateSideBarAmount(earnAmount)** for active tab or on link click.
-- **updateSideBarAmount(earnAmount):** Sets **[data-millions="sidebarCount"]** to **earnAmount + "M"**, shows parent.
-- **DOM:** **#half-circle-spinner**, **.portal-info-wrapper**, **[data-container="no-record-found"]**, **.portal-tab**, **.portal-tab-menus**, **.portal-tab-content**, **.w-tab-pane**, **.million-price-text**, **.transactions-table-div**, **[data-millions="sidebarCount"]**.
+### `millions.js` (Page Logic)
 
-### Summary
+- **Class:** `MillionsRenderer`. Used only on the Millions page.
+- **Entry:** `constructor(data)` with `apiBaseURL`, `memberId`; calls `init()`.
+- `init()`**:** Shows loading state; calls `fetchData()` → **GET **`getMillionsTransactionData`. If no `millions_transactions` or empty, shows `[data-container="no-record-found"]` and exits. Otherwise shows tab and wrapper, then calls the following ~~renderTabMenu(millions_transactions), renderTabContent(millions_transactions), renderTab(idx, student) for each, setupTabSwitching(millions_transactions).~~
 
-The Millions page is powered by **millions.js** (**MillionsRenderer**). It fetches **getMillionsTransactionData/**, then renders one tab per student with balance and transaction history and updates the sidebar count. Data comes from **millions_transactions** (per **studentId**). The Millions store and **items** are out of scope.
+<Note>
+  TODO: What is `setupTabSwitching(millions_transactions)`?
+</Note>
+
+- `renderTabMenu(students)`**:** Clears **.portal-tab-menus**; for each student appends **.portal-tab-link** with student name (Webflow tab structure).
+- `renderTabContent(students)`**:** Clears **.portal-tab-content**; for each student creates **.w-tab-pane** with balance (**.million-price-text**) and **.transactions-table-div** (header + **.transactions-row-wrapper** for rows).
+- `renderTab(tabIndex, student, link)`**:** Sets **.million-price-text** to `earnAmount`; fills transaction rows (date, description, amount; **green-semi-bold** / **red-semi-bold**). Sorts **student.transactions** by `lastEarnDate` descending. Calls `updateSideBarAmount(earnAmount)` for active tab or on link click.
+- `updateSideBarAmount(earnAmount)`**:** Sets `[data-millions="sidebarCount"]` to **earnAmount + "M"**
