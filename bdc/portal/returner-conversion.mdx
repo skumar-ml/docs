@@ -12,14 +12,11 @@ TODO: How can admin returner conversion on Retool. Pre-Reg management was alread
 
 ## Technical
 
-TODO: Explain in detail how this works (APIs, JS files/methods needed to render)
+Returner conversion and pre-registration on the portal are driven by **one API** and the `Portal` class in the portal JS. ~~The API returns ~~`recommendedLevel`~~(when published) and ~~ **~~futureSession~~**~~ (with pre-registration dates); the frontend shows/hides the “Next Recommended Program” and pre-reg blocks and buttons based on that data and the current date.~~
 
-Returner conversion and pre-registration on the portal are driven by **one API** and the **Portal** class in the portal JS. The API returns **recommendedLevel** (when published) and **futureSession** (with pre-registration dates); the frontend shows/hides the “Next Recommended Program” and pre-reg blocks and buttons based on that data and the current date.
+**API (**`getPortalDetail/{memberId}`)
 
-**API**
-
-- **`GET getPortalDetail/{memberId}`** (member-service, **getPortalDetails.py**).
-- For each student in the **current** session, the API returns **`recommendedLevel`** from **`getRecommended(row)`**.
+- For each student in the family & the **current** session, the API returns **`recommendedLevel`** from `getRecommended(row)`
 - **`getRecommended(row)`** runs only when **`row['publish'] == True`**; it reads **attendance_session**, **class_session**, **student_grades**, **class_level** and returns **session**, **grade**, **level**, **year**, **pre-registrationDates**, **earlyBirdDeadlineDate**, **registrationStartDate**, **registrationEndDate**. If not published, returns `{}`.
 - **futureSession** (from payment/upsell data) includes **pre-registrationDates**, **programDates**, **earlyBirdDeadlineDate**, **classId** (empty when bundle not yet converted). Used for pre-reg timing and “has bundle” logic.
 
