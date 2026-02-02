@@ -127,7 +127,7 @@ The checkout flow is triggered when the user clicks the **Pay Now** button (`#pa
 That method:
 
 1. Opens the Bergen credits modal via **Utils.waitForCreditApplicationChoice(memberId)** and waits for the user to choose apply or no (**applyCredit**).
-2. Sends a **POST** request to **checkoutUrlForUpsellProgram** with **paymentId** and program details
+2. Sends a **POST** request to **checkoutUrlForUpsellProgram**
 3. Receives **cardUrl** (and optionally **achUrl**) from the API; then redirects to the Stripe page
 
 <Note>
