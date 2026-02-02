@@ -6,7 +6,30 @@ title: "Portal Upsell"
 
 TODO: What users get to see & their checkout flow
 
-### 
+## Portal Upsell View
+
+- Shown in the portal to promote **early registration** for an upcoming session.
+
+  ![Image](/images/image-54.png)
+- Displays:
+  - Session name (e.g., _Fall 2026_)
+  - Discounted price with original price crossed out
+  - Key benefits: early-bird pricing, class priority, price lock
+- **Buy Now** button starts the purchase flow.
+
+## Buy Now Modal
+
+- Opens when **Buy Now** is clicked.
+- User:
+  - Selects the student
+  - Reviews the total amount
+- **Pay Now** confirms the purchase.
+
+## Pay Now (Stripe Payment)
+
+- Clicking **Pay Now** redirects the user to **Stripe’s secure payment page**.
+- Payment is completed on Stripe.
+- After successful payment, enrollment is confirmed.
 
 ## Admins (Retool)
 
