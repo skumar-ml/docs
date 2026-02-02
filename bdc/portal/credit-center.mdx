@@ -62,12 +62,32 @@ Credits are stored per parent (member) in `member_credit_amount`. Admins add cre
 
 ### DB collection and structure
 
-| Collection                  | Role                                                             | Key fields                                                                                                                                            |
-| :-------------------------- | :--------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `member_credit_amount`      | One document per parent; holds current balance and full history. | `memberId`, `credit_balance` (number), `credit_history` (array), `createdOn`, `updatedOn`                                                             |
-| `credit_history` (embedded) | One entry per credit add or debit.                               | `amount`, `type` (e.g. "credit", "debit", "RemovedAdmin"), `description`, `createdOn`; for debits often `invoiceId`, `paymentId`, `year`, `sessionId` |
+**member_credit_amount** — One document per parent (member). Holds current credit balance and full transaction history. Used by the Credit Center page and by Retool / Stripe webhook.
 
-- **Credits:** Admins add credits via Retool. Retool updates `member_credit_amount`: sets `credit_balance` (increased) and pushes an entry to `credit_history` with `type` "credit"  and the `description`. The exact Retool → DB path (direct MongoDB or internal API) is outside this repo.
+| Field              | Description                                              |
+| :----------------- | :------------------------------------------------------- |
+| **\_id**           | MongoDB ObjectId.                                        |
+| **memberId**       | Parent (member) identifier.                              |
+| **emailID**        | Parent email.                                            |
+| **createdOn**      | When the document was created.                           |
+| **updatedOn**      | Last update time (e.g. after balance or history change). |
+| **credit_balance** | Current available credit amount (number).                |
+| **credit_history** | Array of credit/debit entries (see below).               |
+
+**credit_history** array item:
+
+| Field                         | Description                                                                               |
+| :---------------------------- | :---------------------------------------------------------------------------------------- |
+| **amount**                    | Credit added (positive) or debit applied (negative).                                      |
+| **type**                      | e.g. `"credit"`, `"debit"`, `"RemovedAdmin"`.                                             |
+| **createdOn**                 | When the entry was created.                                                               |
+| **description**               | Reason or context (e.g. "Referral Code", "Pro-Rated Tuition", "used in invoice payment"). |
+| **sessionId**                 | Optional; session identifier.                                                             |
+| **year**                      | Optional; year.                                                                           |
+| **session**                   | Optional; nested session object (e.g. classSessionName, registrationDates).               |
+| **invoiceId** / **paymentId** | Optional; for debits, links to invoice or payment.                                        |
+
+- **Credits:** Admins add credits via Retool. Retool updates `member_credit_amount`: sets `credit_balance` (increased) and pushes an entry to `credit_history` with `type` "credit"  and the `description`. The **amount** will always be positive
 
 <Note>
   TODO:
@@ -76,7 +96,7 @@ Credits are stored per parent (member) in `member_credit_amount`. Admins add cre
   2. Can we explain what type == "RemovedAdmin" means. **If we remove the credit amount from the admin, then we maintain status as a "RemovedAdmin". We are storing the amount as a negative or positive value**
 </Note>
 
-- **Debits:** After any successful payment (invoice or checkout), the `stripePaymentListener` runs. It calls `calculateInvoiceAmount`  to get the new `credit_balance` and amount applied; then the balance of the appropriate `member_credit_amount` record is updated, and we **\$push** to **credit_history** an entry with **type** `"debit"`, `description` (e.g. "used in invoice payment" or "applied during checkout"), `amount`, `invoiceId` / `paymentId`, `year`, `sessionId`, `createdOn`.
+- **Debits:** After any successful payment (invoice or checkout), the `stripePaymentListener` runs. It calls `calculateInvoiceAmount`  to get the new `credit_balance` and amount applied; then the balance of the appropriate `member_credit_amount` record is updated, and we **\$push** to **credit_history** an entry with **type** `"debit"`, `description`.The **amount** will always be negetive
 
 <Note>
   TODO:
@@ -88,8 +108,14 @@ Credits are stored per parent (member) in `member_credit_amount`. Admins add cre
 
 - **JS file:** `credit_points.js`, `CreditBalance` class.
 - **Entry:** The Credit Center page instantiates `CreditBalance` with a `data` object that includes `apiBaseURL` and `memberId`.
-- **Flow:** **init()** shows spinner, hides balance/table/no-record divs; calls `fetchCreditData()` → \*\*GET \*\*`getCreditBalance`. On success, sets `this.creditData.creditBalance` and  `this.transactions = this.$creditData.creditHistory`; then, calls:
-- **updateCreditBalanceDisplay()** and **updateTransactionTable()**; finally hides spinner and shows balance, table, and portal wrapper. On error or no data, shows **noRecordDiv**.
-- `updateCreditBalanceDisplay()`**:** Sets `this.balanceElement` text to `$${this.balance.toFixed(2)}`; then calls
-- `updateTransactionTable()`**:** Clears table, sorts `this.transactions` by **date** descending; for each transaction, appends a row with date (formatted), type (displayed as Credit/Debit; RemovedAdmin shown as Debit), sessionName + year, description, and amount (`+amount` for credit, `-amount` for debit).
+- The process starts by showing a loading spinner and hiding the balance, transaction list, and “no record” message. It then requests credit balance data from the server.
+- If the request succeeds, it stores the total credit balance and transaction history. Next, it displays the updated balance and fills the transaction table. After that, the spinner is hidden and the main content becomes visible.
+- If there’s an error or no data is returned, a “no records found” message is shown instead.
+- The balance display shows the total credit amount formatted as dollars.
 - **DOM:** Balance: **[data-credit="balance"]**. Table container: **[data-credit="table"]**. No-record state: **[data-container="no-record-found"]**. Wrapper: **.portal-info-wrapper**.
+- For the transaction list, existing rows are cleared, transactions are sorted from newest to oldest, and each entry is shown with:
+  - Date
+  - Type (Credit or Debit — admin removals count as Debit)
+  - Session name with year
+  - Description
+  - Amount (positive for credit, negative for debit)
