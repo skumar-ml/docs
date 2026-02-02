@@ -86,7 +86,7 @@ TODO: Explain in detail how millions works (from Retool update to render here). 
   SK -- let's get BDC admin to populate this
 </Warning>
 
-This section describes only the **Millions page** ([portal/millions](https://www.bergendebate.com/portal/millions)): how it loads data, where the data lives, and how **millions.js** renders it.
+This section describes only the **Millions page** ([portal/millions](https://www.bergendebate.com/portal/millions)): how it loads data, where the data lives, and how `millions.js` renders it.
 
 ### What the page shows
 
@@ -95,13 +95,13 @@ The Millions page displays **per-student** reward amounts (points). Each student
 ### Where the data lives (DB)
 
 - **millions_transactions:** One document per student. Fields: **studentId**, **earnAmount** (current total), **createdOn**, **transactions** (array of  amount, description, lastEarnDate ).
-- **millions_items_details:** Catalog for the Millions store (out of scope here).
+- **millions_items_details:** Catalog for the Millions store.
 
 The read API filters **which students** appear using current year/session (students with a payment in that term); each student's balance is their total (not per-session).
 
 ### How the page gets data (API)
 
-- **GET getMillionsTransactionData/** (member-service, **getMillionsTransactionData.py**).
+- **GET getMillionsTransactionData/** ( **getMillionsTransactionData.py**).
 - Resolves **memberId** to family **memberId**s; uses current year/session to find students with a payment in that term; for each, looks up **millions_transactions** by **studentId** and returns **studentName**, **studentGrade**, **earnAmount**, **transactions**.
 - Response: . The page uses **millions_transactions**; **items** is for the store (skipped here).
 
@@ -114,8 +114,3 @@ The read API filters **which students** appear using current year/session (stude
 - **renderTabContent(students):** Clears **.portal-tab-content**; for each student creates **.w-tab-pane** with balance (**.million-price-text**) and **.transactions-table-div** (header + **.transactions-row-wrapper** for rows).
 - **renderTab(tabIndex, student, link):** Sets **.million-price-text** to **earnAmount**; fills transaction rows (date, description, amount; **green-semi-bold** / **red-semi-bold**). Sorts **student.transactions** by **lastEarnDate** descending. Calls **updateSideBarAmount(earnAmount)** for active tab or on link click.
 - **updateSideBarAmount(earnAmount):** Sets **[data-millions="sidebarCount"]** to **earnAmount + "M"**, shows parent.
-- **DOM:** **#half-circle-spinner**, **.portal-info-wrapper**, **[data-container="no-record-found"]**, **.portal-tab**, **.portal-tab-menus**, **.portal-tab-content**, **.w-tab-pane**, **.million-price-text**, **.transactions-table-div**, **[data-millions="sidebarCount"]**.
-
-### Summary
-
-The Millions page is powered by **millions.js** (**MillionsRenderer**). It fetches **getMillionsTransactionData/**, then renders one tab per student with balance and transaction history and updates the sidebar count. Data comes from **millions_transactions** (per **studentId**). The Millions store and **items** are out of scope.
