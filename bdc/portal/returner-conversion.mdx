@@ -80,11 +80,11 @@ For each student in the family & the **current** session, if the student's recom
 
 **JS** ( `portal_new_ui.js`  class: `Portal`)
 
-Portal fetches **getPortalDetail** once; then for each student tab it renders that student’s data, including the “Next Recommended Program” and pre-registration block.
+Portal fetches **getPortalDetail** once; then, for each student tab it renders that student’s data, including the “Next Recommended Program” and pre-registration block.
 
 **How returner conversion and pre-reg work together**
 
-Whether the user sees anything in this area depends on two things: (1) the API returned a **recommendedLevel** for that student (backend only sends it when the recommendation is published), and (2) whether the student has a **future-session bundle** (from upsell: a future session with no **classId** ). 
+Whether the user sees anything in this area depends on two things: (1) the API returned a **recommendedLevel** for that student (backend only sends it when the recommendation is published), and (2) whether the student has a **future-session bundle** (from upsell: a future session with **no classId **).
 
 The code then checks the **current date** against two time windows via **getTimeBasedVisibility(recommendedLevel, studentData)**:
 
@@ -96,6 +96,21 @@ Accordingly, **updateButtonVisibility** shows or hides **Register Now** and **Le
 - During pre-reg only (bundle + in pre-reg window): **Register Now** only.
 - During registration (published recommendation + in registration window): both **Register Now** and **Learn More**.
 - If both pre-reg and registration are active, both buttons can show; otherwise both are hidden and the section is hidden.
+
+**Register Now and Learn More**
+
+- **Register Now** (`#enroll-now-btn-2` on the page; `#enroll-now-btn` inside the modal)\
+  Clicking **Register Now** goes to a URL that is set from **recommendedLevel** and the current registration window:
+  - **When returner conversion is active and today is within the registration window:** the link is `https://www.bergendebate.com/programs/{levelUrl}` (e.g. `programs/level-3b` for Level 3B). The user is sent to that program/level page in a **new tab**.
+  - **Otherwise:** the link is `https://www.bergendebate.com/classes-overview`. The user is sent to the classes overview in a **new tab**.
+- **Learn More** (`[data-portal="next-recomm-learn-more"]`)\
+  Clicking **Learn More** opens the **#next-recomm-modal** overlay. The modal is filled with data from the current student and **recommendedLevel**:
+  - **Title:** “Next Step for [student name]”.
+  - **Recommended line:** “Recommended: [session year | level]” (or session/year, level, or grade if some fields are missing).
+  - **Early-bird countdown:** If **recommendedLevel** has `earlyBirdDeadlineDate`, a countdown to that deadline is shown in the modal.
+  - **Enroll Now button:** The modal has its own **Register Now** button; its link uses the same logic as above (programs/level when in registration window, else classes-overview), and it also opens in a new tab.
+  - **“Why This Program”:** Short copy recommending the level for that student.\
+    Closing the modal (e.g. backdrop or close control) hides it; the modal does not navigate the page.
 
 <Note>
   TODO: Rewrite to explain the following:
