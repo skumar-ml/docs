@@ -42,7 +42,7 @@ Please refer to the Pre-Registration Management details from the document URL: b
 
 Returner conversion and pre-registration on the portal are driven by **one API(**`getPortalDetails`**)** and the `Portal` class in the` portal.js`. The API returns **recommendedLevel**(when published) and futureSession (with pre-registration dates); the frontend shows/hides the “Next Recommended Program” and pre-reg blocks and buttons based on that data and the current date
 
-**API (**`getPortalDetails/{memberId}`)
+### **API (**`getPortalDetails/{memberId}`)
 
 In this api returns all student records for the family, including current recommendation program data. With the help of the recommendation program.
 
@@ -78,13 +78,13 @@ For each student in the family & the **current** session, if the student's recom
   2. Explain the return, in some detail. Might want to use a table **Updated Description**
 </Note>
 
-**JS** ( `portal_new_ui.js`  class: `Portal`)
+### **JS** ( `portal_new_ui.js`  class: `Portal`)
 
 Portal fetches **getPortalDetail** once; then, for each student tab it renders that student’s data, including the “Next Recommended Program” and pre-registration block.
 
 **How returner conversion and pre-reg work together**
 
-Whether the user sees anything in this area depends on two things: (1) the API returned a **recommendedLevel** for that student (backend only sends it when the recommendation is published), and (2) whether the student has a **future-session bundle** (from upsell: a future session with **no classId **).
+Whether the user sees anything in this area depends on two things: (1) the API returned a **recommendedLevel** for that student (backend only sends it when the recommendation is published), and (2) whether the student has a **future-session bundle** (from upsell: a future session with \*\*no classId \*\*).
 
 The code then checks the **current date** against two time windows via **getTimeBasedVisibility(recommendedLevel, studentData)**:
 
