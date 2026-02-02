@@ -67,21 +67,21 @@ Credits are stored per parent (member) in `member_credit_amount`. Admins add cre
 | `member_credit_amount`      | One document per parent; holds current balance and full history. | `memberId`, `credit_balance` (number), `credit_history` (array), `createdOn`, `updatedOn`                                                             |
 | `credit_history` (embedded) | One entry per credit add or debit.                               | `amount`, `type` (e.g. "credit", "debit", "RemovedAdmin"), `description`, `createdOn`; for debits often `invoiceId`, `paymentId`, `year`, `sessionId` |
 
-- **Credits:** Admins add credits via Retool. Retool updates `member_credit_amount`: sets `credit_balance` (increased) and pushes an entry to `credit_history` with `type` "credit" (or similar) and the `description`. The exact Retool → DB path (direct MongoDB or internal API) is outside this repo.
+- **Credits:** Admins add credits via Retool. Retool updates `member_credit_amount`: sets `credit_balance` (increased) and pushes an entry to `credit_history` with `type` "credit"  and the `description`. The exact Retool → DB path (direct MongoDB or internal API) is outside this repo.
 
 <Note>
   TODO:
 
-  1. What do you mean "(or similar)"
-  2. Can we explain what type == "RemovedAdmin" means
+  1. What do you mean "(or similar)" **removed text**
+  2. Can we explain what type == "RemovedAdmin" means. **If we remove the credit amount from the admin, then we maintain status as a "RemovedAdmin". We are storing the amount as a negative or positive value**
 </Note>
 
-- **Debits:** After any successful payment (invoice or checkout), the `stripePaymentListener` runs. It calls `calculateInvoiceAmount` (or equivalent) to get the new `credit_balance` and amount applied; then the balance of the appropriate `member_credit_amount` record is updated, and we **\$push** to **credit_history** an entry with **type** `"debit"`, `description` (e.g. "used in invoice payment" or "applied during checkout"), `amount`, `invoiceId` / `paymentId`, `year`, `sessionId`, `createdOn`.
+- **Debits:** After any successful payment (invoice or checkout), the `stripePaymentListener` runs. It calls `calculateInvoiceAmount`  to get the new `credit_balance` and amount applied; then the balance of the appropriate `member_credit_amount` record is updated, and we **\$push** to **credit_history** an entry with **type** `"debit"`, `description` (e.g. "used in invoice payment" or "applied during checkout"), `amount`, `invoiceId` / `paymentId`, `year`, `sessionId`, `createdOn`.
 
 <Note>
   TODO:
 
-  1. What is "(or equivalent)" -- in general, we should be specific, not vague.
+  1. What is "(or equivalent)" -- in general, we should be specific, not vague.  **Removed text**
 </Note>
 
 ### Portal Rendering (Credit Center page)
