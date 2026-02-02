@@ -37,7 +37,11 @@ The [referral](https://bergendebate.retool.com/apps/bfafe442-3222-11f0-aebe-07c9
 
 TODO: Add a screenshot of the overall page...
 
-Admins can also manually \*\*Add a Referral. \*\*TODO: What happens if user is already purchased, does it auto-attribute?
+Admins can also manually add a referral using the **Add Referrals** button.
+
+TODO: What happens if user is already purchased, does it auto-attribute?
+
+Yes , If the user has already made a purchase, it is **automatically attributed**.
 
 ## Technical
 
@@ -115,7 +119,7 @@ When a **referred user** lands on the site via the referral link (**?code=...&id
   - **#referralCode** is set to **coupon_code**. **[data-referral='referral-link-input']** is set to `https://www.bergendebate.com?code={coupon_code}&id={memberId}`.
   - Written JavaScript code for copying  the code and link for this element: **[data-referrals='copy']** (code), **[data-referrals='copy-link']** (link).
   - **Referrals table**: each row shows name , status (Enrolled / Pending / Signed Up from **referred_stage**), date_referred, purchased_date. Status mapping: **Purchased** → "Enrolled", **Signed_Up** → "Signed Up", **None** → "Pending" from `getReferralData` API data.
-  - element**[data-referrals='count']**  shows the count of "enrolled" referrals (referred_stage **Purchased** ).
+  - element\*\*[data-referrals='count']\*\*  shows the count of "enrolled" referrals (referred_stage **Purchased** ).
   - **createTracker** / **createMobileTracker** render the progress bar (desktop/mobile) from **maxReferrals**, **rewards**, **icons**.
   - Form **Referral Form** (name, email) → **handleFormSubmit** → **POST addReferralData** with **name**, **email**, **memberId**. On success: hide form, show success message, call **loadReferralData()** again.
 - **Sidebar visibility:** `sidebar.js` calls **checkReferralsAccess(data)** after **setupTabs**. If any student has **currentSession** (length \> 0) all **[sidebar-menu="referrals"]** elements are set to **display: flex**, else **display: none**.
