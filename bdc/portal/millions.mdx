@@ -127,9 +127,7 @@ The read API filters **which students** appear using current year/session (stude
 ### millions.js (page logic)
 
 - **Class:** **MillionsRenderer**. Used only on the Millions page.
-- **Entry:** **constructor(data)** with **apiBaseURL**, **memberId**; calls **init()**.
-- **init():** Shows **#half-circle-spinner**; hides **.portal-tab** and **.portal-info-wrapper**; calls **fetchData()** → **GET getMillionsTransactionData/**. If no **millions_transactions** or empty, shows **[data-container="no-record-found"]** and exits. Otherwise shows tab and wrapper, then **renderTabMenu(millions_transactions)**, **renderTabContent(millions_transactions)**, **renderTab(idx, student)** for each, **setupTabSwitching(millions_transactions)**.
-- **renderTabMenu(students):** Clears **.portal-tab-menus**; for each student appends **.portal-tab-link** with student name (Webflow tab structure).
-- **renderTabContent(students):** Clears **.portal-tab-content**; for each student creates **.w-tab-pane** with balance (**.million-price-text**) and **.transactions-table-div** (header + **.transactions-row-wrapper** for rows).
-- **renderTab(tabIndex, student, link):** Sets **.million-price-text** to **earnAmount**; fills transaction rows (date, description, amount; **green-semi-bold** / **red-semi-bold**). Sorts **student.transactions** by **lastEarnDate** descending. Calls **updateSideBarAmount(earnAmount)** for active tab or on link click.
-- **updateSideBarAmount(earnAmount):** Sets **[data-millions="sidebarCount"]** to **earnAmount + "M"**, shows parent.
+- **MillionsRenderer** runs only on the Millions page. It starts with the API URL and member ID, then loads the Millions transaction data.
+- While loading, it shows a spinner and hides the page content. If no transactions are found, it shows a “no records” message and stops.
+- If data exists, it displays the page, creates a tab for each student, and shows their balance and transaction history. Transactions are sorted from newest to oldest, and amounts are shown in green for earnings and red for deductions.
+- When a student tab is selected, their total Millions amount is shown in the sidebar. The sidebar updates automatically whenever the user switches students.
