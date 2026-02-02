@@ -10,6 +10,17 @@ TODO: What users get to see for both returner conversion & pre-registration. I t
 
 TODO: How can admin returner conversion on Retool. Pre-Reg management was already discussed (link to doc)
 
+### Manage Returner Conversion
+
+The [Returner Conversion](https://bergendebate.retool.com/apps/385a97e8-695f-11f0-94e7-d3db21f5beef/Q2%6025/Manage%20Recommended%20Level) page helps admins manage recommendations for **returning students**, meaning students who have previously enrolled and are eligible to continue to the next level.\
+Admins can review and update the recommended next level and grade, apply filters to find specific students, and publish or unpublish recommendations to control what appears on the user portal.
+
+![Image](/images/image-43.png)
+
+**Pre-Reg Management**
+
+Please refer to the Pre-Registration Management details from the document URL: bdc/checkout-systems/semester/pre-reg-system.
+
 ## Technical
 
 Returner conversion and pre-registration on the portal are driven by **one API** and the `Portal` class in the portal JS. **`~~~~~~The API returns recommendedLevel(when published) and ~~ futureSession~~~~~~`** (with pre-registration dates); the frontend shows/hides the “Next Recommended Program” and pre-reg blocks and buttons based on that data and the current date.~~
