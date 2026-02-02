@@ -84,7 +84,9 @@ Portal fetches **getPortalDetail** once; then for each student tab it renders th
 
 **How returner conversion and pre-reg work together**
 
-Whether the user sees anything in this area depends on two things: (1) the API returned a **recommendedLevel** for that student (backend only sends it when the recommendation is published), and (2) whether the student has a **future-session bundle** (from payment/upsell: a future session with no **classId** yet, and not Summer). The code then checks the **current date** against two time windows via **getTimeBasedVisibility(recommendedLevel, studentData)**:
+Whether the user sees anything in this area depends on two things: (1) the API returned a **recommendedLevel** for that student (backend only sends it when the recommendation is published), and (2) whether the student has a **future-session bundle** (from upsell: a future session with no **classId** ). 
+
+The code then checks the **current date** against two time windows via **getTimeBasedVisibility(recommendedLevel, studentData)**:
 
 - **Pre-registration window** — from **futureSession**: between `pre-registrationDates.preRegStartDate` and `programDates.startDate`. When the user is in this window and has a bundle, the pre-reg block is shown and they can complete pre-reg (e.g. “Register Now” only).
 - **Registration window** — from **recommendedLevel**: between `pre-registrationDates.preRegStartDate` and `registrationEndDate`. When the user is in this window and has a published recommendation, the “Next Recommended Program” line and both “Register Now” and “Learn More” can show.
