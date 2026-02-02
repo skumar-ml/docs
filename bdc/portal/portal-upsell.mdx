@@ -103,31 +103,35 @@ For example, please take a look at the response below, sessionId: 1 (Winter/Spri
 ]
 ```
 
-Each card shows `label`, `year`, **portal_amount** (discount price), **portal_disc_amount** (original price), and `description`. The user selects programs via checkboxes; the running total is shown in `[data-cart-total='cart-total-price']`. **displayTotalDiscount()** shows the total discount (portal_disc_amount − portal_amount) in **[data-addon="discount"]**. **disableEnableBuyNowButton()** enables or disables **.add-to-cart** and **.bundle-add-to-cart** based on whether any program is selected.
+Each card shows `label`, `year`, **portal_amount** (discount price), **portal_disc_amount** (original price), and `description`. The user selects programs via checkboxes.
+
+- **Buy now modal total price:** The total of all selected programs (`portal_amount`) is calculated and shown wherever `data-cart-total="cart-total-price"` (dom element) appears — both in the sidebar and in the modal.
+- **Learn more modal total discount:** `displayTotalDiscount()` adds up all upsell product discounts (`portal_disc_amount − portal_amount`) for the selected bundle and shows this value in every element with `data-addon="discount"`.
+- **Add to cart:** **disableEnableBuyNowButton()** enables or disables the **.add-to-cart(Modal)** and **.bundle-add-to-cart(sidebar)** buttons: they are disabled when no program is selected and enabled when at least one is selected. Those buttons open the checkout modal; the user then clicks **Pay Now** to start payment.
 
 <Note>
   TODO: The last three sentences are confusing..
 
-  1. The total discount & total payment amount seems to only display in the checkout modal, right?
-  2. You need to explain the last line better
+  1. The total discount & total payment amount seems to only display in the checkout modal, right? **YES**
+  2. You need to explain the last line better. **Updated description above**
 </Note>
 
 ### Checkout flow
 
-The checkout flow is triggered when the user clicks the **Pay Now** button (`#pay-supp-program`). `handlePaymentEvents()` ensures a student is selected in **#portal-students** (the value is used as **paymentId**, the existing payment record the bundle will be attached to). It then calls `initSupplementaryPayment(paymentId, upsellProgramIds, programName, amount)`.
+The checkout flow is triggered when the user clicks the **Pay Now** button (`#pay-supp-program`). `handlePaymentEvents()` ensures a student is selected from the buy-now modal dropdown (the value is used as **paymentId**, the existing payment record the bundle will be attached to). It then calls `initSupplementaryPayment(paymentId, upsellProgramIds, programName, amount)`.
 
 <Note>
-  In general, using something like `#portal-students` is not helpful. You need to describe what that is. Otherwise, I need to look at the website or code to determine what that is, which defeats the purpose of the docs...
+  In general, using something like `#portal-students` is not helpful. You need to describe what that is. Otherwise, I need to look at the website or code to determine what that is, which defeats the purpose of the docs.... **Updated the descriptions**
 </Note>
 
 That method:
 
 1. Opens the Bergen credits modal via **Utils.waitForCreditApplicationChoice(memberId)** and waits for the user to choose apply or no (**applyCredit**).
-2. Sends a **POST** request to **checkoutUrlForUpsellProgram** with **paymentId**, **upsellProgramIds**, **successUrl** (portal/dashboard?success=true), **cancelUrl** (portal/dashboard), **label**, **amount** (selected programs' **portal_amount** sum plus **memberData.amount**), **source: "portal_page"**, **memberId**, and **applyCredit**.
-3. Receives **cardUrl** (and optionally **achUrl**) from the API; sets **window.location.href** to **cardUrl** so the user is redirected to Stripe to complete payment.
+2. Sends a **POST** request to **checkoutUrlForUpsellProgram** with **paymentId** and program details
+3. Receives **cardUrl** (and optionally **achUrl**) from the API; then redirects to the Stripe page
 
 <Note>
-  TODO: Specifying all the input params for an API is usually not that useful. That's what we have python docstrings for
+  TODO: Specifying all the input params for an API is usually not that useful. That's what we have Python docstrings for
 </Note>
 
-After payment, the webhook (same as for semester/summer upsells) inserts the bundle placeholder and upsell records as described in [Semester/Summer upsells](#).
+After payment, the webhook inserts the bundle placeholder as described in [Semester/Summer upsells](#).
