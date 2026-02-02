@@ -12,22 +12,22 @@ TODO: How can admin returner conversion on Retool. Pre-Reg management was alread
 
 ## Technical
 
-Returner conversion and pre-registration on the portal are driven by **one API** and the `Portal` class in the portal JS. **~~~~~~`The API returns recommendedLevel(when published) and ~~ futureSession`~~~~~~** (with pre-registration dates); the frontend shows/hides the “Next Recommended Program” and pre-reg blocks and buttons based on that data and the current date.~~
+Returner conversion and pre-registration on the portal are driven by **one API** and the `Portal` class in the portal JS. **`~~~~~~The API returns recommendedLevel(when published) and ~~ futureSession~~~~~~`** (with pre-registration dates); the frontend shows/hides the “Next Recommended Program” and pre-reg blocks and buttons based on that data and the current date.~~
 
 **API (**`getPortalDetails/{memberId}`)
 
-- For each student in the family & the **current** session, if the student's recommendation (in the `members` collection) has `publish==True`, the API returns `recommendedLevel` 
+- For each student in the family & the **current** session, if the student's recommendation has `publish==True`, the API returns `recommendedLevel`
 - **`getRecommended(row)`** runs only when **`row['publish'] == True`**; it reads **attendance_session**, **class_session**, **student_grades**, **class_level** and returns **session**, **grade**, **level**, **year**, **pre-registrationDates**, **earlyBirdDeadlineDate**, **registrationStartDate**, **registrationEndDate**. If not published, returns `{}`.
 - **futureSession** (from payment/upsell data) includes **pre-registrationDates**, **programDates**, **earlyBirdDeadlineDate**, **classId** (empty when bundle not yet converted). Used for pre-reg timing and “has bundle” logic.
 
 <Note>
   TODO: This section is messy right now:
 
-  1. Explain conditions (e.g., For each student in the family & the **current** session, if the student's recommendation (in the `members` collection) has `publish==True`) 
+  1. Explain conditions (e.g., For each student in the family & the **current** session, if the student's recommendation (in the `members` collection) has `publish==True`)
   2. Explain the return, in some detail. Might want to use a table
 </Note>
 
-**JS **( `portal_new_ui.js`  class: `Portal`)
+\*\*JS \*\*( `portal_new_ui.js`  class: `Portal`)
 
 Portal fetches **getPortalDetail/** once; then for each student tab it calls **renderRecommendedLevel(tabPane, student, studentData)**.
 
@@ -41,7 +41,7 @@ Portal fetches **getPortalDetail/** once; then for each student tab it calls **r
 
   1. Conditions can be simplified -- obviously, publish is true. So non-empty `recommendedLevel` is really the only condition, right
   2. Instead of just having independent bullet points, explain how they are connected. So for example, you reference **updateButtonVisibility**
-     1. Explain what that does, and a little of how it works. 
+     1. Explain what that does, and a little of how it works.
      2. Alternatively, you don't even need to reference minor methods. You can just explain the functionality that executes. This might make the docs easier.
 </Note>
 

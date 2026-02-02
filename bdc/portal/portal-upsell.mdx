@@ -26,7 +26,7 @@ The class fetches upsell programs, renders them as selectable cards, and when th
 
 ### API
 
-The API used is **GET **`getUpsellProgramV2?type=portal` (referral-promotion-service). When `type=portal` is present, the API reads `upsell_program_mapping` for the current year and session and uses `portal_program_ids` (instead of `upsell_program_ids`, which is used for checkout) to decide which programs to return.
+The API used is \*\*GET \*\*`getUpsellProgramV2?type=portal` (referral-promotion-service). When `type=portal` is present, the API reads `upsell_program_mapping` for the current year and session and uses `portal_program_ids` (instead of `upsell_program_ids`, which is used for checkout) to decide which programs to return.
 
 The response is an array of objects, each with:
 
@@ -38,12 +38,70 @@ The response is an array of objects, each with:
 `DisplaySuppProgram` hides all `.bundle-sem-rounded-red-div` elements initially, then calls `displaySupplementaryProgram()`, which fetches `getUpsellProgramV2?type=portal` and stores the result. If the response has items, it calls `createBundleProgram()`, which:
 
 - Clears `[data-upSell='card-container']` and `[data-upSell='modal-card-container']`
-- Filters to academic-only and future-session programs (as above)
+- Filters to academic-only and future-session programs(If available)
 - For each program, appends a card from `createBundleCard()` to the card container and a card from `createModelBundleCard()` to the modal container
 
 <Note>
-  TODO: Can you explain the "academic-only" filter. How is future programs determined?
+  TODO: Can you explain the "academic-only" filter. How is future programs determined? **Updated description below**
 </Note>
+
+**Academic-only:** The API returns programs for both the current session and summer (sessionId 2). The frontend keeps only items where `sessionId !== 2`, so Summer is excluded and only academic-year sessions (e.g. Fall, Winter/Spring) are used.
+
+**Future-session programs:** For each of those academic sessions, the code filters `upsellPrograms` to programs whose `sessionId` is **not** the current session. So only programs for a different (future) term are shown—e.g. if the current session is Fall, only Winter/Spring bundles appear; if current is Winter/Spring, only the next Fall appears.
+
+For example, please take a look at the response below, sessionId: 1 (Winter/Spring). This is the current session. First, we filter the sessionId to the upsell program array object. After that, we render the upsell program data.
+
+```
+[
+    {
+        "sessionId": 1,
+        "upsellPrograms": [
+            {
+                "amount": 1500,
+                "desc": "Fall Tuition + Early Bird (With Deposit)",
+                "disc_amount": 1720,
+                "label": "Fall",
+                "portal_amount": 1500,
+                "portal_disc_amount": 1720,
+                "sessionId": 3,
+                "upsellProgramId": 107,
+                "yearId": 2026
+            },
+            {
+                "amount": 1850,
+                "desc": "Last Year's Locked-In Tuition + Early Bird",
+                "disc_amount": 2050,
+                "label": "Winter/Spring",
+                "portal_amount": 1850,
+                "portal_disc_amount": 2050,
+                "sessionId": 1,
+                "upsellProgramId": 105,
+                "yearId": 2026
+            }
+        ],
+        "yearId": 2026
+    },
+    {
+        "desc": "Last Year's Locked-In Tuition + $50 Off | Full-Day Enrollment",
+        "disc_amount": 50,
+        "sessionId": 2,
+        "upsellPrograms": [
+            {
+                "amount": 1500,
+                "desc": "Fall Tuition + Early Bird (With Deposit)",
+                "disc_amount": 1720,
+                "label": "Fall",
+                "portal_amount": 1500,
+                "portal_disc_amount": 1720,
+                "sessionId": 3,
+                "upsellProgramId": 107,
+                "yearId": 2026
+            }
+        ],
+        "yearId": 2026
+    }
+]
+```
 
 Each card shows `label`, `year`, **portal_amount** (discount price), **portal_disc_amount** (original price), and `description`. The user selects programs via checkboxes; the running total is shown in `[data-cart-total='cart-total-price']`. **displayTotalDiscount()** shows the total discount (portal_disc_amount − portal_amount) in **[data-addon="discount"]**. **disableEnableBuyNowButton()** enables or disables **.add-to-cart** and **.bundle-add-to-cart** based on whether any program is selected.
 
