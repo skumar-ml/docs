@@ -104,7 +104,7 @@ The Millions page displays **per-student** reward amounts (points). Each student
 | **createdOn**    | When the document was created.                |
 | **transactions** | Array of transaction entries (see below).     |
 
-_Optional or joined when read:_ **name**, **email**, **memberId**, **studentId **may appear when the API joins with **members** ; the stored document may only have **studentId**, **earnAmount**, **createdOn**, **transactions**.
+_Optional or joined when read:_ **name**, **email**, **memberId**, **studentId** may appear when the API joins with **members** ; the stored document may only have **studentId**, **earnAmount**, **createdOn**, **transactions**.
 
 **transactions** array item:
 
@@ -114,7 +114,7 @@ _Optional or joined when read:_ **name**, **email**, **memberId**, **studentId *
 | **description**  | Optional text for the transaction. |
 | **lastEarnDate** | Date of the transaction.           |
 
-**millions_items_details** — Catalog for the Millions store (skipped for the portal Millions page).
+**millions_items_details** — Catalog for the Millions store .
 
 The read API filters **which students** appear using current year/session (students with a payment in that term); each student's balance is their total (not per-session).
 
