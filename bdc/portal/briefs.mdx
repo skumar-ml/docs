@@ -25,13 +25,28 @@ Portal Briefs shows only briefs the member has already purchased (one JS file, o
 - With **memberId**: returns only purchased topics from **`topic_payment_details`** + **`topic_details`** (topicName, topic_order, version, pdf_url, preview_pdf_url, purchase_date).
 - Without memberId: returns full catalog (checkout; see [Briefs upsells](#)).
 
+**Sidebar and main content**
+
+- **My Briefs menu** has **no** hide/show logic—all users see the same sidebar; "My Briefs" is always visible.
+- **Main content** depends on whether the member has purchased briefs:
+  - **Has purchased briefs:** Show the briefs UI (dropdown, download link, PDF preview).
+  - **No purchased briefs:** Show the empty state: message _"You haven't purchased any of our Briefs! Check out our briefs on topics like Cognitive Biases and Argumentation, created to strengthen your critical thinking with real-life examples and exercises."_ and a **See Briefs** button (links to the briefs checkout).
+
 **Flow**
 
-- **BriefManager** caches DOM: **`[data-brief="select-brief"]`**, **`[data-brief="download-pdf"]`**, **`[data-brief="pdf-preview"]`**, **`.pdf-briefs-main-container`**, **`#half-circle-spinner`**.
-- Fetches **`getTopicsDetails?memberId=...`** → stores result as **`$briefs`**.
-- Shows or hides the main container depending on whether **`$briefs`** has items.
-- Fills the dropdown from **`$briefs`**; on **change**, sets the download link and iframe **src** to the selected brief's **pdf_url**.
-- All rendering is client-side from that one API response.
+1. **JS (BriefManager)** — init and request
+   - Caches DOM references: **`[data-brief="select-brief"]`** (dropdown), **`[data-brief="download-pdf"]`** (download link), **`[data-brief="pdf-preview"]`** (iframe), **`.pdf-briefs-main-container`** (main briefs panel), **`#half-circle-spinner`** (loading indicator).
+   - Calls **`GET getTopicsDetails?memberId={memberId}`**
+2. **API (getTopicsDetails.py)**
+   - For the given **memberId**, reads **`topic_payment_details`** and **`topic_details`**.
+   - Returns only topics the member has purchased, with: topicName, topic_order, version, pdf_url, preview_pdf_url, purchase_date.
+3. **JS (BriefManager)** — after response
+   - Stores the API response as **`$briefs`**.
+   - **Content switch:** If **`$briefs`** has at least one item: show **`.pdf-briefs-main-container`** (briefs UI). If **`$briefs`** is empty: show the empty state (message + **See Briefs** button) and skip the steps below.
+   - **Populate dropdown:** Fills **`[data-brief="select-brief"]`** with options from **`$briefs`** (e.g. by topicName), ordered by **topic_order**.
+   - **Initial selection:** If there are items, selects the first (or default) brief and sets **`[data-brief="download-pdf"]`** href and **`[data-brief="pdf-preview"]`** iframe **src** to that brief’s **pdf_url**
+   - **Dropdown change handler:** On **change** of **`[data-brief="select-brief"]`**, updates the download link **href** and the iframe **src** to the newly selected brief’s **pdf_url**
+   - All of the above is client-side; no further API calls for viewing/downloading the selected brief.
 
 <Note>
   TODO: Changes to be done...
