@@ -65,9 +65,9 @@ The **referrals page** (portal) fetches GET `getReferralData` to show the referr
 
 The **Referral visibility** **in the portal sidebar** is controlled by `checkReferralsAccess` (only if the member has at least one `currentSession`).
 
-<Note>
+<Warning>
   TODO: Need to update so that Referrals is visible is user has one payment (not currentSession)
-</Note>
+</Warning>
 
 When a **referred user** lands on the site via the referral link (**?code=...&id=...**), `referrals_modal.js` shows a **pop-up** with the discount code, referrer name, and a form to claim the discount (which adds their name/email via `addReferralData`). How `referred_stage` is set to **Signed_Up** or **Purchased**, and how `coupon_details` are created, is not covered here; see the [checkout](/bdc/checkout-systems) and [post-payment](/bdc/checkout-systems/semester/web-checkout/technical/post-payment) docs.
 
@@ -83,9 +83,9 @@ When a **referred user** lands on the site via the referral link (**?code=...&id
   - \*\*If the referred email already belongs to a member who is part of a \*\*`familyId`\
     → The referral is rejected, → Message shown: **“Member already exists”**
 
-  <Note>
+  <Warning>
     TODO: Shouldn't this be a member who is part of a family that is enrolled? They could be in a `familyId` and be purchased
-  </Note>
+  </Warning>
   - \*\*If the email was already referred earlier by the same referee \*\*`memberId`\
     → The referral is rejected, → Message shown: **“Member already referred”**
   - If the email already exists in the system **but is not linked to any familyId yet**\
@@ -123,17 +123,15 @@ When a **referred user** lands on the site via the referral link (**?code=...&id
 <Note>
   TODO: Above needs to be updated to be a little more readable
 
-  TODO: Did not review below. I can tell this page is a little more unfinished -- so waiting.
+  TODO: SK to review below in detail.
 </Note>
 
 ### What a referred user sees (referral link)
 
-Checks URL parameters for referral code and ID, displays modal when user arrives via referral link or based on suppression rules, handles form submission to claim referral discount, manages modal suppression for 1 hour after dismissal, and processes referral flow.
+The referral modal is triggered **when a user lands on the website using a referral link**\
+(`https://www.bergendebate.com?code=...&id=...`).
 
-The referral modal is triggered when a user lands on the website using a referral link\
-(`https://www.bergendebate.com?code=...&id=...`, where both values are base64-encoded).
-
-On page load, the `ReferralModal` class reads the `code` and `id` from the URL. If present, it decodes them, stores referral details in `localStorage`, updates the discount code on the page, and fetches the referrer’s name to display in the modal. If the user has not already submitted their name and email, the referral modal is shown.
+On page load, the `ReferralModal` class reads the `code` and `id` from the URL. If present, it decodes them, stores referral details in `localStorage`, updates the discount code on the page, and fetches \<TODO: how\> the referrer’s name to display in the modal. If the user has not already submitted their name and email, the referral modal is shown.
 
 When the user submits the form, the details are sent to the `addReferralData` API. On success, the referral is saved, a confirmation message is shown, and the modal closes automatically. If the referral already exists or fails, an error message is displayed.
 
