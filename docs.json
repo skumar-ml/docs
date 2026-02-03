@@ -180,6 +180,20 @@
             "pages": []
           }
         ]
+      },
+      {
+        "tab": "Invoices Retool Pages",
+        "menu": [
+          {
+            "item": "Invoice Overview"
+          },
+          {
+            "item": "Manage Invoice"
+          },
+          {
+            "item": "Invoice Center"
+          }
+        ]
       }
     ]
   },
