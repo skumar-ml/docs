@@ -97,6 +97,7 @@
             "group": "Customer Portal",
             "icon": "person-to-portal",
             "pages": [
+              "bdc/portal/invoice-center",
               "bdc/portal/overview",
               "bdc/portal/dashboard",
               "bdc/portal/millions",
