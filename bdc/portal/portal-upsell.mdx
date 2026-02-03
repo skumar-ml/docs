@@ -35,7 +35,7 @@ The purchase modal opens when **Buy Now** is clicked. The user must selects the 
 
 TODO: How can admin manage this on Retool.
 
-### Manage Uploaded Content 
+### Manage Uploaded Content
 
 Admins manage session-specific resources from the **Manage Uploaded Documents** section in Retool [page](https://bergendebate.retool.com/apps/2f15d79e-f03f-11f0-9bb4-bf2c26d4c428/Q1%6026/Upload%20Content%20Dashboard%20-%20Latest) by selecting the **session** and **year** to view relevant content.
 
@@ -74,10 +74,14 @@ The response is an array of objects, each with:
 - Filters to academic-only and future-session programs (if available)
 - For each program, appends a card from `createBundleCard()` to the card container and a card from `createModelBundleCard()` to the modal container
 
-**Academic-only:** The API returns programs for both the current session and summer (sessionId 2). The frontend keeps only items where `sessionId !== 2`, so Summer is excluded and only academic-year sessions (e.g. Fall, Winter/Spring) are used.
+**Academic-only:** The API returns programs for both the current session(`portal_program_ids` ) and summer (sessionId 2). The frontend keeps only items where `sessionId !== 2`, so Summer is excluded and only academic-year sessions (e.g. Fall, Winter/Spring) are used.
+
+![Image](/images/image-73.png)
 
 <Note>
-  TODO: Is this accurate? I'm pretty sure we are showing summer upsells in the portal?
+  TODO: Is this accurate? I'm pretty sure we are showing summer upsells in the portal? 
+
+  Comment: currect session `portal_program_ids` upsell programs we are showing in the portal. we are not using summer upsell program id
 </Note>
 
 **Future-session programs:** For each of those academic sessions, the code filters `upsellPrograms` to programs whose `sessionId` is **not** the current session. So only programs for a different (future) term are shown—e.g. if the current session is Fall, only Winter/Spring bundles appear; if current is Winter/Spring, only the next Fall appears.
@@ -144,10 +148,14 @@ Each card shows `label`, `year`, **portal_amount** (discount price), **portal_di
 - **Learn more modal total discount:** `displayTotalDiscount()` adds up all upsell product discounts (`portal_disc_amount − portal_amount`) for the selected bundle and shows this value in every element with `data-addon="discount"`.
 - **Add to cart:** **disableEnableBuyNowButton()** enables or disables the **.add-to-cart(Modal)** and **.bundle-add-to-cart(sidebar)** buttons: they are disabled when no program is selected and enabled when at least one is selected. Those buttons open the checkout modal; the user then clicks **Pay Now** to start payment.
 
+| ![Image](/images/image-74.png) | ![Image](/images/image-75.png) |
+| ------------------------------ | ------------------------------ |
+| ![Image](/images/image-76.png) | ![Image](/images/image-77.png) |
+
 <Note>
   TODO: The last three sentences are confusing..
 
-  1. I think some screenshots of the above will be helpful. They can be in accordions
+  1. I think some screenshots of the above will be helpful. They can be in accordions: **Added Image**
 </Note>
 
 ### Checkout flow
