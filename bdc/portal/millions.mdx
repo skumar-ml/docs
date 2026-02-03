@@ -92,7 +92,7 @@ Portal Millions shows **per-student** reward balances and transaction history fo
 **API**
 
 - `GET getMillionsTransactionData/{memberId}` (**getMillionsTransactionData.py**).
-- Resolves **memberId** to family member IDs; uses current year/session to find students with a payment in that term; for each student, looks up **millions_transactions** by **studentId** and returns **studentName**, **studentGrade**, **earnAmount**, **transactions**.
+- Resolves `memberId` to family member IDs; uses current year/session to find students with a payment in that term; for each student, looks up `millions_transactions` by `studentId` and returns `studentName, studentGrade, earnAmount, transactions`.
 - Response includes **millions_transactions** (array per student); **items** is for the store (skipped).
 
 **Where the data lives (DB)**
@@ -135,12 +135,12 @@ The read API filters **which students** appear using current year/session (stude
    - Caches DOM: `#half-circle-spinner` (loading), `.portal-info-wrapper` (main content wrapper), `[data-container="no-record-found"]` (empty state), `.portal-tab` (tab container).
    - Shows spinner, hides portal content and no-record div, then calls `GET getMillionsTransactionData/{memberId}`.
 2. **API (getMillionsTransactionData.py)**
-   - Resolves **memberId** to family; uses current year/session to get students with a payment in that term; for each, reads **millions_transactions** by **studentId**.
-   - Returns **millions_transactions** with **studentName**, **studentGrade**, **earnAmount**, **transactions** (and optionally **items** for store; page ignores **items**).
+   - Resolves `memberId` to family; uses current year/session to get students with a payment in that term; for each, reads `millions_transactions` by `studentId`.
+   - Returns `millions_transactions` with `studentName, studentGrade, earnAmount, transactions` (and optionally **items** for store; page ignores **items**).
 3. **JS (MillionsRenderer)** — after response
-   - **Content switch:** If **millions_transactions** is missing or empty: show **no-record-found**, hide portal wrapper and spinner; return. Otherwise: hide spinner, show `.portal-info-wrapper` and `.portal-tab`.
+   - **Content switch:** If `millions_transactions` is missing or empty: show `no-record-found`, hide portal wrapper and spinner; return. Otherwise: hide spinner, show `.portal-info-wrapper` and `.portal-tab`.
    - **Tab menu:** Fills `.portal-tab-menus` with one `.portal-tab-link` per student (student name); first tab has **w--current**.
-   - **Tab panes:** Fills `.portal-tab-content` with one `.w-tab-pane` per student; each pane has Current Balance (**.million-price-text**), "View Store" link, and Transactions table (**.transactions-table-div** with header row and `.transactions-row-wrapper` for rows).
-   - **Render each tab:** For each student, **renderTab** writes balance into `.million-price-text`, sorts **transactions** by **lastEarnDate** (newest first), and appends rows (date, description, amount with **green-semi-bold** / **red-semi-bold** for +/-). If no transactions, shows "No Record Found" in that pane.
+   - **Tab panes:** Fills `.portal-tab-content` with one `.w-tab-pane` per student; each pane has Current Balance (`.million-price-text`), "View Store" link, and Transactions table (`.transactions-table-div` with header row and `.transactions-row-wrapper` for rows).
+   - **Render each tab:** For each student, `renderTab` writes balance into `.million-price-text`, sorts `transactions` by `lastEarnDate` (newest first), and appends rows (date, description, amount with green-semi-bold / red-semi-bold for +/-). If no transactions, shows "No Record Found" in that pane.
    - **Sidebar:** Updates `[data-millions="sidebarCount"]` with the first student's **earnAmount** (e.g. "1,234M"); parent is shown.
-   - **Tab switching:** Listens on `.portal-tab-link` clicks; on switch, toggles **w--current** / **w--tab-active**, re-runs **renderTab** for the selected index to refresh that pane's display, and updates `[data-millions="sidebarCount"]` to the selected student's balance.
+   - **Tab switching:** Listens on `.portal-tab-link` clicks; on switch, toggles `w--current / w--tab-active`, re-runs `renderTab` for the selected index to refresh that pane's display, and updates `[data-millions="sidebarCount"]` to the selected student's balance.
