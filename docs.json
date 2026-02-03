@@ -14,10 +14,6 @@
         "tab": "BDC",
         "groups": [
           {
-            "group": "test-group",
-            "pages": []
-          },
-          {
             "group": "Introduction",
             "icon": "rocket-launch",
             "pages": [
