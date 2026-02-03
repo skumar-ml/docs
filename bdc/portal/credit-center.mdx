@@ -79,13 +79,9 @@ Credits are stored per parent (member) in `member_credit_amount`. Admins add cre
 | **session**                   | Optional; nested session object (e.g. classSessionName, registrationDates).               |
 | **invoiceId** / **paymentId** | Optional; for debits, links to invoice or payment.                                        |
 
-- **Credits:** Admins add credits via Retool. Retool updates `member_credit_amount`: sets `credit_balance` (increased) and pushes an entry to `credit_history` with `type` "credit"  and the `description`. The **amount** will always be positive
+- **Credits:** Admins add credits via Retool. Retool updates `member_credit_amount`: sets `credit_balance` (increased) and pushes an entry to `credit_history` with `type` "credit"  and the `description`. The **amount** will always be positive.
+  - If the added credit amount is **negative** (e.g., to remove credits), then `type` is "RemovedAdmin"
 
-<Note>
-  TODO:
-
-  2. Can we explain what type == "RemovedAdmin" means. **If we remove the credit amount from the admin, then we maintain status as a "RemovedAdmin". We are storing the amount as a negative or positive value**
-</Note>
 
 - **Debits:** After any successful payment (invoice or checkout), the `stripePaymentListener` runs. It calls `calculateInvoiceAmount`  to get the new `credit_balance` and amount applied; then the balance of the appropriate `member_credit_amount` record is updated, and we **\$push** to **credit_history** an entry with **type** `"debit"`, `description`. The **amount** will always be negetive
 
