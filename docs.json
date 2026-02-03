@@ -12,8 +12,11 @@
     "tabs": [
       {
         "tab": "BDC",
-        "pages": [
-          "invoice-test",
+        "groups": [
+          {
+            "group": "test-group",
+            "pages": []
+          },
           {
             "group": "Introduction",
             "icon": "rocket-launch",
