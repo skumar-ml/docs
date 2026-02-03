@@ -10,6 +10,12 @@ TODO: What users get to see for both returner conversion & pre-registration. I t
 2. Returner conversion + pre-registration (before AND after pre-registration period)
 3. Only Pre-registration (?)
 
+### Returner Conversion
+
+Once a student’s next level recommendation is published, the **“Next Recommended Program”** section becomes visible on the portal, showing the next level and semester with **Register Now** and **Learn More** options. If it is not published, this section is not visible.
+
+![Image](/images/image-66.png)
+
 ### Pre-Registration
 
 This section displays the **current pre-registration status** for returning students along with a **countdown timer** indicating when the pre-registration or early-bird offer ends.
@@ -22,21 +28,24 @@ This section displays the **current pre-registration status** for returning stud
 
 #### During the Pre-Registration Period
 
-When pre-registration is active, users see a banner highlighting that registration is open, along with the remaining time to secure a spot.
+When pre-registration is active **and** the next recommended program is published, users see a pre-registration banner along with the **Next Recommended Program** section. The banner highlights that registration is open and shows a countdown, while the recommended program displays the next level and term with **Register Now** and **Learn More** options.
 
-- Clicking **Register Now** takes the user directly to the **Stripe payment page** to complete enrollment.
-- Clicking **Learn More** opens a **Next Recommended Program** popup, showing details such as the recommended level, term, and program information.
+Clicking **Register Now** takes the user directly to the Stripe payment page. Clicking **Learn More** opens the Next Recommended Program popup with program details.
+
+### After the Pre-Registration Period
+
+Once pre-registration ends, the banner updates to reflect the new registration state and the countdown is removed. The **Next Recommended Program** section continues to be shown if it is published, and users proceed through the standard registration flow based on availability.
 
 ### Next Recommended Program Popup
 
-![Image](/images/image-50.png)
-
-- Highlights the next recommended program along with available offers, expiry countdown, and guidance on the next step.
-
-#### After the Pre-Registration Period
-
-Once pre-registration ends, the banner updates to reflect the new registration state.\
-The countdown is no longer shown, and users are guided through the standard registration flow based on availability.
+<Columns cols={2}>
+  <Card title="Next Recommended Program Info" icon="sparkles">
+    Highlights the next recommended program along with available offers, expiry countdown, and guidance on the next step.
+  </Card>
+  <Card title="Next Recommended Program Banner " icon="sparkles">
+    ![Image 50](/images/image-50.png)
+  </Card>
+</Columns>
 
 ## Admins (Retool)
 
@@ -45,7 +54,7 @@ TODO: How can admin returner conversion on Retool. Pre-Reg management was alread
 ### Manage Returner Conversion
 
 The [Returner Conversion](https://bergendebate.retool.com/apps/385a97e8-695f-11f0-94e7-d3db21f5beef/Q2%6025/Manage%20Recommended%20Level) page helps admins manage recommendations for **returning students**, meaning students who have previously enrolled and are eligible to continue to the next level.\
-Admins can review and update the recommended next level and grade, apply filters to find specific students, and publish or unpublish recommendations to control what appears on the user portal.
+Admins can review and update the recommended next level , grade etc., apply filters to find specific students, and publish or unpublish recommendations to control what appears on the user portal.
 
 ![Image](/images/image-43.png)
 
