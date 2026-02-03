@@ -52,7 +52,7 @@ Portal Invoices (Payment History page) shows per-student outstanding invoices an
 
 **Returns data (invoice-specific)**
 
-`getPortalDetail` returns an array of student objects. Each element is a single-key object: **key** = student name (string), **value** = student data object for that student.
+`getPortalDetail` returns an array of student objects. Each element is a single-key object: `key` = student name (string), `value` = student data object for that student.
 
 **Student data object** (per student):
 
@@ -85,7 +85,7 @@ Portal Invoices (Payment History page) shows per-student outstanding invoices an
 
 **Where the data lives (DB)**
 
-**invoice_notifications** — Links a payment to an invoice. Created/updated by admin (Retool). Used as the base for **getInvoiceListScript** aggregation (match **paymentId**).
+**invoice_notifications** — Links a payment to an invoice. Created/updated by admin (Retool). Used as the base for `getInvoiceListScript` aggregation (match `paymentId`).
 
 | Field          | Description                        |
 | :------------- | :--------------------------------- |
@@ -94,7 +94,7 @@ Portal Invoices (Payment History page) shows per-student outstanding invoices an
 | **emailId**    | Email identifier.                  |
 | **created_on** | When the notification was created. |
 
-**invoice_records** — One document per invoice (e.g. semester bucket). Looked up by **invoice_id** in aggregation.
+**invoice_records** — One document per invoice (e.g. semester bucket). Looked up by `invoice_id` in aggregation.
 
 | Field              | Description                                                  |
 | :----------------- | :----------------------------------------------------------- |
@@ -107,7 +107,7 @@ Portal Invoices (Payment History page) shows per-student outstanding invoices an
 | **classSessionId** | Session ID (used with **invoice_rates**).                    |
 | **payment_type**   | e.g. `"bucket"`.                                             |
 
-**invoice_rates** — Pricing and discounts by year/session. Used by **calculatebucketAmount** for **breakDownList**.
+**invoice_rates** — Pricing and discounts by year/session. Used by `calculatebucketAmount` for `breakDownList`.
 
 | Field                     | Description                 |
 | :------------------------ | :-------------------------- |
@@ -118,7 +118,7 @@ Portal Invoices (Payment History page) shows per-student outstanding invoices an
 | **siblingDiscPercentage** | Sibling discount (%).       |
 | **earlyBirdsDiscount**    | Early-bird discount amount. |
 
-**invoice_payment_link** — One or more payment options per invoice (card, ACH, form, etc.). Looked up by **invoice_id** in aggregation.
+**invoice_payment_link** — One or more payment options per invoice (card, ACH, form, etc.). Looked up by `invoice_id` in aggregation.
 
 | Field           | Description                   |
 | :-------------- | :---------------------------- |
@@ -129,7 +129,7 @@ Portal Invoices (Payment History page) shows per-student outstanding invoices an
 | **jotFormUrl**  | URL for form-based payment.   |
 | **formid**      | Form identifier.              |
 
-**invoice_responses** — One per successful (or attempted) invoice payment. Written by Stripe webhook. Looked up by **invoice_id** + **paymentId** in aggregation.
+**invoice_responses** — One per successful (or attempted) invoice payment. Written by Stripe webhook. Looked up by `invoice_id + paymentId` in aggregation.
 
 | Field                                                     | Description                               |
 | :-------------------------------------------------------- | :---------------------------------------- |
@@ -143,7 +143,7 @@ Portal Invoices (Payment History page) shows per-student outstanding invoices an
 | **credit_amount**                                         | (After completion) For itemized receipts. |
 | **basePrice**, **newStudent**, **sibling**, **earlyBird** | (After completion) For itemized PDFs.     |
 
-**stripe_checkout_customer** — Created when user starts Stripe checkout for an invoice. Looked up by **invoice_id** + **paymentId** in aggregation.
+**stripe_checkout_customer** — Created when user starts Stripe checkout for an invoice. Looked up by `invoice_id + paymentId` in aggregation.
 
 | Field              | Description              |
 | :----------------- | :----------------------- |
@@ -163,12 +163,12 @@ Portal Invoices (Payment History page) shows per-student outstanding invoices an
   - **Sibling Discount** — negative amount from **invoice_rates**.siblingDiscPercentage.
   - **Early Bird** — negative **invoice_rates**.earlyBirdsDiscount (if earlyBirds).
   - **Deposit** — fixed amount (e.g. 300)
-- It shows **basePrice**, **newStudent**, **sibling**, **earlyBird**, and **credit_amount**
+- It shows `basePrice, newStudent, sibling, earlyBird, and credit_amount`
 
 **Sidebar and main content**
 
-- **Main content** depends on **getPortalDetail** response:
-  - **Has portal data:** Show the Payment History UI (student tabs, Outstanding Invoices, Completed Enrollments / Payment history). First student is selected by default; `.portal-info-wrapper` and `.portal-tab` shown after **Webflow.require("tabs").redraw()**.
+- **Main content** depends on `getPortalDetail` response:
+  - **Has portal data:** Show the Payment History UI (student tabs, Outstanding Invoices, Completed Enrollments / Payment history). First student is selected by default; `.portal-info-wrapper` and `.portal-tab`.
   - **No data** (e.g. "No data Found"): Show `[data-container="no-record-found"]`, hide `.portal-info-wrapper` and spinner (`#half-circle-spinner`).
 
 **Flow**
@@ -176,12 +176,12 @@ Portal Invoices (Payment History page) shows per-student outstanding invoices an
 1. **JS (PaymentHistory)** — init and request
    - Constructor receives `data` with `apiBaseURL` and `memberId`.
    - Caches DOM: `#half-circle-spinner`, `[data-container="no-record-found"]`, `.portal-info-wrapper`, `.portal-tab-menus`, `.portal-tab-content`, `.portal-tab-link`, `.portal-tab-pane`.
-   - **render()** hides content, shows spinner; calls **fetchData()** → **GET getPortalDetail/**; if response is "No data Found" → show no-record, hide spinner; return. Otherwise continue.
+   - **render()** hides content, shows spinner; calls` fetchData() → GET getPortalDetail/;` if response is "No data Found" → show no-record, hide spinner; return. Otherwise continue.
 2. **API (getPortalDetail)**
-   - **getPortalDetail/** builds per-student, per-session data; for each relevant payment calls **getInvoiceList** → **getInvoiceListScript**. Returns array of student objects (see **Returns data**). Each student has **currentSession**, **futureSession**, **pastSession** with **invoiceList** and **breakDownList** per session.
+   - `getPortalDetail/ `builds per-student, per-session data; for each relevant payment calls `getInvoiceList → getInvoiceListScript`. Returns array of student objects (see **Returns data**). Each student has `currentSession, futureSession, pastSession with invoiceList and breakDownList` per session.
 3. **JS (PaymentHistory)** — after response
    - `setupTabs(data)`**:** Build one tab per student;  `renderStudentTab` fills each pane with `renderOutstandingInvoices` + `renderPaymentHistory`.
    - **Outstanding invoices** (`[data-payment="outstanding-invoice"]`): Show `invoiceList` where the **invoice is not completed**. Per invoice: icon, **invoiceName**, "Invoice Breakdown" link, and pay now button(Bank Transfer, Credit/Debit Card).
-   - **Invoice breakdown:** **initializeInvoiceBreakdownLinks()** — click on `.invoice-breakdown-link` opens modal with **breakDownList** (Semester Tuition, Early Bird, New Student Fee, sibling discount, Deposit) and remaining balance.
-   - **Payment history** (`[data-payment="payment-history"]`): Sessions from **currentSession** + **pastSession** by year; per session, download icon calls **generateInvoicePDF** → POST **generateItemizedInvoice**.
-   - **Invoice Stripe payment:** **initializeStripePayment** — POST **createCheckoutUrl** (amount in cents, invoiceId, paymentId, etc.); on success redirect to Stripe.
+   - **Invoice breakdown:** `initializeInvoiceBreakdownLinks()` — click on `.invoice-breakdown-link` opens modal with `breakDownList` (Semester Tuition, Early Bird, New Student Fee, sibling discount, Deposit) and remaining balance.
+   - **Payment history** (`[data-payment="payment-history"]`): Sessions from `currentSession `\+ `pastSession `by year; per session, download icon calls `generateInvoicePDF` → POST `generateItemizedInvoice`.
+   - **Invoice Stripe payment:** `initializeStripePayment `— POST `createCheckoutUrl `(amount in cents, invoiceId, paymentId, etc.); on success redirect to Stripe.
