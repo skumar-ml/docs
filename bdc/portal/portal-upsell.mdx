@@ -142,11 +142,11 @@ For example, please take a look at the response below, sessionId: 1 (Winter/Spri
   ```
 </Accordion>
 
-Each card shows `label`, `year`, **portal_amount** (discount price), **portal_disc_amount** (original price), and `description`. The user selects programs via checkboxes.
+Each card shows `label`, `year`, `portal_amount` (discount price), `portal_disc_amount `(original price), and `description`. The user selects programs via checkboxes.
 
 - **Buy now modal total price:** The total of all selected programs (`portal_amount`) is calculated and shown wherever `data-cart-total="cart-total-price"` (dom element) appears — both in the sidebar and in the modal.
 - **Learn more modal total discount:** `displayTotalDiscount()` adds up all upsell product discounts (`portal_disc_amount − portal_amount`) for the selected bundle and shows this value in every element with `data-addon="discount"`.
-- **Add to cart:** **disableEnableBuyNowButton()** enables or disables the **.add-to-cart(Modal)** and **.bundle-add-to-cart(sidebar)** buttons: they are disabled when no program is selected and enabled when at least one is selected. Those buttons open the checkout modal; the user then clicks **Pay Now** to start payment.
+- **Add to cart:** **disableEnableBuyNowButton()** enables or disables the `.add-to-cart(Modal)` and `.bundle-add-to-cart(sidebar)` buttons: they are disabled when no program is selected and enabled when at least one is selected. Those buttons open the checkout modal; the user then clicks **Pay Now** to start payment.
 
 | **Before checked**             | **After checked**              |
 | ------------------------------ | ------------------------------ |
@@ -169,9 +169,9 @@ The checkout flow is triggered when the user clicks the **Pay Now** button (`#pa
 
 That method:
 
-1. Opens the Bergen credits modal via **Utils.waitForCreditApplicationChoice(memberId)** and waits for the user to choose apply or no (**applyCredit**).
-2. Sends a **POST** request to **checkoutUrlForUpsellProgram**
-3. Receives **cardUrl** (and optionally **achUrl**) from the API; then redirects to the Stripe page
+1. Opens the Bergen credits modal via `Utils.waitForCreditApplicationChoice(memberId)` and waits for the user to choose apply or no (`applyCredit`).
+2. Sends a `POST` request to `checkoutUrlForUpsellProgram`
+3. Receives `cardUrl `(and optionally `achUrl`) from the API; then redirects to the Stripe page
 
 <Note>
   TODO: Specifying all the input params for an API is usually not that useful. That's what we have Python docstrings for
