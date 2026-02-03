@@ -33,70 +33,52 @@ The [Referral](https://www.bergendebate.com/portal/referral) page allows users t
 
 The [referral](https://bergendebate.retool.com/apps/bfafe442-3222-11f0-aebe-07c9e7fd34a5/2025%20Phase%20B/Referrals/referrals) Retool page is used to manage and monitor referral activity. On the left, admins can view how many referrals each family has. Clicking a record shows (on the left) detailed information for the selected referrer. The admin can manually mark an invited user as purchased.
 
-TODO: Add a screenshot of the overall page...
-
 ![Image](/images/image-41.png)
 
-Admins can also manually add a referral using the **Add Referrals** button.
-
-TODO: What happens if user is already purchased, does it auto-attribute?
-
-Yes , If the user has already made a purchase, it is **automatically attributed**.
+Admins can also manually add a referral using the **Add Referrals** button. If the added user has already made a purchase, the **Purchased** stage is **automatically attributed**.
 
 ## Technical
 
 ### Overview
 
-The referral system lets a **referrer**  share a **referral link** and **coupon code** and submit referred people’s **name** and **email** via \*\*POST \*\*`addReferralData` (referral-promotion-service). The API creates a `referral_details` record, sends an email to the referred person with the coupon code, and schedules follow-up emails. The **referrals page** (portal) fetches \*\*GET \*\*`getReferralData` to show the referrer’s `coupon_code`, `referrals` list (`name`, `email`, `date_referred`, `purchased_date`, `referred_stage`), and a form to add new referrals.
+The referral system lets a **referrer**  share a **referral link** and **coupon code** and submit referred people’s **name** and **email** via POST `addReferralData`. The API creates a `referral_details` record, sends an email to the referred person with the coupon code, and schedules follow-up emails.
 
-**Referral link visibility** in the portal sidebar is controlled by `checkReferralsAccess` (only if the member has at least one `currentSession`).
+The **referrals page** (portal) fetches GET `getReferralData` to show the referrer’s `coupon_code`, `referrals` list (`name`, `email`, `date_referred`, `purchased_date`, `referred_stage`), and a form to add new referrals.
 
-When a **referred user** lands on the site via the referral link (**?code=...&id=...**), `referrals_modal.js` shows a **pop-up** with the discount code, referrer name, and a form to claim the discount (name/email → `addReferralData`). How `referred_stage` is set to **Signed_Up** or **Purchased**, and how `coupon_details` are created, is not covered here; see the [checkout](/bdc/checkout-systems) and [post-payment](/bdc/checkout-systems/semester/web-checkout/technical/post-payment) docs.
+The **Referral visibility** **in the portal sidebar** is controlled by `checkReferralsAccess` (only if the member has at least one `currentSession`).
+
+<Note>
+  TODO: Need to update so that Referrals is visible is user has one payment (not currentSession)
+</Note>
+
+When a **referred user** lands on the site via the referral link (**?code=...&id=...**), `referrals_modal.js` shows a **pop-up** with the discount code, referrer name, and a form to claim the discount (which adds their name/email via `addReferralData`). How `referred_stage` is set to **Signed_Up** or **Purchased**, and how `coupon_details` are created, is not covered here; see the [checkout](/bdc/checkout-systems) and [post-payment](/bdc/checkout-systems/semester/web-checkout/technical/post-payment) docs.
 
 ### API and data source (referrer)
 
-- **GET** `getReferralData` (referral-promotion-service)
-  - Look up member's `familyId`. If member has no `familyId` (or empty/null), return .
+- **GET** `getReferralData`
+  - Look up member's `familyId`. If member has no `familyId` (or empty/null), return.
   - Get's `coupon_code` and `couponId`. If no coupon, return `{}`.
   - Look up who this family has referred in `referral_details`. For each referral, gather `name`, `email`, `date_referred`, `purchased_date`, `referred_stage`.
   - Response: `{ referrals (array), coupon_code }`.
-- **POST** `addReferralData` (referral-promotion-service)
-
-  ### 1. What is sent to the system
-
-  When someone refers another person, the system receives: 1) **Name** of the referred person, 2) **Email** of the referred person,  3) **Member ID** of the person who is doing the referral
-
-  ### 2. Basic checks (before saving anything)
-
-  The system first checks the email:
-  - **If the email already belongs to a member who is part of a familyId**\
+- **POST** `addReferralData`
+  - The system receives: 1) **Name** and \*\*Email \*\*of the referred person, 2) **Member ID** of the referee
+  - \*\*If the referred email already belongs to a member who is part of a \*\*`familyId`\
     → The referral is rejected, → Message shown: **“Member already exists”**
-  - **If the email was already referred earlier**\
-    → The referral is rejected, → Message shown: **“Member already referred”**
 
-  ### 3. Finding or creating the referred person (guest)(**members**)
+  <Note>
+    TODO: Shouldn't this be a member who is part of a family that is enrolled? They could be in a `familyId` and be purchased
+  </Note>
+  - \*\*If the email was already referred earlier by the same referee \*\*`memberId`\
+    → The referral is rejected, → Message shown: **“Member already referred”**
   - If the email already exists in the system **but is not linked to any familyId yet**\
     → That existing record is used as the **guest**
   - If the email does **not exist at all**\
-    → A **new guest parent account** is created in the member collection\
-    → This account is marked as coming from a **referral**\
+    → A **new guest parent account** is created in the member collection (with source as referral)\
     → The new objectId is used as the **guestId**
-
-  ### 4. Finding the referrer’s coupon(**coupon_details**)
-  - The system finds the **familyId** of the person who sent the referral
-  - It then looks for a **coupon linked to that family**
+  - Then, the system finds the referee **familyId** and looks for their coupon.
   - If no coupon is found\
     → The referral is rejected, → Message shown: **“Coupon not found”**
-
-  ### 5. Saving the referral
-
-  After all checks are passed, the system **stores the referral**.\
-  It saves who sent the referral, who was referred, which coupon is linked, and the date the referral was made.\
-  The referral is marked as **not yet purchased**, and the system notes that the referral email has been sent.
-
-<Note>
-  TODO: make the `addReferralData` more technical (reference collections, fields, etc).
-</Note>
+  - After all checks are passed, the system **stores the referral**. The referral is marked as **not yet purchased**, and the system notes that the referral email has been sent.
 
 ### DB collections and relations
 
@@ -106,10 +88,6 @@ When a **referred user** lands on the site via the referral link (**?code=...&id
 | **coupon_details**   | One per family; stores coupon code for referral rewards.                                       | `familyId`, `coupon_code` (and others; creation/lifecycle is in checkout/post-payment docs)                                                                    |
 
 - **Relation:** `getReferralData` joins `referral_details` to `members` (guest) by `guestId` and to `coupon_details` by `couponId` (via referrer’s `familyId`). `referred_stage` is updated to `Signed_Up` when the guest signs up (see [sign-up flow](#)) and to **Purchased** when they complete a purchase (see [post-payment](#)).
-
-<Note>
-  TODO: "see sign-up flow" missing hyperlink
-</Note>
 
 ### Portal rendering (referrals page)
 
