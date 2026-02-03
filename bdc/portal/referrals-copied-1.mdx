@@ -91,14 +91,14 @@ When a **referred user** lands on the site via the referral link (**?code=...&id
   - Look up who this family has referred in `referral_details`. For each referral, gather `name`, `email`, `date_referred`, `purchased_date`, `referred_stage`.
   - Response: `{ referrals (array), coupon_code }`.
 - **POST** `addReferralData`
-  - The system receives: 1) **Name** and \*\*Email \*\*of the referred person, 2) **Member ID** of the referee
-  - \*\*If the referred email already belongs to a member who is part of a \*\*`familyId`\
+  - The system receives: 1) `Name` and `Email` of the referred person, 2) `Member ID` of the referee
+  - If the referred email already belongs to a member who is part of a `familyId`\
     → The referral is rejected, → Message shown: **“Member already exists”**
 
   <Warning>
     TODO: Shouldn't this be a member who is part of a family that is enrolled? They could be in a `familyId` and be purchased
   </Warning>
-  - \*\*If the email was already referred earlier by the same referee \*\*`memberId`\
+  - If the email was already referred earlier by the same referee `memberId`\
     → The referral is rejected, → Message shown: **“Member already referred”**
   - If the email already exists in the system **but is not linked to any familyId yet**\
     → That existing record is used as the **guest**
