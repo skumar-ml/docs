@@ -156,8 +156,14 @@ Portal Invoices (Payment History page) shows per-student outstanding invoices an
 
 ### Itemized invoice(bucket breakdown)
 
-- **breakDownList **shown on the portal for each invoice is computed by `calculatebucketAmount(invoiceRecord) `. It uses `invoice_rates` for the invoice’s `currentYear` and `classSessionId`.
-- It shows **basePrice**, **newStudent**, **sibling**, **earlyBird**, and **credit_amount** 
+- \*\*breakDownList \*\*shown on the portal for each invoice is computed by `calculatebucketAmount(invoiceRecord) `. It uses `invoice_rates` for the invoice’s `currentYear` and `classSessionId`.
+- **breakDownList** (bucket breakdown) — keys and meaning:
+  - **Semester Tuition** — **invoice_rates**.basePrice.
+  - **New Student Fee** — **invoice_rates**.newStudent (if not returner).
+  - **Sibling Discount** — negative amount from **invoice_rates**.siblingDiscPercentage.
+  - **Early Bird** — negative **invoice_rates**.earlyBirdsDiscount (if earlyBirds).
+  - **Deposit** — fixed amount (e.g. 300)
+- It shows **basePrice**, **newStudent**, **sibling**, **earlyBird**, and **credit_amount**
 
 **Sidebar and main content**
 
@@ -178,4 +184,4 @@ Portal Invoices (Payment History page) shows per-student outstanding invoices an
    - **Outstanding invoices** (`[data-payment="outstanding-invoice"]`): Show `invoiceList` where the **invoice is not completed**. Per invoice: icon, **invoiceName**, "Invoice Breakdown" link, and pay now button(Bank Transfer, Credit/Debit Card).
    - **Invoice breakdown:** **initializeInvoiceBreakdownLinks()** — click on `.invoice-breakdown-link` opens modal with **breakDownList** (Semester Tuition, Early Bird, New Student Fee, sibling discount, Deposit) and remaining balance.
    - **Payment history** (`[data-payment="payment-history"]`): Sessions from **currentSession** + **pastSession** by year; per session, download icon calls **generateInvoicePDF** → POST **generateItemizedInvoice**.
-   - **Invoice Stripe pay:** **initializeStripePayment** — POST **createCheckoutUrl** (amount in cents, invoiceId, paymentId, etc.); on success redirect to Stripe.
+   - **Invoice Stripe payment:** **initializeStripePayment** — POST **createCheckoutUrl** (amount in cents, invoiceId, paymentId, etc.); on success redirect to Stripe.
