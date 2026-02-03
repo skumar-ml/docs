@@ -10,14 +10,19 @@ TODO: What users get to see & their checkout flow
 
 <Danger>
   KS: Shubham, I tried adding a screenshot of the section here, but the image was appearing too large, so I didn’t add it. Even after resizing, it was still showing big. I’ll check it again today.
+
+  SK: You can use the "Column" layout to display.
 </Danger>
 
+- 
 - Shown in the portal to promote **early registration** for an upcoming session.
 - Displays:
   - Session name (e.g., _Fall 2026_)
   - Discounted price with original price crossed out
   - Key benefits: early-bird pricing, class priority, price lock
 - **Buy Now** button starts the purchase flow.
+
+/
 
 ## Buy Now Modal
 
@@ -37,11 +42,9 @@ TODO: How can admin manage this on Retool.
 
 ## Technical
 
-TODO: Explain in detail how the portal upsells work. Explain what options get shown to bundle. Explain how checkout flow works.
-
 ### Overview
 
-Portal upsells (supplementary programs) are driven by `portal_upsell_program.js` and one API. The page that hosts the supplementary programs section must instantiate `DisplaySuppProgram` with a `memberData` object that includes:
+Portal upsells (supplementary programs) are driven by `portal_upsell_program.js` and GET `getUpsellProgramV2?type=portal`. The page that hosts the supplementary programs section must instantiate `DisplaySuppProgram` with a `memberData` object that includes:
 
 - `baseUrl` — API base URL
 - `memberId` — current member ID
@@ -51,7 +54,7 @@ The class fetches upsell programs, renders them as selectable cards, and when th
 
 ### API
 
-The API used is \*\*GET \*\*`getUpsellProgramV2?type=portal` (referral-promotion-service). When `type=portal` is present, the API reads `upsell_program_mapping` for the current year and session and uses `portal_program_ids` (instead of `upsell_program_ids`, which is used for checkout) to decide which programs to return.
+The API used is GET`getUpsellProgramV2?type=portal`. When `type=portal` is present, the API reads `upsell_program_mapping` for the current year and session and uses `portal_program_ids` (instead of `upsell_program_ids`, which is used for checkout) to decide which programs to return.
 
 The response is an array of objects, each with:
 
@@ -63,7 +66,7 @@ The response is an array of objects, each with:
 `DisplaySuppProgram` hides all `.bundle-sem-rounded-red-div` elements initially, then calls `displaySupplementaryProgram()`, which fetches `getUpsellProgramV2?type=portal` and stores the result. If the response has items, it calls `createBundleProgram()`, which:
 
 - Clears `[data-upSell='card-container']` and `[data-upSell='modal-card-container']`
-- Filters to academic-only and future-session programs(If available)
+- Filters to academic-only and future-session programs (if available)
 - For each program, appends a card from `createBundleCard()` to the card container and a card from `createModelBundleCard()` to the modal container
 
 <Note>
@@ -72,61 +75,67 @@ The response is an array of objects, each with:
 
 **Academic-only:** The API returns programs for both the current session and summer (sessionId 2). The frontend keeps only items where `sessionId !== 2`, so Summer is excluded and only academic-year sessions (e.g. Fall, Winter/Spring) are used.
 
+<Note>
+  TODO: Is this accurate? I'm pretty sure we are showing summer upsells in the portal?
+</Note>
+
 **Future-session programs:** For each of those academic sessions, the code filters `upsellPrograms` to programs whose `sessionId` is **not** the current session. So only programs for a different (future) term are shown—e.g. if the current session is Fall, only Winter/Spring bundles appear; if current is Winter/Spring, only the next Fall appears.
 
 For example, please take a look at the response below, sessionId: 1 (Winter/Spring). This is the current session. First, we filter the sessionId to the upsell program array object. After that, we render the upsell program data.
 
-```
-[
-    {
-        "sessionId": 1,
-        "upsellPrograms": [
-            {
-                "amount": 1500,
-                "desc": "Fall Tuition + Early Bird (With Deposit)",
-                "disc_amount": 1720,
-                "label": "Fall",
-                "portal_amount": 1500,
-                "portal_disc_amount": 1720,
-                "sessionId": 3,
-                "upsellProgramId": 107,
-                "yearId": 2026
-            },
-            {
-                "amount": 1850,
-                "desc": "Last Year's Locked-In Tuition + Early Bird",
-                "disc_amount": 2050,
-                "label": "Winter/Spring",
-                "portal_amount": 1850,
-                "portal_disc_amount": 2050,
-                "sessionId": 1,
-                "upsellProgramId": 105,
-                "yearId": 2026
-            }
-        ],
-        "yearId": 2026
-    },
-    {
-        "desc": "Last Year's Locked-In Tuition + $50 Off | Full-Day Enrollment",
-        "disc_amount": 50,
-        "sessionId": 2,
-        "upsellPrograms": [
-            {
-                "amount": 1500,
-                "desc": "Fall Tuition + Early Bird (With Deposit)",
-                "disc_amount": 1720,
-                "label": "Fall",
-                "portal_amount": 1500,
-                "portal_disc_amount": 1720,
-                "sessionId": 3,
-                "upsellProgramId": 107,
-                "yearId": 2026
-            }
-        ],
-        "yearId": 2026
-    }
-]
-```
+<Accordion title="Example API Response">
+  ```
+  [
+      {
+          "sessionId": 1,
+          "upsellPrograms": [
+              {
+                  "amount": 1500,
+                  "desc": "Fall Tuition + Early Bird (With Deposit)",
+                  "disc_amount": 1720,
+                  "label": "Fall",
+                  "portal_amount": 1500,
+                  "portal_disc_amount": 1720,
+                  "sessionId": 3,
+                  "upsellProgramId": 107,
+                  "yearId": 2026
+              },
+              {
+                  "amount": 1850,
+                  "desc": "Last Year's Locked-In Tuition + Early Bird",
+                  "disc_amount": 2050,
+                  "label": "Winter/Spring",
+                  "portal_amount": 1850,
+                  "portal_disc_amount": 2050,
+                  "sessionId": 1,
+                  "upsellProgramId": 105,
+                  "yearId": 2026
+              }
+          ],
+          "yearId": 2026
+      },
+      {
+          "desc": "Last Year's Locked-In Tuition + $50 Off | Full-Day Enrollment",
+          "disc_amount": 50,
+          "sessionId": 2,
+          "upsellPrograms": [
+              {
+                  "amount": 1500,
+                  "desc": "Fall Tuition + Early Bird (With Deposit)",
+                  "disc_amount": 1720,
+                  "label": "Fall",
+                  "portal_amount": 1500,
+                  "portal_disc_amount": 1720,
+                  "sessionId": 3,
+                  "upsellProgramId": 107,
+                  "yearId": 2026
+              }
+          ],
+          "yearId": 2026
+      }
+  ]
+  ```
+</Accordion>
 
 Each card shows `label`, `year`, **portal_amount** (discount price), **portal_disc_amount** (original price), and `description`. The user selects programs via checkboxes.
 
@@ -137,8 +146,7 @@ Each card shows `label`, `year`, **portal_amount** (discount price), **portal_di
 <Note>
   TODO: The last three sentences are confusing..
 
-  1. The total discount & total payment amount seems to only display in the checkout modal, right? **YES**
-  2. You need to explain the last line better. **Updated description above**
+  1. I think some screenshots of the above will be helpful. They can be in accordions
 </Note>
 
 ### Checkout flow
