@@ -86,11 +86,11 @@ This section describes only the **Millions page** ([portal/millions](https://www
 
 ### What the page shows
 
-The Millions page displays **per-student** reward amounts (points). Each student has a single balance and transaction history stored in **millions_transactions** (keyed by **studentId**). The page lists students (tabs), shows **Current Balance** and a **Transactions** table per student, and updates the sidebar count (`[data-millions="sidebarCount"]`) with the selected student's balance as "XM".
+The Millions page displays **per-student** reward amounts (points). Each student has a single balance and transaction history stored in `millions_transactions` (keyed by `studentId`). The page lists students (tabs), shows **Current Balance** and a **Transactions** table per student, and updates the sidebar count (`[data-millions="sidebarCount"]`) with the selected student's balance as "XM".
 
 ### Where the data lives (DB)
 
-**millions_transactions** — One document per student (keyed by **studentId**). Used by the Millions page and by the read/write APIs.
+**millions_transactions** — One document per student (keyed by `studentId`). Used by the Millions page and by the read/write APIs.
 
 | Field            | Description                                   |
 | :--------------- | :-------------------------------------------- |
