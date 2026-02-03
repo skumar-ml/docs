@@ -81,7 +81,7 @@ The **Referral visibility** **in the portal sidebar** is controlled by `checkRef
   TODO: Need to update so that Referrals is visible is user has one payment (not currentSession)
 </Warning>
 
-When a **referred user** lands on the site via the referral link (**?code=...&id=...**), `referrals_modal.js` shows a **pop-up** with the discount code, referrer name, and a form to claim the discount (which adds their name/email via `addReferralData`). How `referred_stage` is set to **Signed_Up** or **Purchased**, and how `coupon_details` are created, is not covered here; see the [checkout](/bdc/checkout-systems) and [post-payment](/bdc/checkout-systems/semester/web-checkout/technical/post-payment) docs.
+When a **referred user** lands on the site via the referral link `(?code=...&id=...)`, `referrals_modal.js` shows a **pop-up** with the discount code, referrer name, and a form to claim the discount (which adds their name/email via `addReferralData`). How `referred_stage` is set to **Signed_Up** or **Purchased**, and how `coupon_details` are created, is not covered here; see the [checkout](/bdc/checkout-systems) and [post-payment](/bdc/checkout-systems/semester/web-checkout/technical/post-payment) docs.
 
 ### API and data source (referrer)
 
@@ -104,8 +104,8 @@ When a **referred user** lands on the site via the referral link (**?code=...&id
     → That existing record is used as the **guest**
   - If the email does **not exist at all**\
     → A **new guest parent account** is created in the member collection (with source as referral)\
-    → The new objectId is used as the **guestId**
-  - Then, the system finds the referee **familyId** and looks for their coupon.
+    → The new objectId is used as the `guestId`
+  - Then, the system finds the referee `familyId` and looks for their coupon.
   - If no coupon is found\
     → The referral is rejected, → Message shown: **“Coupon not found”**
   - After all checks are passed, the system **stores the referral**. The referral is marked as **not yet purchased**, and the system notes that the referral email has been sent.
@@ -124,13 +124,13 @@ When a **referred user** lands on the site via the referral link (**?code=...&id
 - **JS:** `referrals.js`, `ReferralProgram` class. The page is instantiated with `data` (`memberId`, `baseUrl`, `referralCount`, `maxReferrals`, `rewards`, `icons`).
 - **Flow:**
   - **loadReferralData()** → **GET getReferralData/**. If no **coupon_code**, alert and redirect to homepage.
-  - **#referralCode** is set to **coupon_code**. **[data-referral='referral-link-input']** is set to `https://www.bergendebate.com?code={coupon_code}&id={memberId}`.
-  - Written JavaScript code for copying  the code and link for this element: **[data-referrals='copy']** (code), **[data-referrals='copy-link']** (link).
-  - **Referrals table**: each row shows name , status (Enrolled / Pending / Signed Up from **referred_stage**), date_referred, purchased_date. Status mapping: **Purchased** → "Enrolled", **Signed_Up** → "Signed Up", **None** → "Pending" from `getReferralData` API data.
-  - element\*\*[data-referrals='count']\*\*  shows the count of "enrolled" referrals (referred_stage **Purchased** ).
-  - **createTracker** / **createMobileTracker** render the progress bar (desktop/mobile) from **maxReferrals**, **rewards**, **icons**.
-  - Form **Referral Form** (name, email) → **handleFormSubmit** → **POST addReferralData** with **name**, **email**, **memberId**. On success: hide form, show success message, call **loadReferralData()** again.
-- **Sidebar visibility:** `sidebar.js` calls **checkReferralsAccess(data)** after **setupTabs**. If any student has **currentSession** (length \> 0) all **[sidebar-menu="referrals"]** elements are set to **display: flex**, else **display: none**.
+  - `#referralCode` DOM element is set to **coupon_code**. `[data-referral='referral-link-input']` DOM element is set to `https://www.bergendebate.com?code={coupon_code}&id={memberId}`.
+  - Written JavaScript code for copying  the code and link for this element:` [data-referrals='copy']` (code), `[data-referrals='copy-link']` (link).
+  - **Referrals table**: each row shows name , status (Enrolled / Pending / Signed Up from `referred_stage`), date_referred, purchased_date. Status mapping: **Purchased** → "Enrolled", **Signed_Up** → "Signed Up", **None** → "Pending" from `getReferralData` API data.
+  - `element[data-referrals='count']`  shows the count of "enrolled" referrals (referred_stage **Purchased** ).
+  - `createTracker / createMobileTracker` render the progress bar (desktop/mobile) from `maxReferrals, rewards, icons.`
+  - Form **Referral Form** (name, email) → `handleFormSubmit` → **POST **`addReferralData` with` name, email, memberId`. On success: hide form, show success message, call `loadReferralData()` again.
+- **Sidebar visibility:** `sidebar.js` calls `checkReferralsAccess(data)` after `setupTabs`. If any student has `currentSession` (length \> 0) all `[sidebar-menu="referrals"]` elements are set to `display: flex`, else `display: none`.
 
 <Note>
   TODO: Above needs to be updated to be a little more readable
