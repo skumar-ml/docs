@@ -8,10 +8,6 @@ TODO: Shubham, provide some overview of BDC credits here
 
 ### Overview
 
-<Note>
-  TODO: Katyayani, please include a screenshot. That should communicate most of the page...
-</Note>
-
 The [Credit Center](https://www.bergendebate.com/portal/credit-balance) web page shows the user how much credit they currently have and how it has been used over time.
 
 ![Image](/images/image-35.png)
@@ -33,12 +29,10 @@ The [Credit Center](https://bergendebate.retool.com/apps/2cdaaa88-6f1f-11ef-b711
 
 ### View Credits
 
-TODO: Katyayani, please fill this out.
-
 The [View Credit](https://bergendebate.retool.com/apps/1e8644de-6f55-11ef-a73b-6f14815b8360/2024%20phase%202/View%20Credit)  Retool page allows admins to view existing parent credit balances, review transaction history, and update credits.
 
 **Update Credit**\
-This feature allows to update the credit amount for a parent account and add a short description.
+This feature allows to update the credit amount for a parent account and add a short description. The description is displayed to users on their portal.
 
 ![Image](/images/image-37.png)
 
@@ -49,15 +43,13 @@ This shows the complete credit transaction history for a parent, including debit
 
 ## Technical
 
-TODO: Explain in detail how credit works (from Retool update to render here). Include DB. Do not details on the modal that gets rendered during front-end checkout (just link to docs)
-
 ### Overview
 
-Credits are stored per parent (member) in `member_credit_amount`. Admins add credits via **Retool** (which updates this collection). Deductions happen when a parent applies credit during an **invoice payment** or **checkout**; the Stripe webhook (`stripePaymentListener`) updates `member_credit_amount` and appends a **debit** entry to `credit_history`. The Credit page fetches \*\*GET \*\*`getCreditBalance` and renders balance and transaction history via `credit_points.js` (`CreditBalance` class). For the **BDC Credits modal shown during checkout**, see the [checkout](#) and [invoices ](#)docs; this section does not detail that modal.
+Credits are stored per parent (member) in `member_credit_amount`. Admins add credits via **Retool** (which updates this collection). Deductions happen when a parent applies credit during an **invoice payment** or **checkout**; the Stripe webhook (`stripePaymentListener`) updates `member_credit_amount` and appends a **debit** entry to `credit_history`. The Credit page fetches GET `getCreditBalance` and renders balance and transaction history via `credit_points.js` (`CreditBalance` class). For the **BDC Credits modal shown during checkout**, see the [checkout](#) and [invoices ](#)docs; this section does not detail that modal.
 
 ### API and data source
 
-- **API:** ****`GET getCreditBalance/`**** (**getCreditBalance.py**).
+- **API:** ****`GET getCreditBalance`****
 - **Response**: `creditBalance` object with `name`, `email`, `memberId`, `creditBalance` (number), `creditHistory` (array of logs), `createdOn`, `updatedOn`.
 
 ### DB collection and structure
@@ -92,17 +84,10 @@ Credits are stored per parent (member) in `member_credit_amount`. Admins add cre
 <Note>
   TODO:
 
-  1. What do you mean "(or similar)" **removed text**
   2. Can we explain what type == "RemovedAdmin" means. **If we remove the credit amount from the admin, then we maintain status as a "RemovedAdmin". We are storing the amount as a negative or positive value**
 </Note>
 
-- **Debits:** After any successful payment (invoice or checkout), the `stripePaymentListener` runs. It calls `calculateInvoiceAmount`  to get the new `credit_balance` and amount applied; then the balance of the appropriate `member_credit_amount` record is updated, and we **\$push** to **credit_history** an entry with **type** `"debit"`, `description`.The **amount** will always be negetive
-
-<Note>
-  TODO:
-
-  1. What is "(or equivalent)" -- in general, we should be specific, not vague.  **Removed text**
-</Note>
+- **Debits:** After any successful payment (invoice or checkout), the `stripePaymentListener` runs. It calls `calculateInvoiceAmount`  to get the new `credit_balance` and amount applied; then the balance of the appropriate `member_credit_amount` record is updated, and we **\$push** to **credit_history** an entry with **type** `"debit"`, `description`. The **amount** will always be negetive
 
 ### Portal Rendering (Credit Center page)
 
