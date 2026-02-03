@@ -143,7 +143,7 @@ When a **referred user** lands on the site via the referral link (**?code=...&id
 The referral modal is triggered **when a user lands on the website using a referral link**\
 (`https://www.bergendebate.com?code=...&id=...`).
 
-On page load, the `ReferralModal` class reads the `code` and `id` from the URL. If present, it decodes them, stores referral details in `localStorage`, updates the discount code on the page, and fetches \<TODO: how\> the referrer’s name to display in the modal. If the user has not already submitted their name and email, the referral modal is shown.
+On page load, the `ReferralModal` class reads the `code` and `id` from the URL. If present, it decodes them, stores referral details in `localStorage`, updates the discount code on the page, and fetches(`getMemberDetails`) \<TODO: how\> the referrer’s name to display in the modal. If the user has not already submitted their name and email, the referral modal is shown.
 
 When the user submits the form, the details are sent to the `addReferralData` API. On success, the referral is saved, a confirmation message is shown, and the modal closes automatically. If the referral already exists or fails, an error message is displayed.
 
