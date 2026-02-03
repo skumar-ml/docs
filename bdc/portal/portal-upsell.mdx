@@ -14,28 +14,29 @@ TODO: What users get to see & their checkout flow
   SK: You can use the "Column" layout to display.
 </Danger>
 
-- Shown in the portal to promote **early registration** for an upcoming session.
-- Displays:
-  - Session name (e.g., _Fall 2026_)
-  - Discounted price with original price crossed out
-  - Key benefits: early-bird pricing, class priority, price lock
-- The **Buy Now** button is initially disabled.
-- When the user **selects the semester by clicking the checkbox**, the **Buy Now** button becomes enabled.
-- Clicking the enabled **Buy Now** button opens a popup to proceed with the purchase flow.
+<Columns cols={2}>
+  <Card title="" icon="sparkles">
+    
+
+    - Shown in the portal to promote **early registration** for an upcoming session.
+    - Displays:
+      - Session name (e.g., _Fall 2026_)
+      - Discounted price with original price crossed out
+      - Key benefits: early-bird pricing, class priority, price lock
+    - The **Buy Now** button is initially disabled.
+    - When the user **selects the semester by clicking the checkbox**, the **Buy Now** button becomes enabled.
+    - Clicking the enabled **Buy Now** button opens a popup to proceed with the purchase flow.
+  </Card>
+  <Card title="" icon="sparkles">
+    
+  </Card>
+</Columns>
 
 ## Buy Now Modal
 
+The purchase modal opens when **Buy Now** is clicked. The user must selects the student to bundle. Clicking **Pay Now** redirects to Stripe for payment.
+
 ![Image](/images/image-58.png)
-
-- Opens when **Buy Now** is clicked.
-- User selects the student and reviews the total amount.
-- **Pay Now** confirms the purchase.
-
-## Pay Now (Stripe Payment)
-
-- Clicking **Pay Now** redirects the user to **Stripe’s secure payment page**.
-- Payment is completed on Stripe.
-- After successful payment, enrollment is confirmed.
 
 ## Admins (Retool)
 
@@ -69,10 +70,6 @@ The response is an array of objects, each with:
 - Clears `[data-upSell='card-container']` and `[data-upSell='modal-card-container']`
 - Filters to academic-only and future-session programs (if available)
 - For each program, appends a card from `createBundleCard()` to the card container and a card from `createModelBundleCard()` to the modal container
-
-<Note>
-  TODO: Can you explain the "academic-only" filter. How is future programs determined? **Updated description below**
-</Note>
 
 **Academic-only:** The API returns programs for both the current session and summer (sessionId 2). The frontend keeps only items where `sessionId !== 2`, so Summer is excluded and only academic-year sessions (e.g. Fall, Winter/Spring) are used.
 
