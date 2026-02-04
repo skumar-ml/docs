@@ -10,6 +10,8 @@ The [Payment History](#) page allows parents to view students, track outstanding
 
 <Note>
   TODO: KS add a screenshot of the page with outstanding invoices & completed enrollments.
+
+  SK: Added.
 </Note>
 
 ### **How to Use**
@@ -18,6 +20,8 @@ The [Payment History](#) page allows parents to view students, track outstanding
   At the top of the page, all linked students are displayed. Click on a student to view their payment details.
 - **View Outstanding Invoices**\
   Once a student is selected, all **pending or unpaid invoices** for that student appear below.
+
+  ![Image](/images/image-87.png)
 - **Check Invoice Details**\
   Click on **Invoice Breakdown** to see a detailed view of the charges, including tuition, discounts, deposits paid, and the remaining balance.
 
@@ -29,6 +33,8 @@ The [Payment History](#) page allows parents to view students, track outstanding
 - **Completed Enrollments (usable for tax purposes)**
 
   After successful payment (or zero-amount enrollment), the record moves to **Completed Enrollments**.
+
+  ![Image](/images/image-86.png)
 
   This section provides:
   - A historical view of completed enrollments by year
@@ -46,13 +52,12 @@ TODO: How can admin manage this on Retool. This section will probably be a littl
   1. DB (current section is good, I think)
   2. Flows
      1. Dashboard
-        1. Invoice display + paying the invoice 
+        1. Invoice display + paying the invoice
         2. Itemized Invoice breakdown
-     2. Payment History Page
+     1. Payment History Page
         1. Rendering
         2. Portal sidebar display
 </Note>
-
 
 Portal Invoices (Payment History page) shows per-student outstanding invoices and completed enrollments—one main JS file (`payment_history.js)` and API `getPortalDetail` (member-service).
 
