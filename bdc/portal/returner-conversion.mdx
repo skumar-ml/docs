@@ -64,15 +64,11 @@ Please refer to the Pre-Registration Management details from the document URL: b
 
 ## Technical
 
-Returner conversion and pre-registration on the portal are driven by **one API(**`getPortalDetails`**)** and the `Portal` class in the` portal.js`. The API returns `recommendedLevel`(when published) and futureSession (with pre-registration dates); the frontend shows/hides the “Next Recommended Program” and pre-reg blocks and buttons based on that data and the current date
+### **Where the data lives (DB)**
 
-### **API (**`getPortalDetails/{memberId}`)
+Returner conversion and pre-registration use data from **getPortalDetails**: **recommendedLevel** (from the recommendation program / class_level, when published) and **futureSession** (from payment/upsell data). The API returns these shapes per student.
 
-In this api returns all student records for the family, including current recommendation program data. With the help of the recommendation program.
-
-For each student in the family & the **current** session, if the student's recommendation has `publish==True`, the API returns `recommendedLevel`
-
-`Return: recommendedLevel` (when published)
+**recommendedLevel** (returned when the student's recommendation has `publish == True` for the current session):
 
 | Field                     | Description                                      |
 | :------------------------ | :----------------------------------------------- |
@@ -84,16 +80,14 @@ For each student in the family & the **current** session, if the student's recom
 | **registrationStartDate** | Start of registration window.                    |
 | **registrationEndDate**   | End of registration window.                      |
 
-**futureSession** (from payment/upsell data) includes` pre-registrationDates, programDates, earlyBirdDeadlineDate, classId` (empty when bundle not yet converted). Used for pre-reg timing and “has bundle” logic.
-
-`Return: futureSession` (from payment/upsell data)
+**futureSession** (from payment/upsell data) — used for pre-reg timing and "has bundle" logic:
 
 | Field                     | Description                                                                                                     |
 | :------------------------ | :-------------------------------------------------------------------------------------------------------------- |
 | **pre-registrationDates** | Pre-reg window for future session.                                                                              |
 | **programDates**          | Program dates.                                                                                                  |
 | **earlyBirdDeadlineDate** | Early-bird deadline.                                                                                            |
-| **classId**               | Class id once converted; **empty** when bundle not yet converted (used for “has bundle” / pre-reg eligibility). |
+| **classId**               | Class id once converted; **empty** when bundle not yet converted (used for "has bundle" / pre-reg eligibility). |
 
 <Note>
   TODO: This section is messy right now:
@@ -102,45 +96,32 @@ For each student in the family & the **current** session, if the student's recom
   2. Explain the return, in some detail. Might want to use a table **Updated Description**
 </Note>
 
-### **JS** ( `portal_new_ui.js`  class: `Portal`)
+### **Flow**
 
-Portal fetches `getPortalDetail` once; then, for each student tab it renders that student’s data, including the “Next Recommended Program” and pre-registration block.
-
-**How returner conversion and pre-reg work together**
-
-Whether the user sees anything in this area depends on two things: (1) the API returned a `recommendedLevel` for that student (backend only sends it when the recommendation is published), and (2) whether the student has a `future-session`**bundle**  (from upsell: a future session with \*\*no classId \*\*).
-
-The code then checks the **current date** against two time windows via `getTimeBasedVisibility(recommendedLevel, studentData)`:
-
-- **Pre-registration window** — from **futureSession**: between `pre-registrationDates.preRegStartDate` and `programDates.startDate`. When the user is in this window and has a bundle, the pre-reg block is shown and they can complete pre-reg (e.g. “Register Now” only).
-- **Registration window** — from **recommendedLevel**: between `pre-registrationDates.preRegStartDate` and `registrationEndDate`. When the user is in this window and has a published recommendation, the “Next Recommended Program” line and both “Register Now” and “Learn More” can show.
-
-Accordingly, **updateButtonVisibility** shows or hides **Register Now** and **Learn More**:
-
-- During pre-reg only (bundle + in pre-reg window): **Register Now** only.
-- During registration (published recommendation + in registration window): both **Register Now** and **Learn More**.
-- If both pre-reg and registration are active, both buttons can show; otherwise both are hidden and the section is hidden.
-
-**Register Now and Learn More**
-
-- **Register Now** (`#enroll-now-btn-2` on the page; `#enroll-now-btn` inside the modal)\
-  Clicking **Register Now** goes to a URL that is set from `recommendedLevel` and the current registration window:
-  - **When returner conversion is active and today is within the registration window:** the link is `https://www.bergendebate.com/programs/{levelUrl}` (e.g. `programs/level-3b` for Level 3B). The user is sent to that program/level page in a **new tab**.
-  - **Otherwise:** the link is `https://www.bergendebate.com/classes-overview`. The user is sent to the classes overview in a **new tab**.
-- **Learn More** (`[data-portal="next-recomm-learn-more"]`)\
-  Clicking **Learn More** opens the `#next-recomm-modal`  DOM element modal. The modal is filled with data from the current student and `recommendedLevel`:
-  - **Title:** “Next Step for [student name]”.
-  - **Recommended line:** “Recommended: [session year | level]” (or session/year, level, or grade if some fields are missing).
-  - **Early-bird countdown:** If **recommendedLevel** has `earlyBirdDeadlineDate`, a countdown to that deadline is shown in the modal.
-  - **Enroll Now button:** The modal has its own **Register Now** button; its link uses the same logic as above (programs/level when in registration window, else classes-overview), and it also opens in a new tab.
-  - **“Why This Program”:** Short copy recommending the level for that student.\
-    Closing the modal (e.g. backdrop or close control) hides it; the modal does not navigate the page.
+1. **JS (Portal)** — init and request
+   - File: `portal_new_ui.js`; class: **Portal**. Portal fetches **getPortalDetails** once; then, for each student tab it renders that student's data, including the "Next Recommended Program" section and pre-registration block.
+2. **API (getPortalDetails/)**
+   - Returns all student records for the family, including current recommendation program data. For each student in the family and the **current** session, if the student's recommendation has **publish == True**, the API returns **recommendedLevel** (see table above). Also returns **futureSession** per student (from payment/upsell data; see table above). Used for pre-reg timing and "has bundle" logic.
+3. **JS (Portal)** — after response
+   - **Visibility:** Whether the user sees anything in this area depends on (1) the API returned a **recommendedLevel** for that student (backend only sends it when the recommendation is published), and (2) whether the student has a future-session **bundle** (from upsell: a future session with **no classId**).
+   - **Time windows:** The code checks the current date against two time windows:
+     - **Pre-registration window** (from **futureSession**): between `pre-registrationDates.preRegStartDate` and `programDates.startDate`. When the user is in this window and has a bundle, the pre-reg block is shown (e.g. "Register Now" only).
+     - **Registration window** (from **recommendedLevel**): between `pre-registrationDates.preRegStartDate` and `registrationEndDate`. When the user is in this window and has a published recommendation, the "Next Recommended Program" line and both "Register Now" and "Learn More" can show.
+   - **Buttons:** During pre-reg only (bundle + in pre-reg window): **Register Now** only. During registration (published recommendation + in registration window): both **Register Now** and **Learn More**. If both pre-reg and registration are active, both buttons can show; otherwise both are hidden and the section is hidden.
+   - **Register Now:** Clicking **Register Now** goes to a URL set from **recommendedLevel** and the current registration window. When returner conversion is active and today is within the registration window: link is `https://www.bergendebate.com/programs/{levelUrl}` (e.g. `programs/level-3b` for Level 3B); user is sent to that program/level page in a new tab. Otherwise: link is `https://www.bergendebate.com/classes-overview`; user is sent to the classes overview in a new tab.
+   - **Learn More:** Clicking **Learn More** opens the Next Recommended Program modal. The modal shows: title "Next Step for [student name]"; recommended line "Recommended: [session year | level]"; early-bird countdown if **recommendedLevel** has `earlyBirdDeadlineDate`; an Enroll Now button (same link logic as Register Now); and "Why This Program" copy. Closing the modal (backdrop or close control) hides it; the modal does not navigate the page.
 
 <Note>
   TODO: Rewrite to explain the following:
 
   1. Conditions can be simplified -- obviously, publish is true. So non-empty `recommendedLevel` is really the only condition, right . **YES, publish  is true or false for the backed logic**
   2. Instead of just having independent bullet points, explain how they are connected. So for example, you reference **updateButtonVisibility**
-     1. Explain what that does, and a little of how it works.
-     2. Alternatively, you don't even need to reference minor methods. You can just explain the functionality that executes. This might make the docs easier.
+     1. Explain what it does, and a little of how it works.
+     2. Alternatively, you don't even need to reference minor methods. You can just explain the functionality that executes. This makes the docs easier.
 </Note>
+
+### **Sidebar and main content**
+
+- **Next Recommended Program section** — Shown when the API returns **recommendedLevel** for that student (recommendation published). Displays next level and semester with **Register Now** and **Learn More**. During pre-reg only (bundle + in pre-reg window), **Register Now** only may show; during registration window, both buttons can show.
+- **Pre-registration block** — Shown when the student has a future-session bundle (no classId) and the current date is within the pre-registration window. Shows pre-reg status and countdown; after pre-reg ends, the banner updates and countdown is removed.
+- **Main content** depends on API response and time windows: if **recommendedLevel** is present and the user is in the registration window, the Next Recommended Program section is visible; if the user has a bundle and is in the pre-reg window, the pre-reg block is visible; otherwise the section 
