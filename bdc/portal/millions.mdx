@@ -12,23 +12,16 @@ This [Millions](https://www.bergendebate.com/portal/millions) page allows users 
 
 #### Million Logs - Student Selection
 
-- At the top, all associated **student names** are displayed as selectable cards.
-- The user can click on any student to view that student’s **Millions activity and balance**.
-- The currently selected student is visually highlighted.
+- All associated **student names** are displayed as selectable cards. The user can click on any student to view that student’s **Millions activity and balance**.
 
 #### Current Balance
 
 - This section shows the **current available Millions balance** for the selected student.
-- The balance is displayed prominently for easy visibility.
-- Clicking **“View Store”** opens the [Reward Store](https://www.bergendebate.com/portal/reward-store), where all available reward items along with their required Millions are displayed.
-
-  If no reward items are available, the page will show a **“No Record Found”** state to indicate that the store is currently empty.
 
 #### Transactions
 
-- The **Transactions table** displays the history of Millions activity for the selected student.
-- Each entry shows the transaction **date, description,** and the **amount** added or deducted (± Millions).
-- Positive values (green) indicate Millions added, while negative values (red) indicate deductions.
+- The **Transactions table** displays the history of Millions activity for the selected student.Each entry shows the transaction **date, description,** and the **amount** added or deducted (± Millions).
+  - Positive values (green) indicate Millions added, while negative values (red) indicate deductions.
 
 ## Admins (Retool)
 
@@ -37,27 +30,16 @@ This [Millions](https://www.bergendebate.com/portal/millions) page allows users 
 #### 1. View Items
 
 - Go to **Retool Dashboard → Million Items**.
-- All existing items are displayed in a table with:
-
-  Item Name, Description, Amount, Image URL, Created On
-- If no records are available, the table shows **“No rows found.”**
-
-  ![Image](/images/image-25.png)
 
 #### 2. Add a New Item
 
 - Click the **Add Item** button.
-- Fill in the following details: Item Name, Description, Amount, Image
 
-  ![Image](/images/image-25.png)
-- Submit the form to save the item.
-- The newly added item appears immediately in the list.
+![Image](/images/image-25.png)
 
 #### 3. Edit an Existing Item
 
 - Select an item from the list.
-- Update required fields such as name, description or amount.
-- Save changes to update the item details.
 
 ### Millions Dashboard Retool
 
@@ -144,3 +126,13 @@ The read API filters **which students** appear using current year/session (stude
    - **Render each tab:** For each student, `renderTab` writes balance into `.million-price-text`, sorts `transactions` by `lastEarnDate` (newest first), and appends rows (date, description, amount with green-semi-bold / red-semi-bold for +/-). If no transactions, shows "No Record Found" in that pane.
    - **Sidebar:** Updates `[data-millions="sidebarCount"]` with the first student's **earnAmount** (e.g. "1,234M"); parent is shown.
    - **Tab switching:** Listens on `.portal-tab-link` clicks; on switch, toggles `w--current / w--tab-active`, re-runs `renderTab` for the selected index to refresh that pane's display, and updates `[data-millions="sidebarCount"]` to the selected student's balance.
+
+<Note>
+  TODO: Let's re-organize the technical section as follows:
+
+  1. Describe DB collections (I think current description is good)
+  2. Describe flow for millions page
+  3. Describe sidebar & main content
+
+  Basically, we can delete the current content above the DB, and combine it with the flow.
+</Note>
