@@ -8,19 +8,17 @@ title: "Referrals"
 
 The [Referral](https://www.bergendebate.com/portal/referral) page allows users to **invite friends**, share referral links or codes, and **track referral status and rewards**.
 
-## Current Invitation & Referral Flow
-
 ### 1. Referrer generates a referral
 
-- An existing user receives a **unique referral code** and a **referral link**. They can share either the referral link or the code directly.
+Existing customers receive a **unique referral coupon code** and a **referral link**. They can share either the referral link or the code directly.
 
 ### 2. Refer a Friend Using the Referral Form
 
-- Users also directly send referrals by entering a name and email and clicking **Send** — submitted entries appear in the My Referrals table with their status and enrollment progress.
+Referrers can also directly send referrals by entering a referee's name and email — submitted entries appear in the "My Referrals" table with their status and enrollment progress.
 
 ![Image](/images/image-70.png)
 
-My Referrals Table - shows list of invited referrals.
+**The "My Referrals" table** - shows list of invited referrals.
 
 ![Image](/images/image-72.png)
 
@@ -29,35 +27,22 @@ My Referrals Table - shows list of invited referrals.
 - If the referral is sent via email, the invited user receives an invitation email with a **\$100 discount**, a **call-to-action link to explore classes and register**, and a **coupon code to apply at checkout**.
 - If the referral link is shared manually, the invited user is directed to the same registration flow and can apply the coupon code at checkout, but **no system-generated email** is sent.
 
-### 4. What happens when the invited user clicks the link
+### 4. What happens when the invited user clicks the referral link
 
 <Columns cols={2}>
-  <Card title="" icon="sparkles">
-    When a user clicks the referral invite link, a referral popup appears confirming the invitation and showing the discount. The user enters their name and email to claim the discount, which is automatically applied at checkout and linked to the referrer.
+  <Card title="">
+    When a user clicks the referral invite link, a **referral popup** appears confirming the invitation and showing the discount. The user enters their name and email to claim the discount, which is automatically applied at checkout and linked to the referrer.
   </Card>
-  <Card title="Referral Popup Open Via Referral Link Url" icon="sparkles">
+  <Card title="Referral Popup">
     ![Image 60](/images/image-60.png)
   </Card>
 </Columns>
 
-<Note>
-  TODO: I think we need to explain the invitation flow a little better for non-technicals -- what happens (across the tech stack) when user is invited... What gets sent in email? What happens if a new user reaches website via link...
-</Note>
+### Progress Tracker
 
-### 4. Progress Tracker
-
-- A visual progress tracker shows how many people the user has successfully referred and the **rewards unlocked at each milestone**.
+A visual progress tracker shows how many people the user has successfully referred and the **rewards unlocked at each milestone**.
 
 ![Image](/images/image-27.png)
-
-<Note>
-  TODO:
-
-  1. Screnshot
-  2. Explain when a user gets added here (if form was submitted, but what about via invited link..., obviously, if coupon code is used at checkout)?
-
-     KS: Let me add.
-</Note>
 
 ## Admins (Retool)
 
@@ -69,9 +54,21 @@ Admins can also manually add a referral using the **Add Referrals** button. If t
 
 ## Technical
 
+<Note>
+  TODO: Let's use the following format -- 
+
+  1. Expain db and important fields
+  2. Split next part into flows..
+     1. Portal
+        1. Rendering Portal Referrals Page
+        2. Referrer submits referee details via form
+        3. Referral visibility in portal sidebar
+     2. Referree lands on website via referral link
+</Note>
+
 ### Overview
 
-The referral system lets a **referrer**  share a **referral link** and **coupon code** and submit referred people’s `name` and `email` via POST `addReferralData`. The API creates a `referral_details` record, sends an email to the referred person with the coupon code, and schedules follow-up emails.
+The referral system lets a **referrer**  share a **referral link** and **coupon code** and submit the referee's `name` and `email` via POST `addReferralData`. The API creates a `referral_details` record, sends an email to the referred person with the coupon code, and schedules follow-up emails.
 
 The **referrals page** (portal) fetches GET `getReferralData` to show the referrer’s `coupon_code`, `referrals` list (`name`, `email`, `date_referred`, `purchased_date`, `referred_stage`), and a form to add new referrals.
 
@@ -129,7 +126,7 @@ When a **referred user** lands on the site via the referral link `(?code=...&id=
   - **Referrals table**: each row shows name , status (Enrolled / Pending / Signed Up from `referred_stage`), date_referred, purchased_date. Status mapping: **Purchased** → "Enrolled", **Signed_Up** → "Signed Up", **None** → "Pending" from `getReferralData` API data.
   - `element[data-referrals='count']`  shows the count of "enrolled" referrals (referred_stage **Purchased** ).
   - `createTracker / createMobileTracker` render the progress bar (desktop/mobile) from `maxReferrals, rewards, icons.`
-  - Form **Referral Form** (name, email) → `handleFormSubmit` → **POST **`addReferralData` with` name, email, memberId`. On success: hide form, show success message, call `loadReferralData()` again.
+  - Form **Referral Form** (name, email) → `handleFormSubmit` → \*\*POST \*\*`addReferralData` with` name, email, memberId`. On success: hide form, show success message, call `loadReferralData()` again.
 - **Sidebar visibility:** `sidebar.js` calls `checkReferralsAccess(data)` after `setupTabs`. If any student has `currentSession` (length \> 0) all `[sidebar-menu="referrals"]` elements are set to `display: flex`, else `display: none`.
 
 <Note>
