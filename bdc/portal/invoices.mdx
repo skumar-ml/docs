@@ -8,6 +8,10 @@ TODO: What users get to see & how they can use Invoices page.
 
 The [Payment History](#) page allows parents to view students, track outstanding invoices, and complete pending payments.
 
+<Note>
+  TODO: KS add a screenshot of the page with outstanding invoices & completed enrollments.
+</Note>
+
 ### **How to Use**
 
 - **Select a Student**\
@@ -36,7 +40,19 @@ TODO: How can admin manage this on Retool. This section will probably be a littl
 
 ## Technical
 
-TODO: Explain in detail how the invoice system works (from Retool to rendering here). Include DB collections and relations. Explain itemized invoice logic. Explain invoice breakdowns.
+<Note>
+  TODO: Let's reorganize as follows:
+
+  1. DB (current section is good, I think)
+  2. Flows
+     1. Dashboard
+        1. Invoice display + paying the invoice 
+        2. Itemized Invoice breakdown
+     2. Payment History Page
+        1. Rendering
+        2. Portal sidebar display
+</Note>
+
 
 Portal Invoices (Payment History page) shows per-student outstanding invoices and completed enrollments—one main JS file (`payment_history.js)` and API `getPortalDetail` (member-service).
 
