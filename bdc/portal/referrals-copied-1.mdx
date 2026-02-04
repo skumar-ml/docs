@@ -55,7 +55,7 @@ Admins can also manually add a referral using the **Add Referrals** button. If t
 ## Technical
 
 <Note>
-  TODO: Let's use the following format -- 
+  TODO: Let's use the following format --
 
   1. Expain db and important fields
   2. Split next part into flows..
@@ -63,87 +63,73 @@ Admins can also manually add a referral using the **Add Referrals** button. If t
         1. Rendering Portal Referrals Page
         2. Referrer submits referee details via form
         3. Referral visibility in portal sidebar
-     2. Referree lands on website via referral link
+     1. Referree lands on website via referral link
 </Note>
 
-### Overview
+### Where the data lives (DB)
 
-The referral system lets a **referrer**  share a **referral link** and **coupon code** and submit the referee's `name` and `email` via POST `addReferralData`. The API creates a `referral_details` record, sends an email to the referred person with the coupon code, and schedules follow-up emails.
+**referral_details** — One document per referred person; links the referrer (`memberId` / `familyId`) to the guest (`guestId`). Used by the referrals page and by GET `getReferralData` / POST `addReferralData`.
 
-The **referrals page** (portal) fetches GET `getReferralData` to show the referrer’s `coupon_code`, `referrals` list (`name`, `email`, `date_referred`, `purchased_date`, `referred_stage`), and a form to add new referrals.
+| Field                 | Description                                             |
+| :-------------------- | :------------------------------------------------------ |
+| **\_id**              | MongoDB ObjectId.                                       |
+| **memberId**          | Referrer's member ID.                                   |
+| **referral_familyId** | Referrer's family ID.                                   |
+| **guestId**           | Guest/referred person's member ID (links to `members`). |
+| **date_referred**     | When the referral was created.                          |
+| **purchased_date**    | When the referred person completed a purchase (if any). |
+| **referred_stage**    | "None" / "Signed_Up" / "Purchased".                     |
+| **couponId**          | Links to `coupon_details` (referrer's coupon).          |
+| **email_sent**        | Whether the referral email was sent.                    |
 
-The **Referral visibility** **in the portal sidebar** is controlled by `checkReferralsAccess` (only if the member has at least one `currentSession`).
+_Joined when read:_ `getReferralData` joins `referral_details` to `members` (guest) by `guestId` and to `coupon_details` by `couponId`. `referred_stage` is set to **Signed_Up** on guest sign-up and **Purchased** on purchase (see [post-payment](/bdc/checkout-systems/semester/web-checkout/technical/post-payment)).
 
-<Warning>
-  TODO: Need to update so that Referrals is visible is user has one payment (not currentSession)
-</Warning>
+**coupon_details** — One document per family; stores the referral coupon code. Creation and lifecycle are covered in checkout/post-payment docs.
 
-When a **referred user** lands on the site via the referral link `(?code=...&id=...)`, `referrals_modal.js` shows a **pop-up** with the discount code, referrer name, and a form to claim the discount (which adds their name/email via `addReferralData`). How `referred_stage` is set to **Signed_Up** or **Purchased**, and how `coupon_details` are created, is not covered here; see the [checkout](/bdc/checkout-systems) and [post-payment](/bdc/checkout-systems/semester/web-checkout/technical/post-payment) docs.
+| Field           | Description                        |
+| :-------------- | :--------------------------------- |
+| **familyId**    | Family that owns the coupon.       |
+| **coupon_code** | Referral code (used in link/copy). |
 
-### API and data source (referrer)
+### Flows
 
-- **GET** `getReferralData`
-  - Look up member's `familyId`. If member has no `familyId` (or empty/null), return.
-  - Get's `coupon_code` and `couponId`. If no coupon, return `{}`.
-  - Look up who this family has referred in `referral_details`. For each referral, gather `name`, `email`, `date_referred`, `purchased_date`, `referred_stage`.
-  - Response: `{ referrals (array), coupon_code }`.
-- **POST** `addReferralData`
-  - The system receives: 1) `Name` and `Email` of the referred person, 2) `Member ID` of the referee
-  - If the referred email already belongs to a member who is part of a `familyId`\
-    → The referral is rejected, → Message shown: **“Member already exists”**
+#### 1. Portal
 
-  <Warning>
-    TODO: Shouldn't this be a member who is part of a family that is enrolled? They could be in a `familyId` and be purchased
-  </Warning>
-  - If the email was already referred earlier by the same referee `memberId`\
-    → The referral is rejected, → Message shown: **“Member already referred”**
-  - If the email already exists in the system **but is not linked to any familyId yet**\
-    → That existing record is used as the **guest**
-  - If the email does **not exist at all**\
-    → A **new guest parent account** is created in the member collection (with source as referral)\
-    → The new objectId is used as the `guestId`
-  - Then, the system finds the referee `familyId` and looks for their coupon.
-  - If no coupon is found\
-    → The referral is rejected, → Message shown: **“Coupon not found”**
-  - After all checks are passed, the system **stores the referral**. The referral is marked as **not yet purchased**, and the system notes that the referral email has been sent.
+##### 1.1 Rendering Portal Referrals Page
 
-### DB collections and relations
+- **JS:** `referrals.js`, `ReferralProgram` class. Page is instantiated with `data` (`memberId`, `baseUrl`, `referralCount`, `maxReferrals`, `rewards`, `icons`).
+- **loadReferralData()** → **GET getReferralData**. API: resolve member's `familyId`; if none, return. Get `coupon_code` and `couponId` from `coupon_details`; if no coupon, return `{}`. Read `referral_details` for this family; for each referral return `name`, `email`, `date_referred`, `purchased_date`, `referred_stage`. Response: `{ referrals, coupon_code }`.
+- If no **coupon_code**, alert and redirect to homepage.
+- **UI bindings:** `#referralCode` = coupon_code. `[data-referral='referral-link-input']` = `https://www.bergendebate.com?code={coupon_code}&id={memberId}`. Copy actions: `[data-referrals='copy']` (code), `[data-referrals='copy-link']` (link).
+- **Referrals table:** Each row shows name, status, date_referred, purchased_date. Status from `referred_stage`: **Purchased** → "Enrolled", **Signed_Up** → "Signed Up", **None** → "Pending".
+- **Count:** `[data-referrals='count']` shows number of enrolled referrals (referred_stage **Purchased**).
+- **Progress:** `createTracker` / `createMobileTracker` render the progress bar (desktop/mobile) from `maxReferrals`, `rewards`, `icons`.
 
-| Collection           | Role                                                                                           | Key fields                                                                                                                                                     |
-| -------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **referral_details** | One document per referred person; links referrer (`memberId`/`familyId`) to guest (`guestId`). | `memberId`, `referral_familyId`, `guestId`, `date_referred`, `purchased_date`, `referred_stage` ("None" / "Signed_Up" / "Purchased"), `couponId`, `email_sent` |
-| **coupon_details**   | One per family; stores coupon code for referral rewards.                                       | `familyId`, `coupon_code` (and others; creation/lifecycle is in checkout/post-payment docs)                                                                    |
+##### 1.2 Referrer submits referee details via form
 
-- **Relation:** `getReferralData` joins `referral_details` to `members` (guest) by `guestId` and to `coupon_details` by `couponId` (via referrer’s `familyId`). `referred_stage` is updated to `Signed_Up` when the guest signs up (see [sign-up flow](#)) and to **Purchased** when they complete a purchase (see [post-payment](#)).
+- **Form:** Referral form (name, email) → `handleFormSubmit` → **POST addReferralData** with `name`, `email`, `memberId`.
+- **API (addReferralData):**
+  - If referred email belongs to a member who is part of a `familyId` → reject; show **"Member already exists"**.
 
-### Portal rendering (referrals page)
+    <Warning>
+      TODO: Shouldn't this be a member who is part of a family that is enrolled? They could be in a `familyId` and be purchased
+    </Warning>
+  - If email was already referred by the same referee `memberId` → reject; show **"Member already referred"**.
+  - If email exists but is not linked to any `familyId` → use that record as the **guest**.
+  - If email does not exist → create a **new guest parent** in `members` (source: referral); use new ObjectId as `guestId`.
+  - Find referee's `familyId` and their coupon. If no coupon → reject; show **"Coupon not found"**.
+  - Store the referral in `referral_details` (not yet purchased; mark email sent).
+- **On success:** Hide form, show success message, call `loadReferralData()` again.
 
-- **JS:** `referrals.js`, `ReferralProgram` class. The page is instantiated with `data` (`memberId`, `baseUrl`, `referralCount`, `maxReferrals`, `rewards`, `icons`).
-- **Flow:**
-  - **loadReferralData()** → **GET getReferralData/**. If no **coupon_code**, alert and redirect to homepage.
-  - `#referralCode` DOM element is set to **coupon_code**. `[data-referral='referral-link-input']` DOM element is set to `https://www.bergendebate.com?code={coupon_code}&id={memberId}`.
-  - Written JavaScript code for copying  the code and link for this element:` [data-referrals='copy']` (code), `[data-referrals='copy-link']` (link).
-  - **Referrals table**: each row shows name , status (Enrolled / Pending / Signed Up from `referred_stage`), date_referred, purchased_date. Status mapping: **Purchased** → "Enrolled", **Signed_Up** → "Signed Up", **None** → "Pending" from `getReferralData` API data.
-  - `element[data-referrals='count']`  shows the count of "enrolled" referrals (referred_stage **Purchased** ).
-  - `createTracker / createMobileTracker` render the progress bar (desktop/mobile) from `maxReferrals, rewards, icons.`
-  - Form **Referral Form** (name, email) → `handleFormSubmit` → \*\*POST \*\*`addReferralData` with` name, email, memberId`. On success: hide form, show success message, call `loadReferralData()` again.
-- **Sidebar visibility:** `sidebar.js` calls `checkReferralsAccess(data)` after `setupTabs`. If any student has `currentSession` (length \> 0) all `[sidebar-menu="referrals"]` elements are set to `display: flex`, else `display: none`.
+##### 1.3 Referral visibility in portal sidebar
 
-<Note>
-  TODO: Above needs to be updated to be a little more readable
+- **JS:** `sidebar.js` calls `checkReferralsAccess(data)` after `setupTabs`.
+- If any student has `currentSession` (length \> 0), set all `[sidebar-menu="referrals"]` to `display: flex`; otherwise `display: none`.
 
-  TODO: SK to review below in detail.
-</Note>
+#### 2. lands on website via referral link
 
-### What a referred user sees (referral link)
-
-The referral modal is triggered **when a user lands on the website using a referral link**\
-(`https://www.bergendebate.com?code=...&id=...`).
-
-On page load, the `ReferralModal` class reads the `code` and `id` from the URL. If present, it decodes them, stores referral details in `localStorage`, updates the discount code on the page, and fetches(`getMemberDetails`) \<TODO: how\> the referrer’s name to display in the modal. If the user has not already submitted their name and email, the referral modal is shown.
-
-When the user submits the form, the details are sent to the `addReferralData` API. On success, the referral is saved, a confirmation message is shown, and the modal closes automatically. If the referral already exists or fails, an error message is displayed.
-
-If the modal is dismissed (close button, background click, or “No thanks”), it is suppressed for 1 hour using `localStorage`. During this time, the modal will not reappear unless the user visits again using a referral link.
-
-If the user returns without referral parameters but has incomplete referral data saved locally, the modal may still appear to complete the process. Otherwise, no modal is shown.
+- **URL:** `https://www.bergendebate.com?code=...&id=...`
+- **JS:** `referrals_modal.js`, `ReferralModal` class. On load, read `code` and `id` from URL; decode, store in `localStorage`, update discount code on page, fetch referrer name (e.g. `getMemberDetails`) for the modal.
+- If the user has not yet submitted name and email, show the referral modal (discount code, referrer name, claim form).
+- **Form submit** → **POST addReferralData**. On success: referral saved, confirmation shown, modal closes. On failure or duplicate: error message shown.
+- **Dismissal:** If user closes the modal (close button, background click, or "No thanks"), suppress it for 1 hour via `localStorage`. If user returns without referral params but has incomplete referral data in `localStorage`, the modal may still show to complete the process; otherwise no modal.
