@@ -98,7 +98,7 @@ _Joined when read:_ `getReferralData` joins `referral_details` to `members` (gue
 ##### 1.1 Rendering Portal Referrals Page
 
 - **JS:** `referrals.js`, `ReferralProgram` class. Page is instantiated with `data` (`memberId`, `baseUrl`, `referralCount`, `maxReferrals`, `rewards`, `icons`).
-- **loadReferralData()** → **GET getReferralData**. API: resolve member's `familyId`; if none, return. Get `coupon_code` and `couponId` from `coupon_details`; if no coupon, return `{}`. Read `referral_details` for this family; for each referral return `name`, `email`, `date_referred`, `purchased_date`, `referred_stage`. Response: `{ referrals, coupon_code }`.
+- **loadReferralData()** → **GET getReferralData**. Read `referral_details` for this family; for each referral return `name`, `email`, `date_referred`, `purchased_date`, `referred_stage`. Response: `{ referrals, coupon_code }`.
 - If no **coupon_code**, alert and redirect to homepage.
 - **UI bindings:** `#referralCode` = coupon_code. `[data-referral='referral-link-input']` = `https://www.bergendebate.com?code={coupon_code}&id={memberId}`. Copy actions: `[data-referrals='copy']` (code), `[data-referrals='copy-link']` (link).
 - **Referrals table:** Each row shows name, status, date_referred, purchased_date. Status from `referred_stage`: **Purchased** → "Enrolled", **Signed_Up** → "Signed Up", **None** → "Pending".
@@ -123,13 +123,13 @@ _Joined when read:_ `getReferralData` joins `referral_details` to `members` (gue
 
 ##### 1.3 Referral visibility in portal sidebar
 
-- **JS:** `sidebar.js` calls `checkReferralsAccess(data)` after `setupTabs`.
+- **JS:** `sidebar.js` calls `checkReferralsAccess(data)`.
 - If any student has `currentSession` (length \> 0), set all `[sidebar-menu="referrals"]` to `display: flex`; otherwise `display: none`.
 
 #### 2. lands on website via referral link
 
 - **URL:** `https://www.bergendebate.com?code=...&id=...`
-- **JS:** `referrals_modal.js`, `ReferralModal` class. On load, read `code` and `id` from URL; decode, store in `localStorage`, update discount code on page, fetch referrer name (e.g. `getMemberDetails`) for the modal.
+- **JS:** `referrals_modal.js`, `ReferralModal` class. On load, read `code` and `id` from URL; decode, store in `localStorage`, update discount code on page, fetch referrer name (`getMemberDetails`) for the modal.
 - If the user has not yet submitted name and email, show the referral modal (discount code, referrer name, claim form).
 - **Form submit** → **POST addReferralData**. On success: referral saved, confirmation shown, modal closes. On failure or duplicate: error message shown.
 - **Dismissal:** If user closes the modal (close button, background click, or "No thanks"), suppress it for 1 hour via `localStorage`. If user returns without referral params but has incomplete referral data in `localStorage`, the modal may still show to complete the process; otherwise no modal.
