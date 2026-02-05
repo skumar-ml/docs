@@ -210,6 +210,138 @@ The full technical details of these tables are available in the **Invoices datab
    - **checkReferralsAccess(data)** — Referrals menu in sidebar shown only if at least one student has **currentSession**.
    - **updateSidebarMillionsCount** — Sets **[data-millions="sidebarCount"]** to the selected student’s Millions; listener on tab switch updates it when user changes student.
 
+### Dashboard UI (technical reference)
+
+Each visible region is driven by specific DOM containers and **getPortalDetail** / **getMillionsTransactionData** / **getAnnouncement** data. Use the tabs below for a per-region technical reference (placeholder images can be replaced with real screenshots later).
+
+<Tabs>
+  <Tab title="Student tabs">
+    ![Image 95](/images/image-95.png)
+
+    One tab per student; sorted by **currentSession[0].createdOn** (most recent first).
+
+    - **DOM:** **`.portal-tab-menus`** ? **`.portal-tab-link`**, **`.portal-tab-content`** ? **`.portal-tab-pane`**
+    - **Data:** **getPortalDetail** (array of student objects; tab label = student name)
+    - **Render:** **setupTabs()** ? creates tab link + pane per student, then **renderStudentTab()** per pane
+  </Tab>
+  <Tab title="Current Program & Items Pending">
+    <img
+      src="/images/image-109.png"
+      alt="Image"
+      title="Image"
+      style={{ width:"48%" }}
+    />
+
+    **Current Program** ? Title and class/summer line (e.g. "PF Labs | Session 1 | Glen Rock").
+
+    - **DOM:** **`.recent-announcement-div.current-class`** ? **`.recent-announcement-title`**, **`.poppins-para.current-class`**
+    - **Data:** **currentSession[0].classDetail** or **currentSession[0].summerProgramDetail**
+    - **Render:** **renderCurrentClassSection()**
+
+    **Items Pending** ? Shown when there are incomplete registration forms or unpaid invoices.
+
+    - **DOM:** **`.items-pending-flex-wrapper`**
+    - **Data:** **currentSession[0].formList** / **formCompletedList**; **invoiceList** (current + **futureSession**) with **!invoice.is_completed**
+    - **Render:** **renderPendingItems()**
+  </Tab>
+  <Tab title="Registration Forms header">
+    ![Image](/images/image-91.png)
+
+    Tag text (e.g. "Needs to be completed" or "All Paid") and accordion for forms/invoices.
+
+    - **DOM:** **`.registration-form-accordian`** ? **`.dashboard-tag-text`**; **`[data-portal="invoice-form-accordian"]`**
+    - **Data:** **currentSession[0].formList**; **invoiceList** (current + future)
+    - **Render:** **renderInvoiceAccordionStyled()**, **renderRegistrationForms()**; tag from **invoiceList** completion
+  </Tab>
+  <Tab title="Calendar">
+    <img
+      src="/images/image-110.png"
+      alt="Image"
+      title="Image"
+      style={{ width:"54%" }}
+    />
+
+    Month view and events; "Add to Google Calendar" below.
+
+    - **DOM:** **`.calendar-white-rounded-div`** (iframe or embed)
+    - **Data:** **currentSession[0].uploadedContent** (item with **label === 'Google Calendar'**)
+    - **Render:** **renderCalendarIframe()**, **renderGoogleCalendar()**
+  </Tab>
+  <Tab title="Class Tools / Quick Links">
+    <img
+      src="/images/image-111.png"
+      alt="Image"
+      title="Image"
+      style={{ width:"26%" }}
+    />
+
+    Zoom links, Schedule a Makeup, General Resources.
+
+    - **DOM:** **`.class-tools-quick-links-div`**
+    - **Data:** **currentSession[0].uploadedContent** (Zoom, makeup, general resources by label)
+    - **Render:** **renderZoomLinks()**, **renderMakeupLinks()**, **renderGeneralResources()**
+  </Tab>
+  <Tab title="Recent Announcements">
+    <img
+      src="/images/image-112.png"
+      alt="Image"
+      title="Image"
+      style={{ width:"66%" }}
+    />
+
+    Up to two recent announcements; unread count in sidebar **`[data-announcements="counts"]`**.
+
+    - **DOM:** **`.recent-announcement-info-div`**, **`.recent-announcement-number`**
+    - **Data:** **getAnnouncement** (filtered by **accountEmail**; unread = **!ann.is_read**)
+    - **Render:** **renderRecentAnnouncements()**
+  </Tab>
+  <Tab title="Invoices Accordion">
+    ![Image](/images/image-113.png)
+
+    Outstanding invoices and registration forms for current + future sessions.
+
+    - **DOM:** **`[data-portal="invoice-form-accordian"]`**, **`.invoice-form-accordian`**
+    - **Data:** **currentSession** + **futureSession**  
+    - **Render:** **renderInvoiceAccordionStyled()**
+  </Tab>
+  <Tab title="Millions Balance">
+    ![Image](/images/image-114.png)
+
+    Student millions count and Transaction Logs; sidebar count from **updateSidebarMillionsCount()**.
+
+    - **DOM:** **`.millions-balance-flex-wrapper`** ? **`.million-price-text`**
+    - **Data:** **getMillionsTransactionData** ? **millions_transactions** (match **studentName**;)
+    - **Render:** **renderMillions()**
+  </Tab>
+  <Tab title="Future Classes">
+    ![Image](/images/image-115.png)
+
+    List of upcoming enrollments (session name, class detail, or "No details available").
+
+    - **DOM:** **`.sem-classes-info-div.future-classes`** ? **`[data-portal="future-classe-list"]`**
+    - **Data:** **currentSession[0].futureSession**
+    - **Render:** **renderFutureClasses()**
+  </Tab>
+  <Tab title="Past Class History">
+    ![Image](/images/image-116.png)
+
+    List of past programs/sessions (sorted desc by **createdOn**).
+
+    - **DOM:** **`.sem-classes-info-div`** (second) ? **`[data-portal="past-classe-list"]`**
+    - **Data:** **currentSession[0].pastSession**
+    - **Render:** **renderPastClasses()**
+  </Tab>
+  <Tab title="Next Recommended Program">
+    See the [returner conversion](/bdc/portal/returner-conversion) page for details.
+
+    Pre-registration and/or recommended level (bundle, registration dates, Enroll Now / Learn More).
+
+    - **DOM:** **`.next-recomm-prog-container`**, **`[data-pre-registration="container"]`**
+    - **Data:** **currentSession[0].recommendedLevel**; **futureSession** (pre-reg dates, bundle)
+    - **Render:** **renderRecommendedLevel()**
+  </Tab>
+</Tabs>
+
 ### Sidebar and main content
 
 - **Dashboard / sidebar menu** — Navigation (Dashboard, Payments History, Announcements, Credits, Referrals) is always present. **Referrals** link is shown only when at least one student has a current session (**checkReferralsAccess**). **Millions** count appears in **[data-millions="sidebarCount"]** (e.g. "1,234M") for the currently selected student; updated on tab switch.
