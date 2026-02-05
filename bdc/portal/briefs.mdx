@@ -16,7 +16,7 @@ There are two Retool pages for managing briefs:
 
 The [Briefs Overview ](https://bergendebate.retool.com/apps/11afbd74-b579-11f0-ad9c-bf8216ce2681/2025%20Phase%20B/Briefs%20Overview%20Page/page1) page displays all purchased briefs details along with **Light** and **Full** purchase counts for the selected topic.
 
-[Managing Topics](https://bergendebate.retool.com/apps/b98e67d2-9528-11f0-a770-eb637de74341/Q3%6025/Manage%20Briefs/page1)  page details are documented in the **Briefs Management** section. Please refer to the doc link - bdc/checkout-systems/briefs/management
+[Managing Topics](https://bergendebate.retool.com/apps/b98e67d2-9528-11f0-a770-eb637de74341/Q3%6025/Manage%20Briefs/page1)  page details are documented in the **Briefs Management** section. Please refer to the doc link - [briefs-management](/bdc/checkout-systems/briefs/management)
 
 <Note>
   TODO: KS, please actually hyperlink. You can link within Mintlify docs by using "/" after you open the hyperlink modal
@@ -57,7 +57,7 @@ Full schema for `topic_payment_details` and post-purchase writes are covered in 
 #### 2. Portal render
 
 1. **JS (BriefManager)** — init and request
-   - File: **portal-briefs.js**; class: **BriefManager**. Parent page must pass `baseUrl` and `memberId`: 
+   - File: **portal-briefs.js**; class: **BriefManager**. Parent page must pass `baseUrl` and `memberId`:
    - Caches DOM references for the dropdown, download link, PDF preview iframe, main briefs panel, and loading spinner.
    - Calls **GET getTopicsDetails?memberId=**.
 2. **API (getTopicsDetails.py)**
