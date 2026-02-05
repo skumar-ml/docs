@@ -62,8 +62,10 @@ The [Payment History](#) page allows parents to view students, track outstanding
 
 **invoice_records** — One document per invoice . Looked up by `invoice_id` in aggregation.
 
+Purpose: stores the invoice’s core details (title, year/session, flags) so other collections can reference it by `invoice_id` and display consistent invoice info.
+
 <Note>
-  TODO: What is the point of this collection? 
+  TODO: What is the point of this collection? \<@SK updated discription, please have a look\>
 </Note>
 
 | Field              | Description                                                  |
@@ -101,6 +103,8 @@ The [Payment History](#) page allows parents to view students, track outstanding
 
 <Warning>
   TODO: Can we remove jotFormUrl and formid? Or at least rename if it now serves a different function
+
+  @SK, we can rename it. We need to make some changes on the backend, forntend and retool code
 </Warning>
 
 **invoice_responses** — One per successful (or attempted) invoice payment. Written by Stripe webhook. Looked up by `invoice_id + paymentId` in aggregation.
