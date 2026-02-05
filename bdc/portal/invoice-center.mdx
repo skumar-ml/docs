@@ -59,13 +59,45 @@ The View Unprocessed Invoice navigate to the[ Invoice Sanity Check ](https://ber
 
 ## Invoice Sanity Check
 
-The [Invoice Sanity Check ](https://bergendebate.retool.com/apps/7e8e1fc8-be05-11f0-9288-ebcb815df819/Student%20Consolidation/Invoice%20Sanity%20Check%20-%20Latest)page allows admins to view, filter, and manage student invoices across locations and levels. It provides a consolidated list of students with invoice-related details, including registration status, supplementary programs, and class information, helping admins review and take action on invoices efficiently.
+The [Invoice Sanity Check ](https://bergendebate.retool.com/apps/7e8e1fc8-be05-11f0-9288-ebcb815df819/Student%20Consolidation/Invoice%20Sanity%20Check%20-%20Latest)page helps admins review student invoices and take corrective actions when needed.
+
+![Image](/images/image-105.png)
+
+### Key Columns Explained
+
+- **Prev Student (Self Reported)**\
+  Indicates whether the parent marked the student as a returning student during registration.
+- **Prev Student (Database)**\
+  Shows whether the system already recognizes the student as a returning student based on existing records.\
+  → A mismatch between these two helps identify data inconsistencies.
+- **Pre-Registrant**\
+  Indicates if the student was pre-registered before the invoice was generated, which may affect pricing or discounts.
+- **Supplementary Program**\
+  Shows whether any additional (upsell) programs are attached to the student’s invoice.
 
 <Note>
   TODO: I think this needs some explanation on how to interpret the different columns (pre-register and bundle). \
   \
-  I also think we need some explanation of how to assign bucket invoices vs. other types of invoices. 
+  I also think we need some explanation of how to assign bucket invoices vs. other types of invoices.
 </Note>
+
+### Actions Column
+
+- **Add Bucket**\
+  Used to assign a **bucket-based invoice** to the student.\
+  This is typically done when:
+  - An invoice was not auto-generated
+  - Pricing needs to be corrected
+  - A student should be linked to a predefined invoice bucket
+- **View Family**\
+  Navigates to the [family details](https://bergendebate.retool.com/apps/e5b38f92-b63c-11f0-af15-3348c57919db/Student%20Consolidation/Family%20Snapshot%20-%20SC?familyId=&urlPaymentId=) page, where admins can review related students and invoices.
+- **Refund**\
+  Redirects to a [refund flow](https://bergendebate.retool.com/apps/634efaf0-b646-11f0-90e3-df4825553f35/Student%20Consolidation/Student%20Registration%20Details%20-%20SpeedUp%20-%20SC?paymentId=691efb543180f1fe2f21408d), allowing admins to process refunds as required.
+
+### Bucket Invoice vs Other Invoices
+
+- **Bucket invoices** are manually assigned using **Add Bucket** and are generally used for structured or predefined pricing scenarios.
+- Other invoices may be auto-generated during registration or checkout based on selected programs and discounts.
 
 ## Invoice Rates
 
@@ -88,7 +120,7 @@ Using Edit Bucket, admins can update existing pricing values. Any changes apply 
 ![Image](/images/image-84.png)
 
 <Note>
-  TODO: Yogesh, I think we need some technical explanation for everything that happens when an admin sends out an invoice. Specifically, there are a lot of database collections for invoices, so can you explain in which ones records are created (or updated)? 
+  TODO: Yogesh, I think we need some technical explanation for everything that happens when an admin sends out an invoice. Specifically, there are a lot of database collections for invoices, so can you explain in which ones records are created (or updated)?
 
   Either that explanation can happen here, or you can try to give it in the Database section of the "Invoices" page.
 </Note>
