@@ -104,7 +104,7 @@ The Dashboard is a single-page experience driven by one main API that **aggregat
 
 **getPortalDetail** reads from multiple collections to build per-student current/future/past session data. Below are the main sources; where full table schemas exist elsewhere, references are given.
 
-**payment_details** — **payment_details** stores records of payments made for regular (academic) classes.\
+**payment_details** — **payment_details** stores records of payments made for Academic classes.\
 The system loads all payments for every child in a family and then checks the current year and session to decide whether each payment belongs to a **current class**, a **future class**, or a **past class**.
 
 Some fields in this data are also used to suggest the **next recommended class or level** for a student.\
@@ -301,7 +301,7 @@ Each visible region is driven by specific DOM containers and **getPortalDetail**
     Outstanding invoices and registration forms for current + future sessions.
 
     - **DOM:** **`[data-portal="invoice-form-accordian"]`**, **`.invoice-form-accordian`**
-    - **Data:** **currentSession** + **futureSession**  
+    - **Data:** **currentSession** + **futureSession**
     - **Render:** **renderInvoiceAccordionStyled()**
   </Tab>
   <Tab title="Millions Balance">
