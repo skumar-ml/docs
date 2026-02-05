@@ -36,19 +36,6 @@ The [Payment History](#) page allows parents to view students, track outstanding
 
 ## Technical
 
-<Note>
-  TODO: Let's reorganize as follows:
-
-  1. DB (current section is good, I think)
-  2. Flows
-     1. Dashboard
-        1. Invoice display + paying the invoice
-        2. Itemized Invoice breakdown
-     1. Payment History Page
-        1. Rendering
-        2. Portal sidebar display
-</Note>
-
 ### **Database**
 
 **invoice_notifications** — Links a payment from `payment_details` to an invoice. (matching `paymentId`).
@@ -60,12 +47,12 @@ The [Payment History](#) page allows parents to view students, track outstanding
 | **emailId**    | Email identifier.                  |
 | **created_on** | When the notification was created. |
 
-**invoice_records** — One document per invoice . Looked up by `invoice_id` in aggregation.
-
-Purpose: stores the invoice’s core details (title, year/session, flags) so other collections can reference it by `invoice_id` and display consistent invoice info.
+**invoice_records** — One document per invoice . Looked up by `invoice_id` in aggregation. <u>Purpose:</u> stores the invoice’s core details (title, year/session, flags) so other collections can reference it by `invoice_id` and display consistent invoice info.
 
 <Note>
   TODO: What is the point of this collection? \<@SK updated discription, please have a look\>
+
+  TODO: We should describe how the bucketed invoices work
 </Note>
 
 | Field              | Description                                                  |
@@ -180,7 +167,7 @@ The main portal Dashboard uses `getPortalDetail` and shows invoices in an accord
 ##### **Itemized Invoice breakdown**
 
 - **Breakdown** for each invoice is computed from `invoice_rates` (by year and session). Line items include: Semester Tuition, New Student Fee (if not returner), Sibling Discount, Early Bird discount, Deposit.
-- **Breakdown modal:** When the user clicks “Invoice Breakdown”, a modal opens with the line items and remaining balance. 
+- **Breakdown modal:** When the user clicks “Invoice Breakdown”, a modal opens with the line items and remaining balance.
 
 ### Payment History Page
 
@@ -198,22 +185,13 @@ The main portal Dashboard uses `getPortalDetail` and shows invoices in an accord
 
 This Lambda generates an **official PDF receipt** for a Bergen Debate Club purchase and returns a **downloadable link** to the user.
 
-**What triggers it**
+**Trigerred by: **A frontend request (via API Gateway), when user clicks **“Download Receipt”** for a student.
 
-- A frontend request (via API Gateway)
-- User clicks **“Download Receipt”** for a student or family
+**How it works:**
 
-**What it figures out internally**
-
-1. **Identifies the family**
-   - Starts from a parent `memberId`
-   - Finds all related family members
-   - Ensures receipts include applicable student and payments
-2. **Collects all relevant payments**
-   - Looks across multiple payment types:
-     - Academic classes
-     - Summer programs
-     - Topic add-ons / bundled payments
+1. **Identifies the family: **starting from a parent `memberId`, finds all related family members to ensures receipts include selected student and payments
+2. **Collects all relevant payments:**
+   - Looks across multiple payment types: (1) academic classes, (2) summer programs, (3) topic add-ons / bundled payments
    - Groups bundled payments so **one purchase = one receipt section**
    - Filters out refunded payments
 3. **Resolves what was purchased**
@@ -221,40 +199,20 @@ This Lambda generates an **official PDF receipt** for a Bergen Debate Club purch
      - Program/session it belongs to (Fall, Spring, Summer, etc.)
      - Student the purchase applies to
      - Academic year it belongs to
-4. **Applies pricing rules**
+4. **Applies pricing rules to calculate final program cost**
    - Calculates final program cost
-   - Applies:
-     - Discounts (early bird, sibling, promo codes)
-     - Credits and adjustments
-   - Handles:
-     - Deposits
-     - Bucket vs non-bucket invoices
+     - Applies discounts (early bird, sibling, promo codes) & credits/adjustments
+     - Handles deposits & bucket vs non-bucket invoices
    - Ensures totals never go negative
-5. **Builds receipt data**
-   - For each purchase, it prepares:
-     - Student name
-     - Program names
-     - Line-item breakdowns
-     - Credits and discounts
-     - Final paid total
-     - Purchase date
-     - Official footer information
-   - This data is **structured**, not just formatted text.
 6. **Generates a multi-page PDF**
    - Uses a custom PDF layout
    - Adds:
-     - Club branding/logo
      - One page per purchase group
      - Clean totals and breakdowns
    - Handles multiple students and purchases gracefully
 7. **Stores and returns the receipt**
-   - Uploads the PDF to S3
-   - Returns a public URL to the frontend
+   - Uploads the PDF to S3, returning the public URL to the frontend
    - Frontend displays or downloads the receipt
-
-<Note>
-  TODO: Can you explain at a high-level what information is needed for `generateItemizedInvoice`.  Especially, can you explain this line from above: " Itemized PDFs use the same breakdown data plus `invoice_responses` after payment."
-</Note>
 
 ##### **Portal sidebar display**
 
