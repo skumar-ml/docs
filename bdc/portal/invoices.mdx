@@ -196,6 +196,40 @@ The main portal Dashboard uses `getPortalDetail` and shows invoices in an accord
 
 **Itemized Invoice PDF**
 
+At a high level, `generateItemizedInvoice` needs:
+
+1. **Family & school year**
+   - **memberId**: identifies the parent/family requesting the receipt.
+   - **yearId**: specifies the year, so only payments from that year are included.
+   - Together, these decide **who** the invoice is for and **which year** it covers.
+2. **All family members**
+   - Fetch all `memberId`s under the same `familyId`.
+   - Ensures the receipt includes payments for **every student in the family**, not just one.
+3. **Payments for the selected year**
+   - Pull all **non‑refunded** payments for those family members from:
+     - `payment_details`
+     - `summer_payment_details`
+     - `topic_payment_details`
+   - Group payments into **purchases**, where:
+     - one main payment is treated as the **parent**, and
+     - any related bundle/add‑on payments are treated as **children**.
+   - Each group represents a **single logical purchase** on the invoice.
+4. **Student & program information**
+   - Link each payment to:
+     - the correct **student/member** record, and
+     - the related **session, program, or semester**.
+   - Allows the PDF to clearly state:
+     - which **student** the charge applies to, and
+     - which **program/term** the payment was for.
+5. **Itemized amounts per purchase**
+   - For each grouped purchase, calculate and display:
+     - tuition
+     - fees
+     - discounts
+     - credits
+     - deposits
+   - These values are used to produce an **itemized total per purchase**.
+
 <Note>
   TODO: Can you explain at a high-level what information is needed for `generateItemizedInvoice`.  Especially, can you explain this line from above: " Itemized PDFs use the same breakdown data plus `invoice_responses` after payment."
 </Note>
