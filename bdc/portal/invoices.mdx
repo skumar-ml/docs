@@ -4,15 +4,7 @@ title: "Invoices"
 
 ## Non-Technical
 
-TODO: What users get to see & how they can use Invoices page.
-
 The [Payment History](#) page allows parents to view students, track outstanding invoices, and complete pending payments.
-
-<Note>
-  TODO: KS add a screenshot of the page with outstanding invoices & completed enrollments.
-
-  SK: Added.
-</Note>
 
 ### **How to Use**
 
@@ -40,9 +32,7 @@ The [Payment History](#) page allows parents to view students, track outstanding
   - A historical view of completed enrollments by year
   - Downloadable **PDF receipts** for each enrollment
 
-## Admins (Retool)
-
-TODO: How can admin manage this on Retool. This section will probably be a little long, since we have a lot of invoice functionality. Explain bucket system, and how we handle pre-reg / bundled people.
+**TODO: SK insert hyperlink to Retool page once finalized**
 
 ## Technical
 
@@ -59,9 +49,9 @@ TODO: How can admin manage this on Retool. This section will probably be a littl
         2. Portal sidebar display
 </Note>
 
-### **Where the data lives (DB)**
+### **Database**
 
-**invoice_notifications** — Links a payment to an invoice. (match `paymentId`).
+**invoice_notifications** — Links a payment from `payment_details` to an invoice. (matching `paymentId`).
 
 | Field          | Description                        |
 | :------------- | :--------------------------------- |
@@ -71,6 +61,10 @@ TODO: How can admin manage this on Retool. This section will probably be a littl
 | **created_on** | When the notification was created. |
 
 **invoice_records** — One document per invoice . Looked up by `invoice_id` in aggregation.
+
+<Note>
+  TODO: What is the point of this collection? 
+</Note>
 
 | Field              | Description                                                  |
 | :----------------- | :----------------------------------------------------------- |
@@ -105,6 +99,10 @@ TODO: How can admin manage this on Retool. This section will probably be a littl
 | **jotFormUrl**  | URL for form-based payment.   |
 | **formid**      | Form identifier.              |
 
+<Warning>
+  TODO: Can we remove jotFormUrl and formid? Or at least rename if it now serves a different function
+</Warning>
+
 **invoice_responses** — One per successful (or attempted) invoice payment. Written by Stripe webhook. Looked up by `invoice_id + paymentId` in aggregation.
 
 | Field                                                     | Description                               |
@@ -130,18 +128,16 @@ TODO: How can admin manage this on Retool. This section will probably be a littl
 | **status**         | Checkout status.         |
 | **payment_intent** | Stripe payment intent.   |
 
-### Flows
+### Dashboard
 
-#### 1. Dashboard
+The main portal Dashboard uses `getPortalDetail` and shows invoices in an accordion for each student tab.
 
-The main portal Dashboard uses **getPortalDetail** and shows invoices in an accordion for each student tab.
-
-##### **1.1 Invoice display + paying the invoice**
+##### **Invoice display + paying the invoice**
 
 1. **JS — init and request**
-   - Portal (portal_new_ui.js) loads with **apiBaseURL** and **memberId**. Calls **getPortalDetail**.
+   - Portal (`portal_new_ui.js`) loads with `apiBaseURL` and `memberId`. Calls `getPortalDetail`.
 2. **API**
-   - **getPortalDetail** returns per-student data with **currentSession**, **futureSession**, and **pastSession**. Each session has an **invoiceList** (and **breakDownList** per invoice). Invoice data comes from **invoice_notifications** joined with **invoice_records**, **invoice_payment_link**, **invoice_responses**, and **stripe_checkout_customer**.
+   - `getPortalDetail` returns per-student data with `currentSession`, `futureSession`, and `pastSession`. Each session has an `invoiceList` (and `breakDownList` per invoice). Invoice data comes from `invoice_notifications` joined with `invoice_records`, `invoice_payment_link`, `invoice_responses`, and `stripe_checkout_customer`.
    - **Returns data (invoice-specific)**
 
      **Student data object** (per student):
@@ -160,41 +156,47 @@ The main portal Dashboard uses **getPortalDetail** and shows invoices in an acco
      | **createdOn**   | Session creation date (used for sorting students and sessions).              |
      | **currentYear** | Year ID (used for Payment history rows and itemized PDF by year).            |
 
-     **Invoice object** (each item in **invoiceList**):
+     **Invoice object** (each item in `invoiceList`):
 
      | Field              | Description                                                                                                                                                                                                                                              |
      | :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-     | **invoice_id**     | Invoice identifier (links to **invoice_records**.\_id).                                                                                                                                                                                                  |
-     | **invoiceName**    | Display name (from **invoice_records**.title).                                                                                                                                                                                                           |
-     | **is_completed**   | `true` if one **invoice_response** exists for this invoice + paymentId; else unpaid/pending.                                                                                                                                                             |
+     | **invoice_id**     | Invoice identifier (links to `invoice_records._id`).                                                                                                                                                                                                     |
+     | **invoiceName**    | Display name (from `invoice_records.title`).                                                                                                                                                                                                             |
+     | **is_completed**   | `true` if one `invoice_response` exists for this invoice + paymentId; else unpaid/pending.                                                                                                                                                               |
      | **breakDownList**  | Object of line-item labels to amounts (see **Itemized invoice logic**). Keys include **Semester Tuition**, **New Student Fee**, **Sibling Discount**, **Early Bird**, **Deposit**. Used for Invoice Breakdown modal and to show/hide the breakdown link. |
-     | **jotFormUrlLink** | Array of payment options: **paymentLinkId**, **title**, **amount**, **paymentType** (e.g. `card`, `us_bank_account`). Used to render Pay                                                                                                                 |
+     | **jotFormUrlLink** | Array of payment options: `paymentLinkId`, `title`, `amount`, `paymentType` (e.g. `card`, `us_bank_account`). Used to render Pay                                                                                                                         |
      | **status**         | Invoice/payment status.                                                                                                                                                                                                                                  |
      | **paymentId**      | Payment identifier.                                                                                                                                                                                                                                      |
      | **created_on**     | When the invoice notification was created (used for sorting outstanding invoices).                                                                                                                                                                       |
 3. **JS — after response**
    - Combine **current session invoices** (first current session) and **future session invoices** only.
    - Show the invoice accordion: for each invoice show name, “Invoice Breakdown” link, and Pay buttons (Bank Transfer, Credit/Debit Card) for unpaid ones. Show “Needs to be completed” or “All Paid” and “X of Y invoices complete”.
-   - When the user clicks Pay (Bank Transfer, Credit/Debit Card) , call **createCheckoutUrl** and redirect to Stripe.
+   - When the user clicks Pay (Bank Transfer, Credit/Debit Card) , call `createCheckoutUrl` and redirect to Stripe.
 
-##### 1.2 Itemized Invoice breakdown
+##### **Itemized Invoice breakdown**
 
-- **Breakdown** for each invoice is computed from **invoice_rates** (by year and session). Line items include: Semester Tuition, New Student Fee (if not returner), Sibling Discount, Early Bird discount, Deposit.
-- **Breakdown modal:** When the user clicks “Invoice Breakdown”, a modal opens with the line items and remaining balance. Itemized PDFs use the same breakdown data plus **invoice_responses** after payment.
+- **Breakdown** for each invoice is computed from `invoice_rates` (by year and session). Line items include: Semester Tuition, New Student Fee (if not returner), Sibling Discount, Early Bird discount, Deposit.
+- **Breakdown modal:** When the user clicks “Invoice Breakdown”, a modal opens with the line items and remaining balance. Itemized PDFs use the same breakdown data plus `invoice_responses` after payment.
 
-#### 2. Payment History Page
+### Payment History Page
 
-##### 2.1 Rendering
+##### **Rendering**
 
 1. **JS — init and request**
-   - Payment History page (payment_history.js, class **PaymentHistory**) loads with **apiBaseURL** and **memberId**. Calls **getPortalDetail**.
+   - Payment History page (`payment_history.js`, class `PaymentHistory`) loads with `apiBaseURL` and `memberId`. Calls `getPortalDetail`.
 2. **API**
-   - **getPortalDetail** returns the same per-student data (currentSession, futureSession, pastSession; each session has invoiceList and breakDownList).
+   - `getPortalDetail` (described in detail above) returns the same per-student data (`currentSession`, `futureSession`, `pastSession`; each session has `invoiceList` and `breakDownList`).
 3. **JS — after response**
    - If there is no data: show a “no records” message and stop.
-   - If there is data: build one tab per student. Fill each tab with **Outstanding invoices** (invoices not completed; user can pay from here) and **Payment history** (completed enrollments from current and past sessions, by year; user can download an itemized PDF per session via **generateItemizedInvoice**).
+   - If there is data: build one tab per student. Fill each tab with **Outstanding invoices** (invoices not completed; user can pay from here) and **Payment history** (completed enrollments from current and past sessions, by year; user can download an itemized PDF per session via `generateItemizedInvoice`).
 
-##### 2.2 Portal sidebar display
+**Itemized Invoice PDF**
+
+<Note>
+  TODO: Can you explain at a high-level what information is needed for `generateItemizedInvoice`.  Especially, can you explain this line from above: " Itemized PDFs use the same breakdown data plus `invoice_responses` after payment."
+</Note>
+
+##### **Portal sidebar display**
 
 - **When there is portal data:** The page shows student tabs, Outstanding Invoices, and Completed Enrollments; the first student is selected by default.
 - **When there is no data:** The page shows a “no records” message and hides the main content.
