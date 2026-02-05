@@ -180,7 +180,7 @@ The main portal Dashboard uses `getPortalDetail` and shows invoices in an accord
 ##### **Itemized Invoice breakdown**
 
 - **Breakdown** for each invoice is computed from `invoice_rates` (by year and session). Line items include: Semester Tuition, New Student Fee (if not returner), Sibling Discount, Early Bird discount, Deposit.
-- **Breakdown modal:** When the user clicks “Invoice Breakdown”, a modal opens with the line items and remaining balance. Itemized PDFs use the same breakdown data plus `invoice_responses` after payment.
+- **Breakdown modal:** When the user clicks “Invoice Breakdown”, a modal opens with the line items and remaining balance. 
 
 ### Payment History Page
 
@@ -196,39 +196,61 @@ The main portal Dashboard uses `getPortalDetail` and shows invoices in an accord
 
 **Itemized Invoice PDF**
 
-At a high level, `generateItemizedInvoice` needs:
+This Lambda generates an **official PDF receipt** for a Bergen Debate Club purchase and returns a **downloadable link** to the user.
 
-1. **Family & school year**
-   - **memberId**: identifies the parent/family requesting the receipt.
-   - **yearId**: specifies the year, so only payments from that year are included.
-   - Together, these decide **who** the invoice is for and **which year** it covers.
-2. **All family members**
-   - Fetch all `memberId`s under the same `familyId`.
-   - Ensures the receipt includes payments for **every student in the family**, not just one.
-3. **Payments for the selected year**
-   - Pull all **non‑refunded** payments for those family members from:
-     - `payment_details`
-     - `summer_payment_details`
-     - `topic_payment_details`
-   - Group payments into **purchases**, where:
-     - one main payment is treated as the **parent**, and
-     - any related bundle/add‑on payments are treated as **children**.
-   - Each group represents a **single logical purchase** on the invoice.
-4. **Student & program information**
-   - Link each payment to:
-     - the correct **student/member** record, and
-     - the related **session, program, or semester**.
-   - Allows the PDF to clearly state:
-     - which **student** the charge applies to, and
-     - which **program/term** the payment was for.
-5. **Itemized amounts per purchase**
-   - For each grouped purchase, calculate and display:
-     - tuition
-     - fees
-     - discounts
-     - credits
-     - deposits
-   - These values are used to produce an **itemized total per purchase**.
+**What triggers it**
+
+- A frontend request (via API Gateway)
+- User clicks **“Download Receipt”** for a student or family
+
+**What it figures out internally**
+
+1. **Identifies the family**
+   - Starts from a parent `memberId`
+   - Finds all related family members
+   - Ensures receipts include applicable student and payments
+2. **Collects all relevant payments**
+   - Looks across multiple payment types:
+     - Academic classes
+     - Summer programs
+     - Topic add-ons / bundled payments
+   - Groups bundled payments so **one purchase = one receipt section**
+   - Filters out refunded payments
+3. **Resolves what was purchased**
+   - For each payment, it determines:
+     - Program/session it belongs to (Fall, Spring, Summer, etc.)
+     - Student the purchase applies to
+     - Academic year it belongs to
+4. **Applies pricing rules**
+   - Calculates final program cost
+   - Applies:
+     - Discounts (early bird, sibling, promo codes)
+     - Credits and adjustments
+   - Handles:
+     - Deposits
+     - Bucket vs non-bucket invoices
+   - Ensures totals never go negative
+5. **Builds receipt data**
+   - For each purchase, it prepares:
+     - Student name
+     - Program names
+     - Line-item breakdowns
+     - Credits and discounts
+     - Final paid total
+     - Purchase date
+     - Official footer information
+   - This data is **structured**, not just formatted text.
+6. **Generates a multi-page PDF**
+   - Uses a custom PDF layout
+   - Adds:
+     - Club branding/logo
+     - One page per purchase group
+     - Clean totals and breakdowns
+   - Handles multiple students and purchases gracefully
+7. **Stores and returns the receipt**
+   - Uploads the PDF to S3
+   - Returns a public URL to the frontend
+   - Frontend displays or downloads the receipt
 
 <Note>
   TODO: Can you explain at a high-level what information is needed for `generateItemizedInvoice`.  Especially, can you explain this line from above: " Itemized PDFs use the same breakdown data plus `invoice_responses` after payment."
