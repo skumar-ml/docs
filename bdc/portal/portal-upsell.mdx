@@ -4,14 +4,12 @@ title: "Portal Upsell"
 
 ## Non-Technical
 
-TODO: What users get to see & their checkout flow
-
 ### Portal Display
 
 <Columns cols={2}>
   <Card title="Pre-Registration Info">
     - Shown in the portal to promote **early registration** for an upcoming session.
-    - Displays the **session name** (e.g., _Fall 2026_), **discounted price** (with original hprice crossed out), and **key benefits** such as early-bird pricing, class priority, and price lock.
+    - Displays the **session name** (e.g., _Fall 2026_), **discounted price** (with original price crossed out)
     - The **Buy Now** button is initially disabled and becomes enabled when the user selects the semester via checkbox; clicking the enabled button opens a popup to proceed with the purchase flow.
   </Card>
   <Card title="Pre-Registration View">
@@ -21,7 +19,7 @@ TODO: What users get to see & their checkout flow
 
 ## Buy Now Modal
 
-The purchase modal opens when **Buy Now** is clicked. The user must selects the student to bundle. Clicking **Pay Now** redirects to Stripe for payment.
+The purchase modal opens when **Buy Now** is clicked. The user must select the student to bundle. Clicking **Pay Now** redirects to Stripe for payment.
 
 ![Image](/images/image-58.png)
 
@@ -37,11 +35,17 @@ To add content, the admin clicks **Add Content**, selects the **necessary detail
 
 Admins can also **edit**, **copy**, **delete**, or **enable/disable** resources to control their visibility in the portal.
 
+<Note>
+  TODO: KS, this is incorrect for the portal upsell. Portal upsells are managed [via this Retool page](https://bergendebate.retool.com/apps/84c8d61e-50a3-11f0-bd6f-77e684555d46/2025%20Phase%20B/upsell%20Program%20Mapping/page1). \
+  \
+  This section is good, but needs to go on the Dashboard page (for how admin manage portal content)
+</Note>
+
 ## Technical
 
-### **Where the data lives (DB)**
+### **Database**
 
-**upsell_program_mapping** — One document per year/session. Tells **getUpsellProgramV2** which programs to return: **portal_program_ids** when `type=portal` (programs shown in the portal); **upsell_program_ids** for checkout. The API looks up each ID in **upsell_program** to build the response.
+**upsell_program_mapping** — One document per year/session. Tells `getUpsellProgramV2` which programs to return: `portal_program_ids` when `type=portal` (programs shown in the portal). The API looks up each ID in `upsell_program` to build the response.
 
 | Field                  | Description                                                                                     |
 | :--------------------- | :---------------------------------------------------------------------------------------------- |
@@ -55,7 +59,7 @@ Admins can also **edit**, **copy**, **delete**, or **enable/disable** resources 
 | **desc**               | Optional description.                                                                           |
 | **disc_amount**        | Optional discount amount.                                                                       |
 
-**upsell_program** — One document per upsell program. Stores the program name, pricing (amount, disc_amount, portal_amount, portal_disc_amount), label, session/year, and bundle type. Looked up by **upsellProgramId** when building the **getUpsellProgramV2** response.
+**upsell_program** — One document per upsell program. Stores the program name, pricing (`amount`, `disc_amount`, `portal_amount`, `portal_disc_amount`), `label`, session/year, and bundle type. Looked up by `upsellProgramId` when building the **getUpsellProgramV2** response.
 
 | Field                  | Description                                                         |
 | :--------------------- | :------------------------------------------------------------------ |
@@ -76,11 +80,11 @@ Admins can also **edit**, **copy**, **delete**, or **enable/disable** resources 
 ### **Flow**
 
 1. **JS (DisplaySuppProgram)** — init and request
-   - File: `portal_upsell_program.js`; class: `DisplaySuppProgram`. The page that hosts the supplementary programs section must instantiate it with a `memberData` object that includes: `baseUrl` (API base URL), `memberId` (current member ID), `site_url` (site base URL, e.g. for success/cancel URLs).
-   - The class hides all bundle section elements initially, then calls `displaySupplementaryProgram()`, which fetches **getUpsellProgramV2?type=portal** and stores the result.
+   - File: `portal_upsell_program.js`; class: `DisplaySuppProgram`. The page that hosts the supplementary programs section must instantiate it with a `memberData` object that includes: `baseUrl` (API base URL), `memberId` (current member ID), `site_url` (site base URL, e.g. for Stripe success/cancel URLs).
+   - The class hides all bundle section elements initially, then calls `displaySupplementaryProgram()`, which fetches `getUpsellProgramV2?type=portal` and stores the result.
 2. **API (getUpsellProgramV2)**
-   - **GET getUpsellProgramV2?type=portal**. When `type=portal` is present, the API reads **upsell_program_mapping** for the current year and session and uses **portal_program_ids** (instead of **upsell_program_ids**, which is used for checkout) to decide which programs to return.
-   - The response is an array of objects, each with: **upsellPrograms** (array of programs with `label`, `portal_amount`, `portal_disc_amount`, `sessionId`, `yearId`, `upsellProgramId`, `desc`), **yearId**, **sessionId** (of current year/session).
+   - **GET getUpsellProgramV2?type=portal**. When `type=portal` is present, the API reads `upsell_program_mapping` for the current year and session and uses `portal_program_ids` to decide which programs to return.
+   - The response is an array of objects, each with: `upsellPrograms` (array of programs with `label`, `portal_amount`, `portal_disc_amount`, `sessionId`, `yearId`, `upsellProgramId`, `desc`), `yearId`, `sessionId` (of current year/session).
 3. **JS (DisplaySuppProgram)** — after response
    - If the response has items, the code calls `createBundleProgram()`, which:
    - Clears `[data-upSell='card-container']` and `[data-upSell='modal-card-container']`
@@ -88,10 +92,13 @@ Admins can also **edit**, **copy**, **delete**, or **enable/disable** resources 
    - For each program, appends a card from `createBundleCard()` to the card container and a card from `createModelBundleCard()` to the modal container
    - **Academic-only:** The API returns programs for both the current session (`portal_program_ids`) and summer (sessionId 2). The frontend keeps only items where `sessionId !== 2`, so Summer is excluded and only academic-year sessions (e.g. Fall, Winter/Spring) are used.
 
+     <Note>
+       TODO: Yogesh, did we confirm the academic-only filtering is correct? I remember us offering summer upsells..
+     </Note>
      ![Image 73](/images/image-73.png)
    - **Future-session programs:** For each of those academic sessions, the code filters `upsellPrograms` to programs whose `sessionId` is **not** the current session. So only programs for a different (future) term are shown—e.g. if the current session is Fall, only Winter/Spring bundles appear; if current is Winter/Spring, only the next Fall appears.
 
-     For example, please take a look at the response below, sessionId: 1 (Winter/Spring). This is the current session. First, we filter the sessionId to the upsell program array object. After that, we render the upsell program data.
+     For example, please take a look at the response below, `sessionId`: 1 (Winter/Spring). This is the current session. First, we filter the `sessionId` to the upsell program array object. After that, we render the upsell program data.
 
      <Accordion title="Example API Response">
        ```
@@ -155,4 +162,4 @@ Admins can also **edit**, **copy**, **delete**, or **enable/disable** resources 
      | ------------------------------ | ------------------------------ |
      | ![Image](/images/image-74.png) | ![Image](/images/image-75.png) |
      | ![Image](/images/image-76.png) | ![Image](/images/image-77.png) |
-     - **Checkout flow**: When the user clicks the Pay Now button, `handlePaymentEvents() `ensures a student is selected from the buy-now modal dropdown (the value is used as paymentId, the existing payment record the bundle will be attached to). It then calls `initSupplementaryPayment(paymentId, upsellProgramIds, programName, amount)`.
+     - **Checkout flow**: When the user clicks the Pay Now button, `handlePaymentEvents() `ensures a student is selected from the buy-now modal dropdown (the value is used to get the `paymentId` of the existing payment record the bundle will be attached to). It then calls `initSupplementaryPayment(paymentId, upsellProgramIds, programName, amount)`.
