@@ -1,5 +1,5 @@
 ---
-title: "Invoices"
+title: "Invoices on Portal"
 ---
 
 ## Non-Technical
@@ -185,11 +185,11 @@ The main portal Dashboard uses `getPortalDetail` and shows invoices in an accord
 
 This Lambda generates an **official PDF receipt** for a Bergen Debate Club purchase and returns a **downloadable link** to the user.
 
-**Trigerred by: **A frontend request (via API Gateway), when user clicks **“Download Receipt”** for a student.
+\*\*Trigerred by: \*\*A frontend request (via API Gateway), when user clicks **“Download Receipt”** for a student.
 
 **How it works:**
 
-1. **Identifies the family: **starting from a parent `memberId`, finds all related family members to ensures receipts include selected student and payments
+1. \*\*Identifies the family: \*\*starting from a parent `memberId`, finds all related family members to ensures receipts include selected student and payments
 2. **Collects all relevant payments:**
    - Looks across multiple payment types: (1) academic classes, (2) summer programs, (3) topic add-ons / bundled payments
    - Groups bundled payments so **one purchase = one receipt section**

@@ -97,13 +97,18 @@
             "group": "Customer Portal",
             "icon": "person-to-portal",
             "pages": [
+              {
+                "group": "Invoices",
+                "pages": [
+                  "bdc/portal/invoices",
+                  "bdc/portal/invoice-center"
+                ]
+              },
               "bdc/portal/overview",
               "bdc/portal/dashboard",
               "bdc/portal/millions",
               "bdc/portal/credit-center",
               "bdc/portal/referrals-copied-1",
-              "bdc/portal/invoices",
-              "bdc/portal/invoice-center",
               "bdc/portal/portal-upsell",
               "bdc/portal/returner-conversion",
               "bdc/portal/briefs",
