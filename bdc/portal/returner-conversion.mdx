@@ -4,12 +4,6 @@ title: "Returner Conversion + Pre-Registration"
 
 ## Non-Technical
 
-TODO: What users get to see for both returner conversion & pre-registration. I think there's a few different states here, so you can cover all of them
-
-1. Returner conversion viewS
-2. Returner conversion + pre-registration (before AND after pre-registration period)
-3. Only Pre-registration (?)
-
 ### Returner Conversion
 
 Once a student’s next level recommendation is published, the **“Next Recommended Program”** section becomes visible on the portal, showing the next level and semester with **Register Now** and **Learn More** options. If it is not published, this section is not visible.
@@ -26,11 +20,17 @@ This section displays the **current pre-registration status** for returning stud
 
 ![Image](/images/image-51.png)
 
-#### During the Pre-Registration Period
-
 When pre-registration is active **and** the next recommended program is published, users see a pre-registration banner along with the **Next Recommended Program** section. The banner highlights that registration is open and shows a countdown, while the recommended program displays the next level and term with **Register Now** and **Learn More** options.
 
 Clicking **Register Now** takes the user directly to the Stripe payment page. Clicking **Learn More** opens the Next Recommended Program popup with program details.
+
+<Note>
+  TODO: This sentence must be inaccurate "Clicking **Register Now** takes the user directly to the Stripe payment page".
+
+  The user is taken to class location & time selection.
+
+  Please ensure you are checking for accuracy.
+</Note>
 
 ### After the Pre-Registration Period
 
@@ -39,10 +39,10 @@ Once pre-registration ends, the banner updates to reflect the new registration s
 ### Next Recommended Program Popup
 
 <Columns cols={2}>
-  <Card title="Next Recommended Program Info" icon="sparkles">
+  <Card title="Next Recommended Program Info">
     Highlights the next recommended program along with available offers, expiry countdown, and guidance on the next step.
   </Card>
-  <Card title="Next Recommended Program Banner " icon="sparkles">
+  <Card title="Next Recommended Program Banner ">
     ![Image 50](/images/image-50.png)
   </Card>
 </Columns>
@@ -56,19 +56,33 @@ TODO: How can admin returner conversion on Retool. Pre-Reg management was alread
 The [Returner Conversion](https://bergendebate.retool.com/apps/385a97e8-695f-11f0-94e7-d3db21f5beef/Q2%6025/Manage%20Recommended%20Level) page helps admins manage recommendations for **returning students**, meaning students who have previously enrolled and are eligible to continue to the next level.\
 Admins can review and update the recommended next level , grade etc., apply filters to find specific students, and publish or unpublish recommendations to control what appears on the user portal.
 
+<Tip>
+  **Publishing** the recommended level means that the user sees it on their portal. This should **only be done after the launch** of the registration cycle (or pre-registration).
+</Tip>
+
 ![Image](/images/image-43.png)
 
 ### **Pre-Reg Management**
 
-Please refer to the Pre-Registration Management details from the document URL: bdc/checkout-systems/semester/pre-reg-system.
+**For pre-registration management, please refer **[**to this document**](/bdc/checkout-systems/semester/pre-reg-system)**.**
 
 ## Technical
 
-### **Where the data lives (DB)**
+### **Database**
 
 Returner conversion and pre-registration use data from **getPortalDetails**: **recommendedLevel** (from the recommendation program / class_level, when published) and **futureSession** (from payment/upsell data). The API returns these shapes per student.
 
+<Note>
+  TODO: We should be starting with the database. I think the above text ^^ can be deleted
+</Note>
+
 **recommendedLevel** (returned when the student's recommendation has `publish == True` for the current session):
+
+<Note>
+  TODO: I think this is explained poorly. We need to explain how returner conversion is managed in the payment_details collection (and explain the fields). \
+  \
+  Please re-write this section as you've done for other pages.
+</Note>
 
 | Field                     | Description                                      |
 | :------------------------ | :----------------------------------------------- |
@@ -89,33 +103,21 @@ Returner conversion and pre-registration use data from **getPortalDetails**: **r
 | **earlyBirdDeadlineDate** | Early-bird deadline.                                                                                            |
 | **classId**               | Class id once converted; **empty** when bundle not yet converted (used for "has bundle" / pre-reg eligibility). |
 
-<Note>
-  TODO: This section is messy right now:
-
-  1. Explain conditions (e.g., For each student in the family & the **current** session, if the student's recommendation (in the `members` collection) has `publish==True`) **Removed members text and updated the description**
-  2. Explain the return, in some detail. Might want to use a table **Updated Description**
-</Note>
-
 ### **Flow**
 
 1. **JS (Portal)** — init and request
-   - File: `portal_new_ui.js`; class: **Portal**. Portal fetches **getPortalDetails** once; then, for each student tab it renders that student's data, including the "Next Recommended Program" section and pre-registration block.
+   - File: `portal_new_ui.js`; class: `Portal`, which fetches `getPortalDetails` once.
 2. **API (getPortalDetails/)**
-   - Returns all student records for the family, including current recommendation program data. For each student in the family and the **current** session, if the student's recommendation has **publish == True**, the API returns **recommendedLevel** (see table above). Also returns **futureSession** per student (from payment/upsell data; see table above). Used for pre-reg timing and "has bundle" logic.
+   - Returns all student records for the family, including current recommendation program data. For each student in the family and the **current** session, if the student's recommendation has `publish == True`, the API returns `recommendedLevel` (see table above). Also returns `futureSession` per student (from payment/upsell data; see table above). Used for pre-reg timing and "has bundle" logic.
 3. **JS (Portal)** — after response
-   - **Visibility:** Whether the user sees anything in this area depends on (1) the API returned a **recommendedLevel** for that student (backend only sends it when the recommendation is published), and (2) whether the student has a future-session **bundle** (from upsell: a future session with **no classId**).
+
+   <Note>
+     TODO: I think we should split this page based on the different conditions. It's kind of confusing right now, since all the conditions are mixed. 
+   </Note>
+   - **Visibility:** Whether the user sees anything in this area depends on (1) the API returned a `recommendedLevel` for that student (backend only sends it when the recommendation is published), and (2) whether the student has a future-session **bundle** (from upsell: a future session with **no classId**).
    - **Time windows:** The code checks the current date against two time windows:
      - **Pre-registration window** (from **futureSession**): between `pre-registrationDates.preRegStartDate` and `programDates.startDate`. When the user is in this window and has a bundle, the pre-reg block is shown (e.g. "Register Now" only).
      - **Registration window** (from **recommendedLevel**): between `pre-registrationDates.preRegStartDate` and `registrationEndDate`. When the user is in this window and has a published recommendation, the "Next Recommended Program" line and both "Register Now" and "Learn More" can show.
    - **Buttons:** During pre-reg only (bundle + in pre-reg window): **Register Now** only. During registration (published recommendation + in registration window): both **Register Now** and **Learn More**. If both pre-reg and registration are active, both buttons can show; otherwise both are hidden and the section is hidden.
    - **Register Now:** Clicking **Register Now** goes to a URL set from **recommendedLevel** and the current registration window. When returner conversion is active and today is within the registration window: link is `https://www.bergendebate.com/programs/{levelUrl}` (e.g. `programs/level-3b` for Level 3B); user is sent to that program/level page in a new tab. Otherwise: link is `https://www.bergendebate.com/classes-overview`; user is sent to the classes overview in a new tab.
    - **Learn More:** Clicking **Learn More** opens the Next Recommended Program modal. The modal shows: title "Next Step for [student name]"; recommended line "Recommended: [session year | level]"; early-bird countdown if **recommendedLevel** has `earlyBirdDeadlineDate`; an Enroll Now button (same link logic as Register Now); and "Why This Program" copy. Closing the modal (backdrop or close control) hides it; the modal does not navigate the page.
-
-<Note>
-  TODO: Rewrite to explain the following:
-
-  1. Conditions can be simplified -- obviously, publish is true. So non-empty `recommendedLevel` is really the only condition, right . **YES, publish  is true or false for the backed logic**
-  2. Instead of just having independent bullet points, explain how they are connected. So for example, you reference **updateButtonVisibility**
-     1. Explain what it does, and a little of how it works.
-     2. Alternatively, you don't even need to reference minor methods. You can just explain the functionality that executes. This makes the docs easier.
-</Note>

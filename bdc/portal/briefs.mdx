@@ -4,40 +4,31 @@ title: "Briefs"
 
 ## Non-Technical
 
-TODO: What users get to see for briefs
-
 The [briefs](https://www.bergendebate.com/portal/my-briefs) page displays purchased briefs in a dropdown. Users can select a brief to preview its content and download the corresponding PDF using the Download PDF button.
 
 ![Image](/images/image-42.png)
 
 ## Admins (Retool)
 
-TODO: What Retool pages can admin use for briefs. Link to doc that describes managing topics.
-
 ### Briefs Overview
 
 There are two Retool pages for managing briefs:
 
-The [briefs overview](https://bergendebate.retool.com/apps/11afbd74-b579-11f0-ad9c-bf8216ce2681/2025%20Phase%20B/Briefs%20Overview%20Page/page1) page displays all purchased briefs details along with **Light** and **Full** purchase counts for the selected topic.
+The [Briefs Overview ](https://bergendebate.retool.com/apps/11afbd74-b579-11f0-ad9c-bf8216ce2681/2025%20Phase%20B/Briefs%20Overview%20Page/page1) page displays all purchased briefs details along with **Light** and **Full** purchase counts for the selected topic.
 
 [Managing Topics](https://bergendebate.retool.com/apps/b98e67d2-9528-11f0-a770-eb637de74341/Q3%6025/Manage%20Briefs/page1)  page details are documented in the **Briefs Management** section. Please refer to the doc link - bdc/checkout-systems/briefs/management
 
-## Technical
-
 <Note>
-  TODO: Reorganize as follows
-
-  1. DB (needs to be added) -- at least whatever is not already covered in "Briefs Checkout" page
-  2. Flow
-     1. Portal visibility
-     2. Portal render
+  TODO: KS, please actually hyperlink. You can link within Mintlify docs by using "/" after you open the hyperlink modal
 </Note>
 
-### **Where the data lives (DB)**
+## Technical
 
-The portal "My Briefs" page shows only briefs the member has **already purchased**. Data comes from **getTopicsDetails** (with **memberId**), which reads **topic_payment_details** (purchases per member) and **topic_details** (catalog: name, order, version, PDF URLs). Full schema for **topic_payment_details** and post-purchase writes are covered in [Briefs Checkout](/bdc/checkout-systems/upsells/briefs). Below is what the **portal** uses.
+### **Database**
 
-**topic_payment_details** — One document per successful briefs purchase. Used by **getTopicsDetails** when **memberId** is present to return only topics the member has purchased.
+Full schema for `topic_payment_details` and post-purchase writes are covered in [Briefs Checkout](/bdc/checkout-systems/upsells/briefs). Below is what the **portal** uses.
+
+**topic_payment_details** — One document per successful briefs purchase. Used by `getTopicsDetails` when `memberId` is present to return only topics the member has purchased.
 
 | Field         | Description                                                   |
 | :------------ | :------------------------------------------------------------ |
@@ -47,7 +38,7 @@ The portal "My Briefs" page shows only briefs the member has **already purchased
 | **paymentId** | Optional; main class payment when briefs bought with a class. |
 | **createdOn** | Purchase date (e.g. purchase_date in portal).                 |
 
-**topic_details** — Catalog of topics. **getTopicsDetails** joins **topic_payment_details** with **topic_details** to return, per purchased topic: topicName, topic_order, version, pdf_url, preview_pdf_url, purchase_date.
+**topic_details** — Catalog of topics. `getTopicsDetails` joins `topic_payment_details` with `topic_details` to return, per purchased topic: `topicName`, `topic_order`, `version`, `pdf_url`, `preview_pdf_url`, `purchase_date`.
 
 | Field (portal-relevant)              | Description                                            |
 | :----------------------------------- | :----------------------------------------------------- |
@@ -66,19 +57,19 @@ The portal "My Briefs" page shows only briefs the member has **already purchased
 #### 2. Portal render
 
 1. **JS (BriefManager)** — init and request
-   - File: **portal-briefs.js**; class: **BriefManager**. Parent page must pass **baseUrl** and **memberId**: `new BriefManager({ baseUrl: '...', memberId: '...' });`.
+   - File: **portal-briefs.js**; class: **BriefManager**. Parent page must pass `baseUrl` and `memberId`: 
    - Caches DOM references for the dropdown, download link, PDF preview iframe, main briefs panel, and loading spinner.
    - Calls **GET getTopicsDetails?memberId=**.
 2. **API (getTopicsDetails.py)**
-   - For the given **memberId**, reads **topic_payment_details** and **topic_details**.
-   - Returns only topics the member has purchased, with: topicName, topic_order, version, pdf_url, preview_pdf_url, purchase_date.
-   - (Without memberId the API returns the full catalog; used for checkout—see [Briefs upsells](/bdc/checkout-systems/upsells/briefs).)
+   - For the given `memberId`, reads `topic_payment_details` and `topic_details`.
+   - Returns only topics the member has purchased, with: `topicName`, `topic_order`, `version`, `pdf_url`, `preview_pdf_url`, `purchase_date`.
+   - (Without `memberId` the API returns the full catalog; this is used for checkout—see [Briefs upsells](/bdc/checkout-systems/upsells/briefs).)
 3. **JS (BriefManager)** — after response
    - Stores the API response as `$briefs`.
    - **Content switch:** If `$briefs` has at least one item: show `.pdf-briefs-main-container` (briefs UI). If `$briefs` is empty: show the empty state (message + **See Briefs** button) and skip the steps below.
-   - **Populate dropdown:** Fills `[data-brief="select-brief"]` with options from `$briefs` (e.g. by topicName), ordered by **topic_order**.
-   - **Initial selection:** If there are items, selects the first (or default) brief and sets `[data-brief="download-pdf"]` href and `[data-brief="pdf-preview"]` iframe **src** to that brief’s **pdf_url**
-   - **Dropdown change handler:** On **change** of `[data-brief="select-brief"]`, updates the download link **href** and the iframe **src** to the newly selected brief’s **pdf_url**
+   - **Populate dropdown:** Fills `[data-brief="select-brief"]` with options from `$briefs` (e.g. by topicName), ordered by `topic_order`.
+   - **Initial selection:** If there are items, selects the first (or default) brief and sets `[data-brief="download-pdf"]` href and `[data-brief="pdf-preview"]` iframe `src` to that brief’s `pdf_url`
+   - **Dropdown change handler:** On **change** of `[data-brief="select-brief"]`, updates the download link `href` and the iframe `src` to the newly selected brief’s `pdf_url`
    - All of the above is client-side; no further API calls for viewing/downloading the selected brief.
 
 ### **Sidebar and main content**
@@ -87,10 +78,3 @@ The portal "My Briefs" page shows only briefs the member has **already purchased
 - **Main content** depends on API response:
   - **Has purchased briefs:** Show the briefs UI (dropdown to select brief, download PDF button, PDF preview).
   - **No purchased briefs:** Show the empty state: message _"You haven't purchased any of our Briefs! Check out our briefs on topics like Cognitive Biases and Argumentation, created to strengthen your critical thinking with real-life examples and exercises."_ and a **See Briefs** button (links to the briefs checkout).
-
-<Note>
-  TODO: Changes to be done...
-
-  1. Make this more step-wise (e.g., first, JS file (through BriefManager) calls API. API does X and returns Y. The rest of the JS does A,B,C
-  2. Explain under what conditions we are showing Briefs in the sidebar.
-</Note>
