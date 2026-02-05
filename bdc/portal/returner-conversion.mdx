@@ -64,37 +64,47 @@ Admins can review and update the recommended next level , grade etc., apply filt
 
 ### **Pre-Reg Management**
 
-**For pre-registration management, please refer **[**to this document**](/bdc/checkout-systems/semester/pre-reg-system)**.**
+[******For pre-registration management, please refer to this document.******](/bdc/checkout-systems/semester/pre-reg-system)
 
 ## Technical
 
 ### **Database**
 
-Returner conversion and pre-registration use data from **getPortalDetails**: **recommendedLevel** (from the recommendation program / class_level, when published) and **futureSession** (from payment/upsell data). The API returns these shapes per student.
-
 <Note>
   TODO: We should be starting with the database. I think the above text ^^ can be deleted
-</Note>
 
-**recommendedLevel** (returned when the student's recommendation has `publish == True` for the current session):
-
-<Note>
   TODO: I think this is explained poorly. We need to explain how returner conversion is managed in the payment_details collection (and explain the fields). \
   \
   Please re-write this section as you've done for other pages.
 </Note>
 
-| Field                     | Description                                      |
-| :------------------------ | :----------------------------------------------- |
-| **session**               | Session identifier from recommendation.          |
-| **level**                 | Recommended level from **class_level**.          |
-| **year**                  | Year.                                            |
-| **pre-registrationDates** | Pre-registration window for this recommendation. |
-| **earlyBirdDeadlineDate** | Early-bird deadline.                             |
-| **registrationStartDate** | Start of registration window.                    |
-| **registrationEndDate**   | End of registration window.                      |
+### **Database**
 
-**futureSession** (from payment/upsell data) — used for pre-reg timing and "has bundle" logic:
+Full schema for **payment_details** (and related collections) is covered in [Semester MongoDB](/bdc/checkout-systems/semester/mongo-db). Below is what the **portal** uses for returner conversion and pre-registration.
+
+**payment_details** — Returner conversion is managed via recommendation fields on **current-session** payment records. Admins set these in Retool (Manage Recommended Level); the API uses them when building **getPortalDetails** to decide whether to return **recommendedLevel** for each student. For each student's current-session payment row, if `publish == True`, the API looks up **class_level**, **class_session**, **attendance_session**, and **student_grades** and returns the `recommendedLevel` shape (see table below).
+
+| Field (returner conversion) | Description                                                                                      |
+| :-------------------------- | :----------------------------------------------------------------------------------------------- |
+| **publish**                 | When `True`, the recommendation is visible on the portal; API returns `recommendedLevel`.        |
+| **nextLevelId**             | Recommended level ID; resolved via **class_level** (e.g. level name, register link).             |
+| **nextYear**                | Year of the recommended next session.                                                            |
+| **nextClassSessionId**      | Session ID of the recommended next session; used with **class_session**, **attendance_session**. |
+| **nextGradeId**             | Recommended grade; resolved via **student_grades**.                                              |
+
+**recommendedLevel** (returned by **getPortalDetails** when the current-session payment has `publish == True`):
+
+| Field                     | Description                                          |
+| :------------------------ | :--------------------------------------------------- |
+| **session**               | Session name from **class_session**.                 |
+| **level**                 | Level display name from **class_level**.             |
+| **year**                  | Year of the recommended session.                     |
+| **pre-registrationDates** | Pre-reg window from **attendance_session**.          |
+| **earlyBirdDeadlineDate** | Early-bird deadline from **attendance_session**.     |
+| **registrationStartDate** | Start of registration window from **class_session**. |
+| **registrationEndDate**   | End of registration window from **class_session**.   |
+
+**futureSession** (built from **payment_details** and **summer_payment_details** for future-session rows) — used for pre-reg timing and "has bundle" logic:
 
 | Field                     | Description                                                                                                     |
 | :------------------------ | :-------------------------------------------------------------------------------------------------------------- |
@@ -112,12 +122,25 @@ Returner conversion and pre-registration use data from **getPortalDetails**: **r
 3. **JS (Portal)** — after response
 
    <Note>
-     TODO: I think we should split this page based on the different conditions. It's kind of confusing right now, since all the conditions are mixed. 
+     TODO: I think we should split this page based on the different conditions. It's kind of confusing right now, since all the conditions are mixed.
    </Note>
-   - **Visibility:** Whether the user sees anything in this area depends on (1) the API returned a `recommendedLevel` for that student (backend only sends it when the recommendation is published), and (2) whether the student has a future-session **bundle** (from upsell: a future session with **no classId**).
-   - **Time windows:** The code checks the current date against two time windows:
-     - **Pre-registration window** (from **futureSession**): between `pre-registrationDates.preRegStartDate` and `programDates.startDate`. When the user is in this window and has a bundle, the pre-reg block is shown (e.g. "Register Now" only).
-     - **Registration window** (from **recommendedLevel**): between `pre-registrationDates.preRegStartDate` and `registrationEndDate`. When the user is in this window and has a published recommendation, the "Next Recommended Program" line and both "Register Now" and "Learn More" can show.
-   - **Buttons:** During pre-reg only (bundle + in pre-reg window): **Register Now** only. During registration (published recommendation + in registration window): both **Register Now** and **Learn More**. If both pre-reg and registration are active, both buttons can show; otherwise both are hidden and the section is hidden.
-   - **Register Now:** Clicking **Register Now** goes to a URL set from **recommendedLevel** and the current registration window. When returner conversion is active and today is within the registration window: link is `https://www.bergendebate.com/programs/{levelUrl}` (e.g. `programs/level-3b` for Level 3B); user is sent to that program/level page in a new tab. Otherwise: link is `https://www.bergendebate.com/classes-overview`; user is sent to the classes overview in a new tab.
-   - **Learn More:** Clicking **Learn More** opens the Next Recommended Program modal. The modal shows: title "Next Step for [student name]"; recommended line "Recommended: [session year | level]"; early-bird countdown if **recommendedLevel** has `earlyBirdDeadlineDate`; an Enroll Now button (same link logic as Register Now); and "Why This Program" copy. Closing the modal (backdrop or close control) hides it; the modal does not navigate the page.
+   3. Display logic uses two time windows: **pre-registration** (from **futureSession**) and **registration** (from **recommendedLevel**). Below is when each section and button appears.
+
+      #### Section display (recommendedLevel vs pre-register)
+
+      | Section                                    | Shown when                                                                                                                                                         |
+      | :----------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+      | **Next Recommended Program**               | API returned **recommendedLevel** for the student **and** today is in the registration window (`preRegStartDate` → `registrationEndDate`).                         |
+      | **Pre-register block** (banner, countdown) | Student has a future-session **bundle** (futureSession with no **classId**) **and** today is in the pre-reg window (`preRegStartDate` → `programDates.startDate`). |
+      | _(Nothing)_                                | If neither row above is true, the whole returner-conversion area is hidden.                                                                                        |
+
+      #### Button display (Register Now vs Learn More)
+
+      | Button           | Shown when                                                                                                                                                                |
+      | :--------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+      | **Register Now** | Pre-reg: student has a bundle **and** today is in the pre-reg window. **Or** registration: API returned **recommendedLevel** **and** today is in the registration window. |
+      | **Learn More**   | API returned **recommendedLevel** **and** today is in the registration window.                                                                                            |
+
+      #### Click behavior
+      - **Register Now** — Link is set from **recommendedLevel** and the current registration window. When returner conversion is active and today is within the registration window: link is `https://www.bergendebate.com/programs/{levelUrl}` (e.g. `programs/level-3b` for Level 3B); user opens that program/level page in a new tab. Otherwise: link is `https://www.bergendebate.com/classes-overview`; user opens the classes overview in a new tab.
+      - **Learn More** — Opens the Next Recommended Program modal. The modal shows: title "Next Step for [student name]"; recommended line "Recommended: [session year | level]"; early-bird countdown if **recommendedLevel** has `earlyBirdDeadlineDate`; an Enroll Now button (same link logic as Register Now); and "Why This Program" copy. Closing the modal (backdrop or close control) hides it; the modal does not navigate the page.
