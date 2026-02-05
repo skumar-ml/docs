@@ -127,7 +127,7 @@ _Joined when read:_ `getReferralData` joins `referral_details` to `members` (gue
 #### A referee lands on website via referral link
 
 - **URL:** `https://www.bergendebate.com?code=...&id=...`
-- **JS:** `referrals_modal.js`, `ReferralModal` class. On load, read `code` and `id` from URL; decode, store in `localStorage`, update discount code on page (TODO: via which API?), fetch referrer name (`getMemberDetails`) for the modal.
+- **JS:** `referrals_modal.js`, `ReferralModal` class. On load, read `code` and `id` from URL; decode, store in `localStorage`, showing coupon code on page (TODO: via which API? @SK, Showing coupon code in the page. updated the description as well), fetch referrer name (`getMemberDetails`) for the modal.
 - If the referee has not yet submitted their name and email, show the referral modal (discount code, referrer name, claim form).
 - **On form submit** → **POST addReferralData**. On success: referral saved, confirmation shown, modal closes. On failure or duplicate: error message shown.
 - **Dismissal:** If user closes the modal (close button, background click, or "No thanks"), suppress it for 1 hour via `localStorage`. If user returns without referral params but has incomplete referral data in `localStorage`, the modal may still show to complete the process; otherwise no modal.
