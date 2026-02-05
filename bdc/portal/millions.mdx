@@ -64,7 +64,7 @@ For each student, the page shows the parent email, student grade, and current Mi
   SK -- let's get BDC admin to populate this
 </Warning>
 
-### **Where the data lives (DB)**
+### **Database Details**
 
 **millions_transactions** — One document per student (keyed by `studentId`). Used by the Millions page and by the read/write APIs.
 
@@ -86,19 +86,21 @@ _Optional or joined when read:_ `name`, `email`, `memberId`, `studentId` may app
 | **description**  | Optional text for the transaction. |
 | **lastEarnDate** | Date of the transaction.           |
 
-**millions_items_details** — Catalog for the Millions store (skipped for this page).
+**millions_items_details** — Catalog for the Millions store (skipped for now).
 
 ### **Flow**
 
-1. **JS (MillionsRenderer)** — init and request
+1. **JS (**`MillionsRenderer`**)** — init and request
    - File: `millions.js`; class: `MillionsRenderer`.
-   - Parent page must pass `apiBaseURL` and `memberId`: `new MillionsRenderer({ apiBaseURL: '...', memberId: '...' });`
-   - Constructor receives `data` with `apiBaseURL` and `memberId`.
+   - Parent page must pass `apiBaseURL` and `memberId` to `MillionsRenderer` class 
    - Caches DOM: `#half-circle-spinner` (loading), `.portal-info-wrapper` (main content wrapper), `[data-container="no-record-found"]` (empty state), `.portal-tab` (tab container).
    - Shows spinner, hides portal content and no-record div, then calls `GET getMillionsTransactionData/{memberId}`.
 2. **API (getMillionsTransactionData.py)**
    - The read API filters **which students** appear using current year/session (students with a payment in that term); each student's balance is their total (not per-session).
-   - `GET getMillionsTransactionData/{memberId}` (**getMillionsTransactionData.py**).
+
+   <Warning>
+     TODO: We need to update code to not just look for student in the current year/session. It should be any student that is in `payment_details`
+   </Warning>
    - Resolves `memberId` to family; uses current year/session to get students with a payment in that term; for each, reads `millions_transactions` by `studentId`.
    - Returns `millions_transactions` with `studentName, studentGrade, earnAmount, transactions` (and optionally **items** for store; page ignores **items**).
 3. **JS (MillionsRenderer)** — after response
@@ -113,15 +115,5 @@ _Optional or joined when read:_ `name`, `email`, `memberId`, `studentId` may app
 
 - **Millions menu** — Sidebar shows balance for the selected student in `[data-millions="sidebarCount"]` as "XM" (e.g. "1,234M"). The parent element is shown/hidden and updated when the user switches student tabs.
 - **Main content** depends on API response:
-  - **Has millions_transactions:** Show the Millions UI (student tabs, Current Balance, Transactions table per student). First student is selected by default; sidebar shows that student's balance.
+  - **Has **`millions_transactions`**:** Show the Millions UI (student tabs, Current Balance, Transactions table per student). First student is selected by default; sidebar shows that student's balance.
   - **No millions_transactions (empty or error):** Show `[data-container="no-record-found"]` (no records message), hide `.portal-info-wrapper` and `.portal-tab`.
-
-<Note>
-  TODO: Let's re-organize the technical section as follows:
-
-  1. Describe DB collections (I think current description is good)
-  2. Describe flow for millions page
-  3. Describe sidebar & main content
-
-  Basically, we can delete the current content above the DB, and combine it with the flow.
-</Note>
