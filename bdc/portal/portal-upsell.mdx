@@ -94,6 +94,8 @@ Admins can also **edit**, **copy**, **delete**, or **enable/disable** resources 
 
      <Note>
        TODO: Yogesh, did we confirm the academic-only filtering is correct? I remember us offering summer upsells..
+
+       **Comment**: We are displaying the selected upsell program in the portal using the portal_program_ids from the current session. Both summer and academic programs can be added to the portal_program_ids. We are displaying the selected upsell program in the portal using the portal_program_ids from the current session. Both summer and academic programs can be added to the portal_program_ids. Please refer to the image below
      </Note>
      ![Image 73](/images/image-73.png)
    - **Future-session programs:** For each of those academic sessions, the code filters `upsellPrograms` to programs whose `sessionId` is **not** the current session. So only programs for a different (future) term are shown—e.g. if the current session is Fall, only Winter/Spring bundles appear; if current is Winter/Spring, only the next Fall appears.
