@@ -164,6 +164,13 @@ The main portal Dashboard uses `getPortalDetail` and shows invoices in an accord
    - Show the invoice accordion: for each invoice show name, “Invoice Breakdown” link, and Pay buttons (Bank Transfer, Credit/Debit Card) for unpaid ones. Show “Needs to be completed” or “All Paid” and “X of Y invoices complete”.
    - When the user clicks Pay (Bank Transfer, Credit/Debit Card) , call `createCheckoutUrl` and redirect to Stripe.
    - **TODO: What MongoDB writes happen after payment...**
+     - After the user completes payment on Stripe, the `stripePaymentListener` webhook receives the event. For **invoice payments** (when the checkout is not class, summer, upsell, or topic), it calls `updateInvoiceResponses()`.
+     - `invoice_responses`: Insert or update the record using `payment_intent`, `invoiceId`, `memberId`, `paymentId`, and `status`.\
+       On **Complete**, optionally store `receipt_url` and rate/credit-related fields.
+     - `stripe_checkout_customer`: Update the checkout session with `payment_intent` and the current `status`.
+     - On **Complete**, if **BDC credit** was used, update `member_credit_amount` (`credit_balance` and `credit_history`).
+     - On **Failed**, delete the corresponding `invoice_responses` record and update `stripe_checkout_customer` status to **Failed**.
+     - A **success email** is sent to the parent when the status is **Complete** (card payments) or **Processing** (bank transfer).
 
 ##### **Itemized Invoice breakdown**
 
