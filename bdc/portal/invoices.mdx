@@ -119,6 +119,154 @@ The [Payment History](#) page allows parents to view students, track outstanding
 | **status**         | Checkout status.         |
 | **payment_intent** | Stripe payment intent.   |
 
+### **Database changes after sending an Invoice via Retool**
+
+When an admin clicks **"Send"** to create a new invoice, here's the complete database operation sequence:
+
+<AccordionGroup>
+  <Accordion title="Invoice Creation Flow (New Invoice)" icon="sparkles">
+    #### **Step 1: Create Master Invoice Record**
+
+    **Collection:** `invoice_records`
+
+    **Data Structure Created:**
+
+    ```
+    {
+      title: "Invoice Title" or "Session (Year): Returner | Early Bird",
+      group_id: <selected group ID>,
+      invoice_type_id: <invoice type ID or 7 for bucket>,
+      payment_type: 'stripe' | 'jotform' | 'bucket' | 'Single' | 'Multiple',
+      created_on: <current timestamp>,
+      currentYear: <selected year ID>,
+      classSessionId: <selected session ID>,
+      // For bucket payments only:
+      returner: true/false,
+      sibling: true/false,
+      earlyBirds: true/false
+    }
+    ```
+
+    **Result:** Returns the newly created invoice's `_id` (ObjectId) which is used in subsequent operations.
+
+    #### **Step 2: Create Notification Records**
+
+    **Collection:** `invoice_notifications`\
+    **What Happens:**
+
+    - One notification record is created **for each student** in the current student list
+    - Links each student's payment record to the invoice using the created invoice_td
+
+    **Data Structure (per student):**
+
+    ```
+    {
+      paymentId: <student's payment_details _id>,
+      created_on: <current timestamp>,
+      is_read: false,
+      is_completed: false,
+      invoice_id: <newly created invoice _id from Step 1>
+    }
+    ```
+
+    **Count:** If you have 50 students selected, this creates **50 records**.
+
+    #### **Step 3: Create Payment Link Records**
+
+    **Collection:** `invoice_payment_link`\
+    **What Happens:**\
+    The structure depends on the payment method selected:
+
+    **A) JotForm Payment Method:**
+
+    - Creates one record per JotForm URL configured
+    - Each record contains the form ID, URL, and payment type
+
+    ```
+    {
+      formid: <extracted JotForm ID>,
+      jotFormUrl: <full JotForm URL>,
+      paymentType: 'jotform',
+      invoice_id: <invoice _id from Step 1>
+    }
+    ```
+
+    **B) Stripe Payment Method (Single or Multiple):**
+
+    - Creates **2 records**: one for card, one for bank transfer
+
+    ```
+    [
+      {
+        amount: <card payment amount>,
+        paymentType: 'card',
+        invoice_id: <invoice _id>,
+        title: <card payment title>,
+        formid: '',
+        jotFormUrl: ''
+      },
+      {
+        amount: <bank transfer amount>,
+        paymentType: 'us_bank_account',
+        invoice_id: <invoice _id>,
+        title: <bank transfer title>,
+        formid: '',
+        jotFormUrl: ''
+      }
+    ]
+    ```
+
+    **C) Bucket Payment Method:**
+
+    - Creates 1-2 records depending on which amounts are non-zero
+    - Similar structure to Stripe, but uses bucket-specific amounts
+  </Accordion>
+  <Accordion title="Invoice Update Flow (Existing Invoice)" icon="sparkles">
+    When an admin clicks **"Save"** on an existing invoice, here's what happens:
+
+    #### **Step 1: Update Master Invoice Record**
+
+    **Collection:** `invoice_records`
+
+    **What Gets Updated:**
+
+    ```
+    {
+      $set: {
+        title: <updated title>,
+        invoice_type_id: <updated type>,
+        payment_type: <updated payment method>
+      }
+    }
+    ```
+
+    **Filter:** `{ _id: { $oid: <invoiceId from URL params> } }`
+
+    #### **Step 2: Update New Payment Links**
+
+    **Collection:** `invoice_payment_link`\
+    **What Happens:**
+
+    - Update payment link 
+
+    #### **Step 3 : Updated Notification Records**
+
+    **Collection:** `invoice_notifications`\
+    **What Happens:**
+
+    - Preserves existing notification records for students still in the list (keeps original `created_on` timestamp)
+    - Creates new notification records for newly added students
+    - Removes notifications for students removed from the list
+  </Accordion>
+  <Accordion title="Database Collections Summary" icon="database">
+    | Collection              | Purpose                            | Records per Invoice                         |
+    | :---------------------- | :--------------------------------- | :------------------------------------------ |
+    | `invoice_records`       | Master invoice metadata            | **1 record** per invoice                    |
+    | `invoice_notifications` | Links invoices to students/parents | **N records** (1 per student)               |
+    | `invoice_payment_link`  | Payment method configurations      | **1-N records** (depends on payment method) |
+  </Accordion>
+</AccordionGroup>
+
 ### Dashboard
 
 The main portal Dashboard uses `getPortalDetail` and shows invoices in an accordion for each student tab.
