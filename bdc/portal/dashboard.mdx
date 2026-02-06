@@ -163,7 +163,7 @@ The full technical details of these tables are available in the **Invoices datab
 
 1. **JS (Portal)** — init and request
    - File: `portal_new_ui.js`; class: **Portal**. Parent page passes `apiBaseURL`, `memberId`, and `typeBApiBaseURL` (for announcements).
-   - Hides main content (`.portal-info-wrapper`), shows spinner (`#half-circle-spinner`), then in parallel calls **GET getPortalDetail/**, **GET getMillionsTransactionData/**, and **GET getAnnouncement/**.
+   - Hides main content (`.portal-info-wrapper`), shows spinner (`#half-circle-spinner`), then in parallel calls` GET getPortalDetail/, GET getMillionsTransactionData/, and GET getAnnouncement/`.
 2. **API (getPortalDetails.py)**
    - The system first finds all children linked to a family. It then loads both Academic and Summer payment records for those children and checks the current year and session to decide whether each payment belongs to a **current**, **future**, or **past** class.
      - Students with the same name are merged into one entry.
@@ -194,13 +194,13 @@ The full technical details of these tables are available in the **Invoices datab
     - ****`Has currentSession:`**** If a student has a **current class**, the page shows the main class section, announcements, invoices, calendar, class tools, and the Millions balance.\
       The **registration forms section** is shown only when there are forms that the parent needs to fill out.
     - ****`No currentSession:`**** Hide those sections; optionally show invoice accordion if `futureSession` has invoices.
-    - **Future Classes** : shown if **futureSession** has length.
-    - **Past Class History**: shown if **pastSession** has length.
+    - **Future Classes** : shown if `futureSession` has length.
+    - **Past Class History**: shown if `pastSession` has length.
   - **No data ("No data Found"):** Free resources shown, paid/portal content hidden; spinner hidden.
 
 ### Dashboard UI (technical reference)
 
-Each visible region is driven by specific DOM containers and **getPortalDetail** / **getMillionsTransactionData** / **getAnnouncement** data. Use the tabs below for a per-region technical reference
+Each visible region is driven by specific DOM containers and `getPortalDetail / getMillionsTransactionData / getAnnouncement` data. Use the tabs below for a per-region technical reference
 
 <Tabs>
   <Tab title="Student tabs">
@@ -237,7 +237,7 @@ Each visible region is driven by specific DOM containers and **getPortalDetail**
 
     `Tag text (e.g. "Needs to be completed" or "All Paid") and accordion for forms.`
 
-    - `DOM: `**`.registration-form-accordian`**` contains `**`.dashboard-tag-text`**`; `**`[data-portal="invoice-form-accordian"]`**
+    - `DOM: `**`.registration-form-accordian`**`contains`**`.dashboard-tag-text`**`; `**`[data-portal="invoice-form-accordian"]`**
     - `Data: currentSession[0].formList; invoiceList (current + future)`
     - `Render: renderInvoiceAccordionStyled(), renderRegistrationForms(); `
   </Tab>
@@ -297,7 +297,7 @@ Each visible region is driven by specific DOM containers and **getPortalDetail**
 
     `Student millions count and Transaction Logs; sidebar count from updateSidebarMillionsCount().`
 
-    - `DOM: `**`.millions-balance-flex-wrapper`**` contains `**`.million-price-text`**
+    - `DOM: `**`.millions-balance-flex-wrapper`**`contains`**`.million-price-text`**
     - `Data: getMillionsTransactionData ? millions_transactions (match studentName;)`
     - `Render: renderMillions()`
   </Tab>
@@ -306,7 +306,7 @@ Each visible region is driven by specific DOM containers and **getPortalDetail**
 
     `List of upcoming enrollments (session name, class detail, or "No details available").`
 
-    - `DOM: `**`.sem-classes-info-div.future-classes`**` contains `**`[data-portal="future-classe-list"]`**
+    - `DOM: `**`.sem-classes-info-div.future-classes`**`contains`**`[data-portal="future-classe-list"]`**
     - `Data: currentSession[0].futureSession`
     - `Render: renderFutureClasses()`
   </Tab>
@@ -315,7 +315,7 @@ Each visible region is driven by specific DOM containers and **getPortalDetail**
 
     `List of past programs/sessions (sorted desc by createdOn).`
 
-    - `DOM: `**`.sem-classes-info-div`**`  contains `**`[data-portal="past-classe-list"]`**
+    - `DOM: `**`.sem-classes-info-div`**` contains`**`[data-portal="past-classe-list"]`**
     - `Data: currentSession[0].pastSession`
     - `Render: renderPastClasses()`
   </Tab>
