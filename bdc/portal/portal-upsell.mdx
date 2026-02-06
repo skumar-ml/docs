@@ -89,7 +89,7 @@ This setup ensures the right upsell options and prices are shown on the portal.
    - Clears `[data-upSell='card-container']` and `[data-upSell='modal-card-container']`
    - Filters to academic-only and future-session programs (if available)
    - For each program, appends a card from `createBundleCard()` to the card container and a card from `createModelBundleCard()` to the modal container
-   - **Academic-only:** The API returns upsell programs connected to both the current session (`portal_program_ids`) and summer (`sessionId` 2). The frontend keeps only items where `sessionId !== 2`, so Summer is excluded and only the `portal_program_ids` for academic-year sessions (e.g. Fall, Winter/Spring) are used.
+   - **Academic-only:** The API returns upsell programs connected to both the current session (`portal_program_ids`) and summer (`sessionId==2`). The frontend keeps only items where `sessionId !== 2`, so Summer is excluded and only the `portal_program_ids` for academic-year sessions (e.g. Fall, Winter/Spring) are used.
 
      ![Image 73](/images/image-73.png)
    - **Future-session programs:** For each of those academic sessions, the code filters `upsellPrograms` to programs whose `sessionId` is **not** the current session. So only programs for a different (future) term are shown—e.g. if the current session is Fall, only Winter/Spring bundles appear; if current is Winter/Spring, only the next Fall appears.
