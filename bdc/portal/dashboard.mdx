@@ -208,7 +208,7 @@ Each visible region is driven by specific DOM containers and **getPortalDetail**
 
     One tab per student; sorted by `currentSession[0].createdOn` (most recent first).
 
-    - **DOM:** **`.portal-tab-menus`** ? **`.portal-tab-link`**, **`.portal-tab-content`** ? **`.portal-tab-pane`**
+    - **DOM:** `.portal-tab-menus` contains `.portal-tab-link`, `.portal-tab-content` contains `.portal-tab-pane`
     - **Data:** **getPortalDetail** (array of student objects; tab label = student name)
     - **Render:** **setupTabs()** ? creates tab link + pane per student, then **renderStudentTab()** per pane
   </Tab>
@@ -222,7 +222,7 @@ Each visible region is driven by specific DOM containers and **getPortalDetail**
 
     **Current Program** ? Title and class/summer line (e.g. "PF Labs | Session 1 | Glen Rock").
 
-    - **DOM:** **`.recent-announcement-div.current-class`** ? **`.recent-announcement-title`**, **`.poppins-para.current-class`**
+    - **DOM:** **`.recent-announcement-div.current-class`** contains **`.recent-announcement-title`**, **`.current-class`**
     - **Data:** **currentSession[0].classDetail** or **currentSession[0].summerProgramDetail**
     - **Render:** `renderCurrentClassSection()`
 
@@ -237,7 +237,7 @@ Each visible region is driven by specific DOM containers and **getPortalDetail**
 
     Tag text (e.g. "Needs to be completed" or "All Paid") and accordion for forms.
 
-    - **DOM:** **`.registration-form-accordian`** ? **`.dashboard-tag-text`**; **`[data-portal="invoice-form-accordian"]`**
+    - **DOM:** **`.registration-form-accordian`** contains **`.dashboard-tag-text`**; **`[data-portal="invoice-form-accordian"]`**
     - **Data:** **currentSession[0].formList**; **invoiceList** (current + future)
     - **Render:** **renderInvoiceAccordionStyled()**, **renderRegistrationForms()**; tag from **invoiceList** completion
   </Tab>
@@ -297,7 +297,7 @@ Each visible region is driven by specific DOM containers and **getPortalDetail**
 
     Student millions count and Transaction Logs; sidebar count from **updateSidebarMillionsCount()**.
 
-    - **DOM:** **`.millions-balance-flex-wrapper`** ? **`.million-price-text`**
+    - **DOM:** **`.millions-balance-flex-wrapper`** contains **`.million-price-text`**
     - **Data:** **getMillionsTransactionData** ? **millions_transactions** (match **studentName**;)
     - **Render:** **renderMillions()**
   </Tab>
@@ -306,7 +306,7 @@ Each visible region is driven by specific DOM containers and **getPortalDetail**
 
     List of upcoming enrollments (session name, class detail, or "No details available").
 
-    - **DOM:** **`.sem-classes-info-div.future-classes`** ? **`[data-portal="future-classe-list"]`**
+    - **DOM:** **`.sem-classes-info-div.future-classes`** contains **`[data-portal="future-classe-list"]`**
     - **Data:** **currentSession[0].futureSession**
     - **Render:** **renderFutureClasses()**
   </Tab>
@@ -315,7 +315,7 @@ Each visible region is driven by specific DOM containers and **getPortalDetail**
 
     List of past programs/sessions (sorted desc by **createdOn**).
 
-    - **DOM:** **`.sem-classes-info-div`** (second) ? **`[data-portal="past-classe-list"]`**
+    - **DOM:** **`.sem-classes-info-div`**  contains **`[data-portal="past-classe-list"]`**
     - **Data:** **currentSession[0].pastSession**
     - **Render:** **renderPastClasses()**
   </Tab>
