@@ -81,7 +81,7 @@ TODO: Explain (at a high-level) the tech. What JS and APIs get called. Don't get
 
 ### Overview
 
-The Dashboard is a single-page experience driven by one main API that **aggregates all portal data by student**. The frontend (`portal_new_ui.js`, class `Portal`) calls **GET **`getPortalDetail`**/** once, and in parallel **GET **`getMillionsTransactionData`**/** and **GET **`getAnnouncement`**/**. The response is a list of student-wise objects; each student has `currentSession`, `futureSession`, and `pastSession`. The Dashboard then renders one tab per student and, for the selected tab, shows the current class view (program info, calendar, resources, announcements, invoices & forms, Millions), plus Future Classes and Past Class History. Full schema for invoices and Millions lives in [Invoices](/bdc/portal/invoices) and [Millions](/bdc/portal/millions); this section stays high-level.
+The Dashboard is a single-page experience driven by one main API that **aggregates all portal data by student**. The frontend (`portal_new_ui.js`, class `Portal`) calls ****`GET getPortalDetail/`**** once, and in parallel ****`GET getMillionsTransactionData/`**** and ****`GET getAnnouncement/`****. The response is a list of student-wise objects; each student has `currentSession`, `futureSession`, and `pastSession`. The Dashboard then renders one tab per student and, for the selected tab, shows the current class view (program info, calendar, resources, announcements, invoices & forms, Millions), plus Future Classes and Past Class History. Full schema for invoices and Millions lives in [Invoices](/bdc/portal/invoices) and [Millions](/bdc/portal/millions); this section stays high-level.
 
 ### Database
 
@@ -157,7 +157,7 @@ The full technical details of these tables are available in the **Invoices datab
 
 **summer_program_details** — Summer program details when payment is summer type (e.g. `programId`, `sessionId`, `yearId`, `summerSessionId`). Full schema (when documented): [Summer MongoDB](/bdc/checkout-systems/summer/mongo-db).
 
-**millions_transactions** — Not read by `getPortalDetail`. Millions balance and history come from **GET **`getMillionsTransactionData`**/**. [**For full table schema see Millions#database-details.**](/bdc/portal/millions)
+**millions_transactions** — Not read by `getPortalDetail`. Millions balance and history come from ****`GET getMillionsTransactionData/`****. [**For full table schema see Millions#database-details.**](/bdc/portal/millions)
 
 ### Flow
 
@@ -166,7 +166,7 @@ The full technical details of these tables are available in the **Invoices datab
    - Hides main content (`.portal-info-wrapper`), shows spinner (`#half-circle-spinner`), then in parallel calls **GET getPortalDetail/**, **GET getMillionsTransactionData/**, and **GET getAnnouncement/**.
 2. **API (getPortalDetails.py)**
    - The system first finds all children linked to a family. It then loads both Academic and Summer payment records for those children and checks the current year and session to decide whether each payment belongs to a **current**, **future**, or **past** class.
-     - Students with the same name are merged into one entry. 
+     - Students with the same name are merged into one entry.
    - For each relevant payment, the system adds extra details such as:
      - invoices and their charge breakdowns,
      - required forms and completed forms,
@@ -191,9 +191,9 @@ The full technical details of these tables are available in the **Invoices datab
 
 - **Main content** depends on `getPortalDetail` response:
   - **Has data:** Show `.portal-info-wrapper`. One tab per student; first tab active. For each tab:
-    - **Has **`currentSession`**:** If a student has a **current class**, the page shows the main class section, announcements, invoices, calendar, class tools, and the Millions balance.\
+    - ****`Has currentSession:`**** If a student has a **current class**, the page shows the main class section, announcements, invoices, calendar, class tools, and the Millions balance.\
       The **registration forms section** is shown only when there are forms that the parent needs to fill out.
-    - **No **`currentSession`**:** Hide those sections; optionally show invoice accordion if `futureSession` has invoices.
+    - ****`No currentSession:`**** Hide those sections; optionally show invoice accordion if `futureSession` has invoices.
     - **Future Classes** : shown if **futureSession** has length.
     - **Past Class History**: shown if **pastSession** has length.
   - **No data ("No data Found"):** Free resources shown, paid/portal content hidden; spinner hidden.
@@ -235,7 +235,7 @@ Each visible region is driven by specific DOM containers and **getPortalDetail**
   <Tab title="Registration Forms header">
     ![Image](/images/image-91.png)
 
-    Tag text (e.g. "Needs to be completed" or "All Paid") and accordion for forms/invoices.
+    Tag text (e.g. "Needs to be completed" or "All Paid") and accordion for forms.
 
     - **DOM:** **`.registration-form-accordian`** ? **`.dashboard-tag-text`**; **`[data-portal="invoice-form-accordian"]`**
     - **Data:** **currentSession[0].formList**; **invoiceList** (current + future)
@@ -327,11 +327,5 @@ Each visible region is driven by specific DOM containers and **getPortalDetail**
     - **DOM:** **`.next-recomm-prog-container`**, **`[data-pre-registration="container"]`**
     - **Data:** **currentSession[0].recommendedLevel**; **futureSession** (pre-reg dates, bundle)
     - **Render:** **renderRecommendedLevel()**
-  </Tab>
-  <Tab title="Tab">
-    
-  </Tab>
-  <Tab title="Tab">
-    
   </Tab>
 </Tabs>
