@@ -191,9 +191,9 @@ The full technical details of these tables are available in the **Invoices datab
 
 - **Main content** depends on `getPortalDetail` response:
   - **Has data:** Show `.portal-info-wrapper`. One tab per student; first tab active. For each tab:
-    - ****Has `currentSession:`**** If a student has a **current class**, the page shows the main class section, announcements, invoices, calendar, class tools, and the Millions balance.\
+    - ****`Has currentSession:`**** If a student has a **current class**, the page shows the main class section, announcements, invoices, calendar, class tools, and the Millions balance.\
       The **registration forms section** is shown only when there are forms that the parent needs to fill out.
-    - ****No `currentSession:`**** Hide those sections; optionally show invoice accordion if `futureSession` has invoices.
+    - ****`No currentSession:`**** Hide those sections; optionally show invoice accordion if `futureSession` has invoices.
     - **Future Classes** : shown if `futureSession` has length.
     - **Past Class History**: shown if `pastSession` has length.
   - **No data ("No data Found"):** Free resources shown, paid/portal content hidden; spinner hidden.
@@ -239,7 +239,7 @@ Each visible region is driven by specific DOM containers and `getPortalDetail / 
 
     - **DOM:** `.registration-form-accordian` contains `.dashboard-tag-text`; `[data-portal="invoice-form-accordian"]`
     - **Data:** `currentSession[0].formList`; `invoiceList` (current + future)
-    - **Render:** `renderInvoiceAccordionStyled()`, `renderRegistrationForms()`; 
+    - **Render:** `renderInvoiceAccordionStyled()`, `renderRegistrationForms()`;
   </Tab>
   <Tab title="Calendar">
     <img
@@ -251,9 +251,9 @@ Each visible region is driven by specific DOM containers and `getPortalDetail / 
 
     Month view and events; "Add to Google Calendar" below.
 
-    - DOM: **.calendar-white-rounded-div** (iframe or embed)
-    - Data: currentSession[0].uploadedContent (item with label === 'Google Calendar')
-    - Render: renderCalendarIframe(), renderGoogleCalendar()
+    - **DOM**: `.calendar-white-rounded-div` (iframe or embed)
+    - **Data**: `currentSession[0].uploadedContent` (item with `label === 'Google Calendar'`)
+    - **Render**: `renderCalendarIframe()`, `renderGoogleCalendar()`
   </Tab>
   <Tab title="Class Tools / Quick Links">
     <img
@@ -265,9 +265,9 @@ Each visible region is driven by specific DOM containers and `getPortalDetail / 
 
     Zoom links, Schedule a Makeup, General Resources.
 
-    - DOM: **.class-tools-quick-links-div**
-    - Data: currentSession[0].uploadedContent (Zoom, makeup, general resources by label)
-    - Render: renderZoomLinks(), renderMakeupLinks(), renderGeneralResources()
+    - **DOM:** `.class-tools-quick-links-div`
+    - **Data:** `currentSession[0].uploadedContent` (Zoom, makeup, general resources by label)
+    - **Render:** `renderZoomLinks()`, `renderMakeupLinks()`, `renderGeneralResources()`
   </Tab>
   <Tab title="Recent Announcements">
     <img
@@ -277,28 +277,28 @@ Each visible region is driven by specific DOM containers and `getPortalDetail / 
       style={{ width:"66%" }}
     />
 
-    Up to two recent announcements; unread count in sidebar **[data-announcements="counts"]**.
+    Up to two recent announcements; unread count in sidebar `[data-announcements="counts"]`.
 
-    - DOM: **.recent-announcement-info-div**, **.recent-announcement-number**
-    - Data: getAnnouncement (filtered by accountEmail; unread = !ann.is_read)
-    - Render: renderRecentAnnouncements()
+    - **DOM:** `.recent-announcement-info-div`, `.recent-announcement-number`
+    - **Data:** `getAnnouncement` (filtered by `accountEmail`; `unread = !ann.is_read`)
+    - **Render:** `renderRecentAnnouncements()`
   </Tab>
   <Tab title="Invoices Accordion">
     ![Image](/images/image-113.png)
 
     Outstanding invoices and registration forms for current + future sessions.
 
-    - DOM: **[data-portal="invoice-form-accordian"]**, **.invoice-form-accordian**
-    - Data: currentSession + futureSession
-    - Render: renderInvoiceAccordionStyled()
+    - **DOM:** `[data-portal="invoice-form-accordian"]`, `.invoice-form-accordian`
+    - **Data:** `currentSession` + `futureSession`
+    - **Render:** `renderInvoiceAccordionStyled()`
   </Tab>
   <Tab title="Millions Balance">
     ![Image](/images/image-114.png)
 
-    Student millions count and Transaction Logs; sidebar count from updateSidebarMillionsCount().
+    Student millions count and Transaction Logs; sidebar count from `updateSidebarMillionsCount()`.
 
-    - DOM: **.millions-balance-flex-wrapper**contains**.million-price-text**
-    - Data: getMillionsTransactionData ? millions_transactions (match studentName;)
+    - **DOM:** `.millions-balance-flex-wrapper` contains `.million-price-text`
+    - **Data:** getMillionsTransactionData ? millions_transactions (match studentName;)
     - Render: renderMillions()
   </Tab>
   <Tab title="Future Classes">
@@ -306,7 +306,7 @@ Each visible region is driven by specific DOM containers and `getPortalDetail / 
 
     List of upcoming enrollments (session name, class detail, or "No details available").
 
-    - DOM: **.sem-classes-info-div.future-classes**contains**[data-portal="future-classe-list"]**
+    - DOM: **.sem-classes-info-div.future-classes**contains\*\*[data-portal="future-classe-list"]\*\*
     - Data: currentSession[0].futureSession
     - Render: renderFutureClasses()
   </Tab>
@@ -315,7 +315,7 @@ Each visible region is driven by specific DOM containers and `getPortalDetail / 
 
     List of past programs/sessions (sorted desc by createdOn).
 
-    - DOM: **.sem-classes-info-div** contains**[data-portal="past-classe-list"]**
+    - DOM: **.sem-classes-info-div** contains\*\*[data-portal="past-classe-list"]\*\*
     - Data: currentSession[0].pastSession
     - Render: renderPastClasses()
   </Tab>
