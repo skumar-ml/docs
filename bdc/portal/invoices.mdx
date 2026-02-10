@@ -132,7 +132,7 @@ The [Payment History](#) page allows parents to view students, track outstanding
 
   The `amount` for each bucket entry is **calculated entirely by Retool.**  Here's the step-by-step process:
 
-  #### **1. Input Parameters (from the modal form):**
+  #### 1. Input Parameters (from the modal form):
 
   - **Base Price**: Starting price for a returning student with no discounts/fees
   - **New Student Fee**: Flat fee added for new students
@@ -140,7 +140,7 @@ The [Payment History](#) page allows parents to view students, track outstanding
   - **Early Bird Discount**: Flat discount amount
   - **Deposit Amount**: Flat deposit to subtract from final amount
 
-  #### **2. Bucket Generation Logic:**
+  #### 2. Bucket Generation Logic:
 
   The system generates **8 different invoice scenarios** representing all possible combinations of three boolean attributes
 
@@ -155,7 +155,7 @@ The [Payment History](#) page allows parents to view students, track outstanding
   [false, false, false]   // New student, no sibling, no early bird
   ```
 
-  #### 3. Amount Calculation Formula (from`calculateAmount`**function):**
+  #### 3. Amount Calculation Formula (from`calculateAmount`function):
 
   For each scenario, the amount is calculated in this exact order
 
