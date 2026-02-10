@@ -53,6 +53,8 @@ The [Payment History](#) page allows parents to view students, track outstanding
   TODO: What is the point of this collection? \<@SK updated description, please have a look\>
 
   TODO: We should describe how the bucketed invoices work
+
+  @SK, Added invoice rates explanation above the "Database changes after sending an Invoice via Retool" section
 </Note>
 
 | Field              | Description                                                  |
@@ -119,12 +121,93 @@ The [Payment History](#) page allows parents to view students, track outstanding
 | **status**         | Checkout status.         |
 | **payment_intent** | Stripe payment intent.   |
 
+### How to calculate the invoice bucket rates amount?
+
+<Accordion title="Invoice Bucket System Explanation" icon="">
+  ### What is an "Invoice Bucket"?
+
+  An **Invoice Bucket** is a pre-calculated pricing table that stores all possible invoice amounts for a given session and year based on different combinations of student attributes. Think of it as a lookup table that eliminates the need to calculate prices on-the-fly when creating invoices.
+
+  ### How Amount Gets Calculated
+
+  The `amount` for each bucket entry is **calculated entirely by Retool.**  Here's the step-by-step process:
+
+  #### **1. Input Parameters (from the modal form):**
+
+  - **Base Price**: Starting price for a returning student with no discounts/fees
+  - **New Student Fee**: Flat fee added for new students
+  - **Sibling Discount**: Percentage discount (e.g., 10%)
+  - **Early Bird Discount**: Flat discount amount
+  - **Deposit Amount**: Flat deposit to subtract from final amount
+
+  #### **2. Bucket Generation Logic:**
+
+  The system generates **8 different invoice scenarios** representing all possible combinations of three boolean attributes
+
+  ```
+  [true, false, false],   // Returning student, no sibling, no early bird
+  [false, true, false],   // New student, has sibling, no early bird
+  [true, true, false],    // Returning student, has sibling, no early bird
+  [false, false, true],   // New student, no sibling, has early bird
+  [true, false, true],    // Returning student, no sibling, has early bird
+  [false, true, true],    // New student, has sibling, has early bird
+  [true, true, true],     // Returning student, has sibling, has early bird
+  [false, false, false]   // New student, no sibling, no early bird
+  ```
+
+  #### 3. Amount Calculation Formula (from`calculateAmount`**function):**
+
+  For each scenario, the amount is calculated in this exact order
+
+  ```
+  1. Start with base price
+  2. IF early bird → subtract early bird discount
+  3. IF NOT returning → add new student fee
+  4. IF sibling → subtract (current amount × sibling discount percentage / 100)
+  5. Finally → subtract deposit amount
+  6. IF result is negative → set to 0
+  ```
+
+  **Example Calculation:**
+
+  - Base Price: \$2000
+  - New Student Fee: \$100
+  - Sibling Discount: 10%
+  - Early Bird Discount: \$100
+  - Deposit: \$500
+
+  For a **new student with sibling and early bird** [false, true, true]
+
+  ```
+  1. Start: $2000
+  2. Early bird: $2000 - $100 = $1900
+  3. New student: $1900 + $100 = $2000
+  4. Sibling (10%): $2000 - ($2000 × 0.10) = $1800
+  5. Deposit: $1800 - $500 = $1300
+  Final Amount: $1300
+  ```
+
+  ### Bucket-Specific Technical Differences
+
+  **Database Collections:**
+
+  1. `invoice_rates`: Stores the **input parameters** (1 record per session/year)
+     - basePrice, newStudent, siblingDiscPercentage, earlyBirdsDiscount, depositAmount
+  2. `invoice_bucket`: Stores the **pre-calculated amounts** (8 records per session/year)
+     - returner (boolean), sibling (boolean), earlyBirds (boolean), amount (calculated)
+
+  **Why Two Collections?**
+
+  - `invoice_rates`: Allows you to edit/update pricing rules later
+  - `invoice_bucket`: Provides fast lookup when creating actual invoices (no recalculation needed)
+</Accordion>
+
 ### Database changes after sending an Invoice via Retool
 
 When an admin clicks **"Send"** to create a new invoice, here's the complete database operation sequence:
 
 <AccordionGroup>
-  <Accordion title="Invoice Creation Flow (New Invoice)" icon="sparkles">
+  <Accordion title="Invoice Creation Flow (New Invoice)" icon="file-invoice">
     #### **Step 1: Create Master Invoice Record**
 
     **Collection:** `invoice_records`
@@ -221,7 +304,7 @@ When an admin clicks **"Send"** to create a new invoice, here's the complete dat
     - Creates 1-2 records depending on which amounts are non-zero
     - Similar structure to Stripe, but uses bucket-specific amounts
   </Accordion>
-  <Accordion title="Invoice Update Flow (Existing Invoice)" icon="sparkles">
+  <Accordion title="Invoice Update Flow (Existing Invoice)" icon="file-invoice-dollar">
     When an admin clicks **"Save"** on an existing invoice, here's what happens:
 
     #### **Step 1: Update Master Invoice Record**
