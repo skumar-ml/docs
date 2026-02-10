@@ -306,26 +306,26 @@ Each visible region is driven by specific DOM containers and `getPortalDetail / 
 
     List of upcoming enrollments (session name, class detail, or "No details available").
 
-    - DOM: **.sem-classes-info-div.future-classes**contains\*\*[data-portal="future-classe-list"]\*\*
-    - Data: currentSession[0].futureSession
-    - Render: renderFutureClasses()
+    - DOM: `.sem-classes-info-div.future-classes` contains `[data-portal="future-classe-list"]`
+    - Data: `currentSession[0].futureSession`
+    - Render: `renderFutureClasses()`
   </Tab>
   <Tab title="Past Class History">
     ![Image](/images/image-116.png)
 
     List of past programs/sessions (sorted desc by createdOn).
 
-    - DOM: **.sem-classes-info-div** contains\*\*[data-portal="past-classe-list"]\*\*
-    - Data: currentSession[0].pastSession
-    - Render: renderPastClasses()
+    - DOM: `.sem-classes-info-div` contains `[data-portal="past-classe-list"]`
+    - Data: `currentSession[0].pastSession`
+    - Render: `renderPastClasses()` 
   </Tab>
   <Tab title="Next Recommended Program">
     See the returner conversion page for details.
 
     Pre-registration and/or recommended level (bundle, registration dates, Enroll Now / Learn More).
 
-    - DOM: **.next-recomm-prog-container**, **[data-pre-registration="container"]**
-    - Data: currentSession[0].recommendedLevel; futureSession (pre-reg dates, bundle)
-    - Render: renderRecommendedLevel()
+    - DOM: `.next-recomm-prog-container`, `[data-pre-registration="container"]`
+    - Data: `currentSession[0].recommendedLevel`; `futureSession (pre-reg dates, bundle)`
+    - Render: `renderRecommendedLevel()`
   </Tab>
 </Tabs>
