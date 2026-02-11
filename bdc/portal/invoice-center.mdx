@@ -1,0 +1,125 @@
+---
+title: "Retool"
+---
+
+## **Invoice Center**
+
+The [Invoice Center](https://bergendebate.retool.com/apps/4cb7af14-b658-11f0-b7e1-0f98c055d69f/Student%20Consolidation/Invoice%20Center%20With%20Zero%20Amount%20-SC) page allows admins to **generate and manage invoices** for students for a selected session and year. Admins first filter and select students, then choose how the payment will be collected.
+
+### **Managing Selected Students**
+
+Selected students on the **Add Student List** are added to the **Current Student List** on the right, where admins can review them and remove any student if needed before proceeding.
+
+![Image](/images/image-88.png)
+
+### Payment Methods Overview
+
+![Image](/images/image-79.png)
+
+**JotForm**\
+Used when payment needs to be collected via an external JotForm link. The admin adds the JotForm URL and sends it to parents to complete the payment outside the platform.
+
+**Stripe**\
+Used for direct online payments. The admin sets the payable amount for card and/or bank transfer, which parents can pay securely through Stripe.
+
+**Bucket**\
+Used when the invoice amount is adjusted using internal credits or predefined pricing options, without requiring an immediate online checkout.
+
+**Bucket Invoice Setup**
+
+- Admin can apply **returner, sibling, or early-bird** options if applicable.
+- Different amounts can be set for **card vs bank transfer**.
+- If an invoice already exists, it can be **edited instead of recreated**.
+
+## **Manage Invoice**
+
+The [Manage Invoice](https://bergendebate.retool.com/apps/8f8c2b60-6f39-11ef-81be-bf44285ea2ae/2024%20phase%202/Manage%20Invoice%20Q2-24) page lets admins view and manage all invoices in one place.\
+Admins can search and filter invoices, check their processing status, and quickly **view, edit, or delete** invoices as needed.
+
+![Image](/images/image-81.png)
+
+## **Invoice List**
+
+The[ Invoice List](https://bergendebate.retool.com/apps/53cebdf8-b65b-11f0-9b34-9fca107ca887/Student%20Consolidation/Invoice%20List%20Q2-24%20-%20SC) page allows admins to view and manage all student invoices in one place. Admins can quickly search, filter, and track invoice status, and take actions such as completing pending invoices.
+
+![Image](/images/image-82.png)
+
+### Key Fields:
+
+- **Pre-registered**: Indicates whether the student was pre-registered before the invoice was generated.
+- **Supplementary Program**: Shows if the invoice includes any additional or optional programs.
+- **Status**: Displays the current state of the invoice (for example, processing, admin marked, or completed).
+- **Actions**: Allows admins to **mark the invoice as complete**.
+
+## Student Consolidation / Invoice Overview
+
+This [Invoice Overview](https://bergendebate.retool.com/apps/214e8204-b89b-11f0-9595-b3db2c990fbf/Student%20Consolidation/Invoice%20Overview%20-%20SC) provides a high-level summary of student and invoice status for the selected year and session. Admins can quickly view total students, invoices sent, and invoices completed.
+
+The View Unprocessed Invoice navigate to the[ Invoice Sanity Check ](https://bergendebate.retool.com/apps/7e8e1fc8-be05-11f0-9288-ebcb815df819/Student%20Consolidation/Invoice%20Sanity%20Check%20-%20Latest?level&location&sessionId=1&yearId=2026)and View Incomplete Invoice navigate to the[ Invoice List](https://bergendebate.retool.com/apps/53cebdf8-b65b-11f0-9b34-9fca107ca887/Student%20Consolidation/Invoice%20List%20Q2-24%20-%20SC?level&location&sessionId=1&status=Incomplete&yearId=2026) pages for further review and action.
+
+## Invoice Sanity Check
+
+The [Invoice Sanity Check ](https://bergendebate.retool.com/apps/7e8e1fc8-be05-11f0-9288-ebcb815df819/Student%20Consolidation/Invoice%20Sanity%20Check%20-%20Latest)page helps admins review student invoices and take corrective actions when needed.
+
+![Image](/images/image-105.png)
+
+### Key Columns Explained
+
+- **Prev Student (Self Reported)**\
+  Indicates whether the parent marked the student as a returning student during registration.
+- **Prev Student (Database)**\
+  Shows whether the system already recognizes the student as a returning student based on existing records.
+- **Pre-Registrant**\
+  Indicates if the student was pre-registered before the invoice was generated, which may affect pricing or discounts.
+- **Supplementary Program**\
+  Shows whether any additional (upsell) programs are attached to the student’s invoice.
+
+### Actions Column
+
+- **Add Bucket**
+
+  <Columns cols={2}>
+    <Card title="Purpose" icon="sparkles">
+      Used to assign an existing predefined (bucket-based) invoice when an invoice was not auto-generated or needs to be manually linked to a student.
+    </Card>
+    <Card title="View" icon="sparkles">
+      ![Add Bucket New](/images/add-bucket-new.png)
+    </Card>
+  </Columns>
+- **View Family**\
+  Navigates to the [family details](https://bergendebate.retool.com/apps/e5b38f92-b63c-11f0-af15-3348c57919db/Student%20Consolidation/Family%20Snapshot%20-%20SC?familyId=&urlPaymentId=) page, where admins can view all linked students, registrations, invoices, and payment history for the selected family.
+- **Refund**\
+  Redirects to a [refund flow](https://bergendebate.retool.com/apps/634efaf0-b646-11f0-90e3-df4825553f35/Student%20Consolidation/Student%20Registration%20Details%20-%20SpeedUp%20-%20SC?paymentId=691efb543180f1fe2f21408d), where admins can review invoice/payment details and initiate a refund if applicable.
+
+### Bucket Invoice vs Other Invoices
+
+- **Bucket invoices** are manually assigned using **Add Bucket** and are generally used for structured or predefined pricing scenarios.
+- Other invoices may be issued via the Invoice Center.
+
+## Invoice Rates
+
+The [Invoice Rates](https://bergendebate.retool.com/apps/0ac16b4a-ff24-11ef-b99e-67da19340c58/2025%20Phase%20B/Invoice%20Rates%20-%20V2) page allows admins to **define and manage invoice pricing rules (buckets)** for different years and sessions.
+
+![Image](/images/image-85.png)
+
+Admins can view existing **base pricing, fees, discounts, and deposit amounts**, and see how different combinations (returner, sibling, early bird) affect the final invoice amount.
+
+**Create Bucket Popup**
+
+Using **Create Bucket**, admins can set up a new pricing bucket for a selected year and session. If a bucket already exists, the system prevents duplication and prompts the admin to edit instead.
+
+![Image](/images/image-83.png)
+
+**Edit Bucket Popup**
+
+Using Edit Bucket, admins can update existing pricing values. Any changes apply to future invoices generated for the selected year and session.
+
+![Image](/images/image-84.png)
+
+<Note>
+  TODO: Yogesh, I think we need some technical explanation for everything that happens when an admin sends out an invoice via Retool. Specifically, there are a lot of database collections for invoices, so can you explain in which ones records are created (or updated)?
+
+  Either that explanation can happen here, or you can try to give it in the Database section of the "Invoices" page.
+
+  **@SK, Updated description in the invoice page below the database section**
+</Note>

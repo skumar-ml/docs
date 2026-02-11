@@ -39,48 +39,62 @@ The [Millions Dashboard](https://bergendebate.retool.com/apps/95b9c6b4-ed69-11f0
 
 ## Technical
 
-TODO: Explain in detail how millions works (from Retool update to render here). Include DB
-
 <Warning>
   Note: Please skip the BDC Millions store for now, since we aren't using it
 
   SK -- let's get BDC admin to populate this
 </Warning>
 
-This section describes only the **Millions page** ([portal/millions](https://www.bergendebate.com/portal/millions)): how it loads data, where the data lives, and how `millions.js` renders it.
+### **Database Details**
 
-### What the page shows
+**millions_transactions** — One document per student (keyed by `studentId`). Used by the Millions page and by the read/write APIs.
 
-The Millions page displays **per-student** reward amounts (points). Each student has a single balance and transaction history stored in **millions_transactions** (keyed by **studentId**). The page lists students (tabs), shows **Current Balance** and a **Transactions** table per student, and updates the sidebar count (`[data-millions="sidebarCount"]`) with the selected student's balance as "XM".
+| Field            | Description                                   |
+| :--------------- | :-------------------------------------------- |
+| **\_id**         | MongoDB ObjectId.                             |
+| **studentId**    | Student identifier (links to member/student). |
+| **earnAmount**   | Current total Millions balance.               |
+| **createdOn**    | When the document was created.                |
+| **transactions** | Array of transaction entries (see below).     |
 
-### Where the data lives (DB)
+_Optional or joined when read:_ `name`, `email`, `memberId`, `studentId` may appear when the API joins with **members**; the stored document may only have `studentId`, `earnAmount`, `createdOn`, `transactions`.
 
-- `millions_transactions:` One document per student. Fields: `studentId`, `earnAmount` (current total), `createdOn`, `transactions` (array of  `amount`, `description`, `lastEarnDate` ). 
-- `millions_items_details`**:** Catalog for the Millions store (out of scope here).
+**transactions** array item:
 
-The read API filters **which students** appear using current year/session (students with a payment in that term); each student's balance is their total (not per-session).
+| Field            | Description                        |
+| :--------------- | :--------------------------------- |
+| **amount**       | Delta added (+) or deducted (-).   |
+| **description**  | Optional text for the transaction. |
+| **lastEarnDate** | Date of the transaction.           |
 
-### How the page gets data (API)
+**millions_items_details** — Catalog for the Millions store (skipped for now).
 
-- **GET **`getMillionsTransactionData` (member-service)
-- Resolves `memberId` to family `memberIds`; uses current year/session to find students with a payment in that term; for each, looks up `millions_transactions` by `studentId` and returns `studentName`, `studentGrade`, `earnAmount`, `transactions`.
-- Response: The page uses `millions_transactions`; **items** is for the store (skipped here).
+### **Flow**
 
-<Note>
-  **TODO: Are we still filtering by current year/session? I think we should be showing student millions for all students, regardless of if they have a payment in the term...**
-</Note>
+1. **JS (**`MillionsRenderer`**)** — init and request
+   - File: `millions.js`; class: `MillionsRenderer`.
+   - Parent page must pass `apiBaseURL` and `memberId` to `MillionsRenderer` class 
+   - Caches DOM: `#half-circle-spinner` (loading), `.portal-info-wrapper` (main content wrapper), `[data-container="no-record-found"]` (empty state), `.portal-tab` (tab container).
+   - Shows spinner, hides portal content and no-record div, then calls `GET getMillionsTransactionData/{memberId}`.
+2. **API (getMillionsTransactionData.py)**
+   - The read API filters **which students** appear using current year/session (students with a payment in that term); each student's balance is their total (not per-session).
 
-### `millions.js` (Page Logic)
+   <Warning>
+     TODO: We need to update code to not just look for student in the current year/session. It should be any student that is in `payment_details`
+   </Warning>
+   - Resolves `memberId` to family; uses current year/session to get students with a payment in that term; for each, reads `millions_transactions` by `studentId`.
+   - Returns `millions_transactions` with `studentName, studentGrade, earnAmount, transactions` (and optionally **items** for store; page ignores **items**).
+3. **JS (MillionsRenderer)** — after response
+   - **Content switch:** If `millions_transactions` is missing or empty: show `no-record-found`, hide portal wrapper and spinner; return. Otherwise: hide spinner, show `.portal-info-wrapper` and `.portal-tab`.
+   - **Tab menu:** Fills `.portal-tab-menus` with one `.portal-tab-link` per student (student name); first tab has **w--current**.
+   - **Tab panes:** Fills `.portal-tab-content` with one `.w-tab-pane` per student; each pane has Current Balance (`.million-price-text`), "View Store" link, and Transactions table (`.transactions-table-div` with header row and `.transactions-row-wrapper` for rows).
+   - **Render each tab:** For each student, `renderTab` writes balance into `.million-price-text`, sorts `transactions` by `lastEarnDate` (newest first), and appends rows (date, description, amount with green-semi-bold / red-semi-bold for +/-). If no transactions, shows "No Record Found" in that pane.
+   - **Sidebar:** Updates `[data-millions="sidebarCount"]` with the first student's **earnAmount** (e.g. "1,234M"); parent is shown.
+   - **Tab switching:** Listens on `.portal-tab-link` clicks; on switch, toggles `w--current / w--tab-active`, re-runs `renderTab` for the selected index to refresh that pane's display, and updates `[data-millions="sidebarCount"]` to the selected student's balance.
 
-- **Class:** `MillionsRenderer`. Used only on the Millions page.
-- **Entry:** `constructor(data)` with `apiBaseURL`, `memberId`; calls `init()`.
-- `init()`**:** Shows loading state; calls `fetchData()` → **GET **`getMillionsTransactionData`. If no `millions_transactions` or empty, shows `[data-container="no-record-found"]` and exits. Otherwise shows tab and wrapper, then calls the following ~~renderTabMenu(millions_transactions), renderTabContent(millions_transactions), renderTab(idx, student) for each, setupTabSwitching(millions_transactions).~~
+### **Sidebar and main content**
 
-<Note>
-  TODO: What is `setupTabSwitching(millions_transactions)`?
-</Note>
-
-- `renderTabMenu(students)`**:** Clears **.portal-tab-menus**; for each student appends **.portal-tab-link** with student name (Webflow tab structure).
-- `renderTabContent(students)`**:** Clears **.portal-tab-content**; for each student creates **.w-tab-pane** with balance (**.million-price-text**) and **.transactions-table-div** (header + **.transactions-row-wrapper** for rows).
-- `renderTab(tabIndex, student, link)`**:** Sets **.million-price-text** to `earnAmount`; fills transaction rows (date, description, amount; **green-semi-bold** / **red-semi-bold**). Sorts **student.transactions** by `lastEarnDate` descending. Calls `updateSideBarAmount(earnAmount)` for active tab or on link click.
-- `updateSideBarAmount(earnAmount)`**:** Sets `[data-millions="sidebarCount"]` to **earnAmount + "M"**
+- **Millions menu** — Sidebar shows balance for the selected student in `[data-millions="sidebarCount"]` as "XM" (e.g. "1,234M"). The parent element is shown/hidden and updated when the user switches student tabs.
+- **Main content** depends on API response:
+  - **Has **`millions_transactions`**:** Show the Millions UI (student tabs, Current Balance, Transactions table per student). First student is selected by default; sidebar shows that student's balance.
+  - **No millions_transactions (empty or error):** Show `[data-container="no-record-found"]` (no records message), hide `.portal-info-wrapper` and `.portal-tab`.

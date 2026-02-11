@@ -4,19 +4,319 @@ title: "Dashboard"
 
 ## Non-Technical
 
-TODO: Explain all the things you see on the portal dashboard
+## Overview
+
+The [Dashboard](https://www.bergendebate.com/portal/dashboard) is the main landing page that appears **after a user logs in**.\
+It allows parents to view and manage all student-related information in one place, including students, programs, forms, schedules, announcements, and account details.\
+**Users must sign up and log in to access this page.**
+
+### **Student Selection**
+
+Displays all students linked to the parent account; selecting a student updates all dashboard information accordingly.
+
+![Image](/images/image-95.png)
+
+### **Navigation Menu**
+
+<Columns cols={2}>
+  <Card title="Purpose" icon="sparkles">
+    Provides quick access to key sections such as Dashboard, Payments, Announcements, Credits, and Referrals.
+  </Card>
+  <Card title="View" icon="sparkles">
+    ![Sidebar](/images/sidebar.png)
+  </Card>
+</Columns>
+
+### **Current Program and Announcements**
+
+- **Current Program :**  Shows the selected student’s active program along with session, location, and any pending items.
+- **Announcements :**  Displays recent updates and important messages with dates.
+
+  ![Image](/images/image-90.png)
+
+### **Registration Forms**
+
+Displays required enrollment forms with their completion status, allowing parents to open and complete pending forms directly.
+
+![Image](/images/image-91.png)
+
+### **Schedule, Tools & Quick Links**
+
+- **Calendar Schedule :** Displays classes, events, and holidays in a monthly calendar view, with an option to add them to Google Calendar.
+- **Class Tools & Quick Links :** Provides quick access to scheduling make-ups, Zoom links, and shared resources.
+
+  ![Image](/images/image-92.png)
+
+### **Class History**
+
+- **Future Classes :** Shows upcoming or pre-registered classes for the selected student.
+- **Past Class History :**  Lists previously attended classes and related details.
+
+  ![Image](/images/image-94.png)
+
+### **Account Balance**
+
+Displays available credit balance with access to transaction logs.
+
+![Image](/images/image-93.png)
 
 ## Admins (Retool)
 
-1. Managing calendar + resources
+### **Manage Calendar and Resources — Overview**
+
+This [page](https://bergendebate.retool.com/apps/2f15d79e-f03f-11f0-9bb4-bf2c26d4c428/Q1%6026/Upload%20Content%20Dashboard%20-%20Latest) allows admins to add, edit, copy _(reuse resources from one session or year to another)_, and delete resource links (such as Zoom links, calendars, and general resources) for a selected session and year, ensuring the correct resources are visible in the web portal.
+
+![Image](/images/image-96.png)
 
 ## Technical
 
-TODO: Explain (at a high-level) the tech. What JS and APIs get called. Don't get into too much detail, since there are a lot of components on the dashboard. Things to talk about:
+### Overview
 
-1. Aggregating info by student
-2. Showing current class view
-   1. Screenshot
-   2. Calendar + resources, Announcements, Invoices & Forms, Millions, etc
-1. Future + Past Classes
-2. Anything else I missed
+The Dashboard is a single-page experience driven by one main API that **aggregates all portal data by student**. The frontend (`portal_new_ui.js`, class `Portal`) calls ****`GET getPortalDetail/`**** once, and in parallel ****`GET getMillionsTransactionData/`**** and ****`GET getAnnouncement/`****. The response is a list of student-wise objects; each student has `currentSession`, `futureSession`, and `pastSession`. The Dashboard then renders one tab per student and, for the selected tab, shows the current class view (program info, calendar, resources, announcements, invoices & forms, Millions), plus Future Classes and Past Class History. Full schema for invoices and Millions lives in [Invoices](/bdc/portal/invoices) and [Millions](/bdc/portal/millions); this section stays high-level.
+
+### Database
+
+The **getPortalDetail** API reads from multiple collections to build per-student current/future/past session data. Below are the main sources; where full table schemas exist elsewhere, references are given.
+
+**payment_details** — **payment_details** stores records of payments made for Academic classes.\
+The system loads all payments for every child in a family and then checks the current year and session to decide whether each payment belongs to a **current class**, a **future class**, or a **past class**.
+
+Some fields in this data are also used to suggest the **next recommended class or level** for a student. The full technical structure of this data is defined in the **Semester database**.
+
+**summer_payment_details** — **Summer program payments** store payments made for summer classes. The system loads all summer payments for every child in a family, combines them with regular (semester) payments, and then marks them as **current**, **future**, or **past** classes using the same rules.
+
+The data looks similar to regular payment records and includes details like the program, session, location, and year. The full technical details are defined in the **Summer database**.
+
+**invoice_notifications**, **invoice_records**, **invoice_payment_link**, **invoice_responses**, **invoice_rates**, **stripe_checkout_customer** — Invoice information comes from several tables.\
+The system combines data from all of them using `getInvoiceListScript` to build a complete invoice view.
+
+For each class session, the result includes:
+
+- a list of invoices, and
+- a detailed breakdown of charges for each invoice.
+
+The full technical details of these tables are available in the **Invoices database**.
+
+**form_detail**, **form_category**, **class_category** — These tables are used to manage **registration forms** and track whether they are completed.
+
+**form_detail** — One document per form.
+
+| Field (dashboard-relevant)                          | Description                 |
+| :-------------------------------------------------- | :-------------------------- |
+| **formId**                                          | Form identifier.            |
+| **form_name**                                       | Display name.               |
+| **categoryId**                                      | Links to **form_category**. |
+| **sequence**                                        | Sort order.                 |
+| **is_live** / **is_editable** / **is_resubmission** | Flags used by portal.       |
+
+**form_category** — Category for grouping forms (e.g. by `category_name` and `sequence`).
+
+| Field (dashboard-relevant) | Description          |
+| :------------------------- | :------------------- |
+| **categoryId**             | Category identifier. |
+| **sequence**               | Sort order.          |
+| **category_name**          | Display name.        |
+
+**class_category** — Maps location to form IDs. `getFormList` uses `classLocationId` to get `formIds`, then looks up `form_detail`.
+
+| Field (dashboard-relevant) | Description                                           |
+| :------------------------- | :---------------------------------------------------- |
+| **classLocationId**        | Location identifier (matches payment **locationId**). |
+| **formIds**                | Array of **form_detail.formId**.                      |
+
+**class_details**, **class_location**, **class_session** — Program name, location, session name for current/future sessions. `getProgramDetail`, `getClassLocationDetails` use these.  [**For table schemas see Semester MongoDB**](/bdc/checkout-systems/semester/mongo-db) (Class Level, Class Location, Class Details, Class Session).
+
+**upload_content_category** — One document per category (e.g. "Google Calendar", "Zoom links", "Make-up Acuity Link", "General resources"). Used to group `upload_content` items; **label** is what the portal matches to render calendar, Zoom, make-up, and general resources.
+
+| Field (dashboard-relevant) | Description                                                                                                          |
+| :------------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| **\_id**                   | Category identifier; **upload_content** documents reference this as **uploadContentId**.                             |
+| **label**                  | Display name shown in the portal (e.g. "Google Calendar", "Zoom links", "Make-up Acuity Link", "General resources"). |
+
+**upload_content** — One document per resource (link) within a category. Filtered by `uploadContentId` (category **\_id**), `yearId`, `sessionId`, and `status = true`. `getUploadedContent` returns `name`, `resourceDesc`, `link` per item; the portal renders calendar iframe, Zoom links, make-up link, and general resource links from these.
+
+| Field (dashboard-relevant) | Description                                                                   |
+| :------------------------- | :---------------------------------------------------------------------------- |
+| **\_id**                   | MongoDB ObjectId.                                                             |
+| **uploadContentId**        | References **upload_content_category.\_id** (which category this belongs to). |
+| **yearId**                 | Academic year; used with **sessionId** to scope content to current term.      |
+| **sessionId**              | Session identifier; used with **yearId** to scope content.                    |
+| **status**                 | When `True`, included in portal response; inactive items are excluded.        |
+| **name**                   | Resource name (displayed in portal).                                          |
+| **resourceDesc**           | Optional description.                                                         |
+| **link**                   | URL (e.g. Zoom link, Google Calendar embed URL, make-up scheduling link).     |
+
+**summer_program_details** — Summer program details when payment is summer type (e.g. `programId`, `sessionId`, `yearId`, `summerSessionId`). Full schema (when documented): [Summer MongoDB](/bdc/checkout-systems/summer/mongo-db).
+
+**millions_transactions** — Not read by `getPortalDetail`. Millions balance and history come from ****`GET getMillionsTransactionData/`****. [**For full table schema see Millions#database-details.**](/bdc/portal/millions)
+
+### Flow
+
+1. **JS (Portal)** — init and request
+   - File: `portal_new_ui.js`; class: **Portal**. Parent page passes `apiBaseURL`, `memberId`, and `typeBApiBaseURL` (for announcements).
+   - Hides main content (`.portal-info-wrapper`), shows spinner (`#half-circle-spinner`), then in parallel calls` GET getPortalDetail/, GET getMillionsTransactionData/, and GET getAnnouncement/`.
+2. **API (getPortalDetails.py)**
+   - The system first finds all children linked to a family. It then loads both Academic and Summer payment records for those children and checks the current year and session to decide whether each payment belongs to a **current**, **future**, or **past** class.
+     - Students with the same name are merged into one entry.
+   - For each relevant payment, the system adds extra details such as:
+     - invoices and their charge breakdowns,
+     - required forms and completed forms,
+     - class resources and links,
+     - program, location, and session details,
+     - and the next recommended class or level.
+
+     Finally, it returns a list where **each student name maps to all of that student’s dashboard data**.
+3. **API (getMillionsTransactionData)** — Returns Millions balance and transaction history per student (see [Millions](/bdc/portal/millions)).
+4. **API (getAnnouncement)** — Returns announcements (Type B API).
+5. **JS (Portal)** — after response
+   - **No data:** If the system does not find any data, it shows only **free resources** and hides all **paid or portal content**. The loading spinner is hidden, and the page stops loading any further dashboard data.
+   - **With data:** `setupTabs(data, millions_transactions, announcements)` builds one tab per student (sorted by most recent `currentSession[0].createdOn`). For each tab: creates tab link and pane, sets student name, calls `renderStudentTab(tabPane, studentData, millionsData, announcements)` which:
+     - Renders current class section (program, calendar, resources, invoices accordion, forms, Millions) from first `currentSession` and `uploadedContent`.
+     - Renders pre-registration / Next Recommended Program from `recommendedLevel` and `futureSession` (see [Returner conversion](/bdc/portal/returner-conversion)).
+     - Renders recent announcements, Future Classes, and Past Class History.
+   - Shows/hides sections per student: current-class block, calendar, invoice accordion, registration-form accordion, class tools, Millions, future classes div, past classes div (see Sidebar and main content).
+   - **checkReferralsAccess(data)** — Referrals menu in sidebar shown only if at least one student has `currentSession`.
+   - **updateSidebarMillionsCount** — Sets `[data-millions="sidebarCount"]` to the selected student’s Millions; listener on tab switch updates it when user changes student.
+
+### Main content display
+
+- **Main content** depends on `getPortalDetail` response:
+  - **Has data:** Show `.portal-info-wrapper`. One tab per student; first tab active. For each tab:
+    - ****`Has currentSession:`**** If a student has a **current class**, the page shows the main class section, announcements, invoices, calendar, class tools, and the Millions balance.\
+      The **registration forms section** is shown only when there are forms that the parent needs to fill out.
+    - ****`No currentSession:`**** Hide those sections; optionally show invoice accordion if `futureSession` has invoices.
+    - **Future Classes** : shown if `futureSession` has length.
+    - **Past Class History**: shown if `pastSession` has length.
+  - **No data ("No data Found"):** Free resources shown, paid/portal content hidden; spinner hidden.
+
+### Dashboard UI (technical reference)
+
+Each visible region is driven by specific DOM containers and `getPortalDetail / getMillionsTransactionData / getAnnouncement` data. Use the tabs below for a per-region technical reference
+
+<Tabs>
+  <Tab title="Student tabs">
+    ![Image 95](/images/image-95.png)
+
+    One tab per student; sorted by `currentSession[0].createdOn` (most recent first).
+
+    - **DOM:** `.portal-tab-menus` contains `.portal-tab-link`, `.portal-tab-content` contains `.portal-tab-pane`
+    - **Data:** `getPortalDetail (array of student objects; tab label = student name)`
+    - **Render:** `setupTabs()` contains creates tab link + pane per student, then `renderStudentTab() `per pane
+  </Tab>
+  <Tab title="Current Program & Items Pending">
+    <img
+      src="/images/image-109.png"
+      alt="Image"
+      title="Image"
+      style={{ width:"48%" }}
+    />
+
+    **Current Program**: Title and class/summer line (e.g. "PF Labs | Session 1 | Glen Rock").
+
+    - **DOM:** **`.recent-announcement-div.current-class`** contains **`.recent-announcement-title`**, **`.current-class`**
+    - **Data:** `currentSession[0].classDetail or currentSession[0].summerProgramDetail`
+    - **Render:** `renderCurrentClassSection()`
+
+    **Items Pending** ? Shown when there are incomplete registration forms or unpaid invoices.
+
+    - **DOM:** **`.items-pending-flex-wrapper`**
+    - **Data:** `currentSession[0].formList / formCompletedList`; `invoiceList (current + futureSession) with !invoice.is_completed`
+    - **Render:** `renderPendingItems()`
+  </Tab>
+  <Tab title="Registration Forms header">
+    ![Image](/images/image-91.png)
+
+    Tag text (e.g. "Needs to be completed" or "All Paid") and accordion for forms.
+
+    - **DOM:** `.registration-form-accordian` contains `.dashboard-tag-text`; `[data-portal="invoice-form-accordian"]`
+    - **Data:** `currentSession[0].formList`; `invoiceList` (current + future)
+    - **Render:** `renderInvoiceAccordionStyled()`, `renderRegistrationForms()`;
+  </Tab>
+  <Tab title="Calendar">
+    <img
+      src="/images/image-110.png"
+      alt="Image"
+      title="Image"
+      style={{ width:"54%" }}
+    />
+
+    Month view and events; "Add to Google Calendar" below.
+
+    - **DOM**: `.calendar-white-rounded-div` (iframe or embed)
+    - **Data**: `currentSession[0].uploadedContent` (item with `label === 'Google Calendar'`)
+    - **Render**: `renderCalendarIframe()`, `renderGoogleCalendar()`
+  </Tab>
+  <Tab title="Class Tools / Quick Links">
+    <img
+      src="/images/image-111.png"
+      alt="Image"
+      title="Image"
+      style={{ width:"26%" }}
+    />
+
+    Zoom links, Schedule a Makeup, General Resources.
+
+    - **DOM:** `.class-tools-quick-links-div`
+    - **Data:** `currentSession[0].uploadedContent` (Zoom, makeup, general resources by label)
+    - **Render:** `renderZoomLinks()`, `renderMakeupLinks()`, `renderGeneralResources()`
+  </Tab>
+  <Tab title="Recent Announcements">
+    <img
+      src="/images/image-112.png"
+      alt="Image"
+      title="Image"
+      style={{ width:"66%" }}
+    />
+
+    Up to two recent announcements; unread count in sidebar `[data-announcements="counts"]`.
+
+    - **DOM:** `.recent-announcement-info-div`, `.recent-announcement-number`
+    - **Data:** `getAnnouncement` (filtered by `accountEmail`; `unread = !ann.is_read`)
+    - **Render:** `renderRecentAnnouncements()`
+  </Tab>
+  <Tab title="Invoices Accordion">
+    ![Image](/images/image-113.png)
+
+    Outstanding invoices and registration forms for current + future sessions.
+
+    - **DOM:** `[data-portal="invoice-form-accordian"]`, `.invoice-form-accordian`
+    - **Data:** `currentSession` + `futureSession`
+    - **Render:** `renderInvoiceAccordionStyled()`
+  </Tab>
+  <Tab title="Millions Balance">
+    ![Image](/images/image-114.png)
+
+    Student millions count and Transaction Logs; sidebar count from `updateSidebarMillionsCount()`.
+
+    - **DOM:** `.millions-balance-flex-wrapper` contains `.million-price-text`
+    - **Data:** `getMillionsTransactionData`, `millions_transactions` (match `studentName`;)
+    - Render: `renderMillions()`
+  </Tab>
+  <Tab title="Future Classes">
+    ![Image](/images/image-115.png)
+
+    List of upcoming enrollments (session name, class detail, or "No details available").
+
+    - DOM: `.sem-classes-info-div.future-classes` contains `[data-portal="future-classe-list"]`
+    - Data: `currentSession[0].futureSession`
+    - Render: `renderFutureClasses()`
+  </Tab>
+  <Tab title="Past Class History">
+    ![Image](/images/image-116.png)
+
+    List of past programs/sessions (sorted desc by createdOn).
+
+    - DOM: `.sem-classes-info-div` contains `[data-portal="past-classe-list"]`
+    - Data: `currentSession[0].pastSession`
+    - Render: `renderPastClasses()`
+  </Tab>
+  <Tab title="Next Recommended Program">
+    See the returner conversion page for details.
+
+    Pre-registration and/or recommended level (bundle, registration dates, Enroll Now / Learn More).
+
+    - DOM: `.next-recomm-prog-container`, `[data-pre-registration="container"]`
+    - Data: `currentSession[0].recommendedLevel`; `futureSession (pre-reg dates, bundle)`
+    - Render: `renderRecommendedLevel()`
+  </Tab>
+</Tabs>
