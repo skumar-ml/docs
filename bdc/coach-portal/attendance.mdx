@@ -18,8 +18,230 @@ On the left side, the **Class Details** panel shows all available classes for th
 
 ![Image](/images/image-121.png)
 
-The main table shows each student’s attendance week by week. A **check mark (✓)** indicates the student attended that week, while a **cross (✕)** indicates absence. 
+The main table shows each student’s attendance week by week. A **check mark (✓)** indicates the student attended that week, while a **cross (✕)** indicates absence.
 
 ## Technical
 
 TODO: Explain in detail how this works (APIs, JS files/methods needed to render). Both for Retool + Portal
+
+### **Database**
+
+**class_attendance** — One document per student check-in for a given class and week. Written by the `updateAttendance` API when a coach marks a student present; read (and aggregated) by `getAttendance/{memberId}` to build the coach's class list with `studentDetails` and each student's `attendanceId`
+
+| Field         | Description                                                                                                                 |
+| :------------ | :-------------------------------------------------------------------------------------------------------------------------- |
+| **\_id**      | MongoDB ObjectId. Unique attendance record id; returned to the portal as **attendanceId** (used when unchecking a student). |
+| **memberId**  | Coach/instructor taking attendance (used by `getAttendance` to return only that coach's classes).                           |
+| **createdOn** | When the attendance was recorded.                                                                                           |
+| **paymentId** | Links to the student's enrollment/payment for this class.                                                                   |
+| **week**      | Week number for which attendance is recorded.                                                                               |
+| **classId**   | Class identifier.                                                                                                           |
+
+**API response shape (getAttendance)** — The portal receives an array of class objects (from other sources plus `class_attendance`). Each class has `classId`, `className`, `week`, and **studentDetails** (one per enrolled student). Each student in **studentDetails** includes `studentName`, `paymentId`, **attendanceId**, and `prevStudent` (e.g. for "New" tag). The portal uses this to render the class dropdown, filters, and check-in icons.
+
+### **Flow**
+
+#### Coach Attendance Page — Rendering
+
+1. **JS — init and request**
+   - File: `instructor-attendance.js`.
+   - Class `ClassData` is constructed with the logged‑in coach’s `webflowMemberId`.
+   - `ClassData.getClasssData`:
+     - Hides the informational wrapper and shows a spinner.
+     - Calls **GET** `getAttendance/{memberId}`.
+     - On success, instantiates `new checkInForm(webflowMemberId, responseText)` with the returned class list.
+     - On error, hides the spinner, hides the main content, and displays a “no record found” area via `[data-container="no-record-found"]`.
+2. **API — data returned to portal**
+   - `getAttendance/{memberId}` returns an array of class attendance objects (see **Database** above).
+   - Each class object contains `classId`, `week`, and `studentDetails[]` with `studentName`, `paymentId`, `attendanceId`, and flags like `prevStudent`.
+3. **JS — after response**
+   - `checkInForm.view` mounts into `#instructor-attendance` and:
+     - Builds the **class selector** dropdown (one option per class from the API).
+     - Builds the **status filter** (`#ins-checkin-filter`) for `CheckedIn` / `Not Checked In`.
+     - Builds the **search box** (`#search-filter`) to filter by `studentName`.
+     - Creates the **student list** container and **pagination** container.
+   - When a class is selected:
+     - `displayStudentList(classId, 'init')` stores that class in `$currentClass`, paginates `studentDetails` via `paginatorList`, and renders:
+       - Header row: **Student Name**, **Coach Check‑In**.
+       - One row per student with name + attendance icon.
+       - “No record found” message if there are no students.
+       - Pagination controls for long lists.
+   - **Toggling attendance**:
+     - Each row’s icon is built from `getCheckedIcon(isCheckedIn)` using `attendanceId`.
+     - On click:
+       - Looks up the latest student record in `$currentClass.studentDetails` using `paymentId`.
+       - If currently checked in:
+         - Prompts: `confirm("Are you sure want to uncheck-in")`.
+         - Calls `updateAttendanceData(currentAttendanceId, currentPaymentId, icon)` → `callCheckedInApi`.
+       - If not checked in:
+         - Calls `updateAttendanceData('', currentPaymentId, icon)` to create a new attendance record.
+     - `callCheckedInApi` sends **POST** `/updateAttendance` with `{ memberId, classId, paymentId, week, attendanceId? }`, then:
+       - Updates `attendanceId` in both `currentClass.studentDetails` and the master `classData` array (using the `attendanceId` from the response where available).
+       - Updates the icon to the correct checked / unchecked state.
+
+### **Portal sidebar display**
+
+- `When there are coach classes returned by getAttendance`:
+  - The Attendance link in the coach portal sidebar leads to a page where:
+    - The class dropdown is populated.
+    - The filter bar, student list header, and pagination are visible.
+    - Coaches can search, filter by status, and toggle attendance for each student.
+- **When there are no classes / no attendance data**:
+  - `ClassData.getClasssData` shows the “no record found” state instead of the main attendance UI, and the body of the page indicates that there are no classes to take attendance for.
+- **Visibility rules (high‑level)**:
+  - The Attendance page is designed for coach users; it appears in the coach‑facing portal sidebar. Parents/students do not use this page for attendance (they use the separate self‑check‑in flow).
+
+### **Retool Attendance Dashboard Page**
+
+#### 1. System Description
+
+The Retool Attendance Dashboard is a comprehensive attendance tracking tool. The system enables administrators to manage multiple classes across different sessions, track student attendance on a weekly basis, and maintain detailed records of class schedules, locations, levels, and instructor assignments.
+
+#### 2. Technical Details
+
+The application follows a modular architecture with:
+
+**UI Components**
+
+- **Filter Container (container1):** Provides filtering cap+abilities by Year, Session, Level, Day, Location, and Student Name
+- **Data Display Container (container2):**
+  - **classDetails table:** Displays filtered class information
+  - **studentAttendance table:** Interactive attendance tracking grid with weekly checkboxes
+
+**Core Queries**
+
+- **getAllClassDetails:** Retrieves class information based on filters
+- **getAttendanceData:** Fetches attendance records for selected class
+- **getAttendanceSession:** Retrieves session date ranges for week calculations
+- **getClassLevel, getClassLocation, getClassInstructor:** Lookup queries for reference data
+- **getStudentName:** Retrieves student enrollment information
+- **insertAttendance:** Adds new attendance records
+- **deleteAttendance:** Removes attendance records
+- **updateAttendance:** Orchestrates attendance updates
+
+**Transformers/Scripts**
+
+- **getAllClassDetailsJs:** Enriches class data with level, location, and instructor details
+- **studentAttendanceFilter:** Constructs the attendance grid matrix
+- **calculateWeek:** Computes total weeks in the session
+- **calculateCurrentWeek:** Determines the current week number
+- **sortByStudentName:** Alphabetically sorts student lists
+
+#### 3. Week Calculation & Attendance Tracking Logic
+
+##### 3.1 Week Calculation Algorithm
+
+The system calculates weeks using a 7-day interval formula based on session start and end dates.
+
+```javascript
+function nWeeks(date1, date2) {
+    const WEEK = 1000 * 60 * 60 * 24 * 7; // milliseconds in a week
+    const date1ms = date1.getTime();
+    const date2ms = date2.getTime();
+    const diff = Math.abs(date2ms - date1ms);
+    return Math.floor(diff / WEEK);
+}
+```
+
+**Process:**
+
+1. Retrieve session start and end dates from `attendance_session` collection
+2. Calculate total weeks using `calculateWeek.js` transformer
+3. Calculate current week number using `calculateCurrentWeek.js` transformer (using today's date)
+4. Generate dynamic columns (week1, week2, ..., week21) based on total weeks
+
+##### 3.2 Attendance Grid Construction
+
+The `studentAttendanceFilter.js` transformer builds the attendance matrix:
+
+**Step 1: Data Aggregation**
+
+- Fetch all students enrolled in selected class from `payment_details` collection
+- Retrieve attendance records from `class_attendance` collection
+- Sort students alphabetically by name
+
+**Step 2: Matrix Generation**
+
+```javascript
+for (let i = 1; i <= totalWeek; i++) {
+    student['week' + i] = false; // Initialize checkbox as unchecked
+
+    // Check if attendance record exists for this week
+    for (let j = 0; j < studentAttendance.length; j++) {
+        if (studentAttendance[j].week == i) {
+            student['week' + i] = true; // Mark as attended
+            break;
+        }
+    }
+}
+```
+
+##### 3.3 Attendance Update Process
+
+When an administrator checks/unchecks attendance boxes:
+
+**Insert Operations (Checking a box)**
+
+```json
+{
+  "classId": "<class_unique_id>",
+  "week": <week_number>,
+  "createdOn": { "$date": "<current_timestamp>" },
+  "paymentId": "<payment_id>",
+  "addedBy": "admin",
+  "memberId": ""
+}
+```
+
+**Delete Operations (Unchecking a box):**
+
+- **Query:** `{ paymentId: <id>, classId: <class_id>, week: <week_number> }`
+- Removes matching attendance record from `class_attendance` collection
+
+#### 5. Database Operations
+
+##### 5.1 INSERT Operations
+
+**Inserting Attendance Records**
+
+- **Collection:** class_attendance
+- **Method:** insertMany
+- **Use Case:** Recording multiple attendance entries when checkboxes are checked
+
+**Query Structure**
+
+```json
+{
+  "collection": "class_attendance",
+  "method": "insertMany",
+  "insert": [
+    {
+      "classId": "class_unique_id_string",
+      "week": 1,
+      "createdOn": { "$date": "2024-01-15T10:30:00Z" },
+      "paymentId": "payment_details_id",
+      "addedBy": "admin",
+      "memberId": ""
+    }
+  ]
+}
+```
+
+**Required Fields:** classId (must match class_details.classUniqueId), week (integer 1-21), createdOn (MongoDB date), paymentId (must match payment_details.\_id), addedBy (e.g. "admin")
+
+**Deleting Attendance Record** — Collection: class_attendance, Method: deleteOne. Query: `{ paymentId, classId, week }`. Use case: Removing attendance when checkbox is unchecked.
+
+#### 6. Data Flow Summary
+
+ 1. User selects filters (Year, Session, Level, Day, Location) → **getAllClassDetails** fetches matching classes
+ 2. **getAllClassDetailsJs** enriches with reference data
+ 3. User selects a class from classDetails table
+ 4. **getAttendanceData** fetches attendance records for class
+ 5. **getAttendanceSession** fetches date range
+ 6. **calculateWeek** computes total weeks
+ 7. **calculateCurrentWeek** computes current week
+ 8. **studentAttendanceFilter** builds attendance matrix
+ 9. **studentAttendance** table displays interactive grid
+10. User checks/unchecks attendance boxes
+11. **updateAttendance** orchestrates insert/delete operations
+12. Data refreshes to show updated attendance
