@@ -70,15 +70,6 @@ This [page](https://bergendebate.retool.com/apps/2f15d79e-f03f-11f0-9bb4-bf2c26d
 
 ## Technical
 
-TODO: Explain (at a high-level) the tech. What JS and APIs get called. Don't get into too much detail, since there are a lot of components on the dashboard. Things to talk about:
-
-1. Aggregating info by student
-2. Showing current class view
-   1. Screenshot
-   2. Calendar + resources, Announcements, Invoices & Forms, Millions, etc
-1. Future + Past Classes
-2. Anything else I missed
-
 ### Overview
 
 The Dashboard is a single-page experience driven by one main API that **aggregates all portal data by student**. The frontend (`portal_new_ui.js`, class `Portal`) calls ****`GET getPortalDetail/`**** once, and in parallel ****`GET getMillionsTransactionData/`**** and ****`GET getAnnouncement/`****. The response is a list of student-wise objects; each student has `currentSession`, `futureSession`, and `pastSession`. The Dashboard then renders one tab per student and, for the selected tab, shows the current class view (program info, calendar, resources, announcements, invoices & forms, Millions), plus Future Classes and Past Class History. Full schema for invoices and Millions lives in [Invoices](/bdc/portal/invoices) and [Millions](/bdc/portal/millions); this section stays high-level.
@@ -298,8 +289,8 @@ Each visible region is driven by specific DOM containers and `getPortalDetail / 
     Student millions count and Transaction Logs; sidebar count from `updateSidebarMillionsCount()`.
 
     - **DOM:** `.millions-balance-flex-wrapper` contains `.million-price-text`
-    - **Data:** getMillionsTransactionData ? millions_transactions (match studentName;)
-    - Render: renderMillions()
+    - **Data:** `getMillionsTransactionData`, `millions_transactions` (match `studentName`;)
+    - Render: `renderMillions()`
   </Tab>
   <Tab title="Future Classes">
     ![Image](/images/image-115.png)
@@ -317,7 +308,7 @@ Each visible region is driven by specific DOM containers and `getPortalDetail / 
 
     - DOM: `.sem-classes-info-div` contains `[data-portal="past-classe-list"]`
     - Data: `currentSession[0].pastSession`
-    - Render: `renderPastClasses()` 
+    - Render: `renderPastClasses()`
   </Tab>
   <Tab title="Next Recommended Program">
     See the returner conversion page for details.
