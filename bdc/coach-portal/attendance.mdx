@@ -22,8 +22,6 @@ The main table shows each student’s attendance week by week. A **check mark (�
 
 ## Technical
 
-TODO: Explain in detail how this works (APIs, JS files/methods needed to render). Both for Retool + Portal
-
 ### **Database**
 
 **class_attendance** — One document per student check-in for a given class and week. Written by the `updateAttendance` API when a coach marks a student present; read (and aggregated) by `getAttendance/{memberId}` to build the coach's class list with `studentDetails` and each student's `attendanceId`
@@ -37,7 +35,7 @@ TODO: Explain in detail how this works (APIs, JS files/methods needed to render)
 | **week**      | Week number for which attendance is recorded.                                                                               |
 | **classId**   | Class identifier.                                                                                                           |
 
-**API response shape (getAttendance)** — The portal receives an array of class objects (from other sources plus `class_attendance`). Each class has `classId`, `className`, `week`, and **studentDetails** (one per enrolled student). Each student in **studentDetails** includes `studentName`, `paymentId`, **attendanceId**, and `prevStudent` (e.g. for "New" tag). The portal uses this to render the class dropdown, filters, and check-in icons.
+**API response shape (getAttendance)** — The portal receives an array of class objects (from other sources plus `class_attendance`). Each class has `classId`, `className`, `week`, and **studentDetails** (one per enrolled student). Each student in **studentDetails** includes `studentName`, `paymentId`, `attendanceId`, and `prevStudent` (e.g. for "New" tag). The portal uses this to render the class dropdown, filters, and check-in icons.
 
 ### **Flow**
 
@@ -81,7 +79,7 @@ TODO: Explain in detail how this works (APIs, JS files/methods needed to render)
 
 ### **Portal sidebar display**
 
-- `When there are coach classes returned by getAttendance`:
+- When there are coach classes returned by `getAttendance`:
   - The Attendance link in the coach portal sidebar leads to a page where:
     - The class dropdown is populated.
     - The filter bar, student list header, and pagination are visible.
@@ -227,9 +225,9 @@ When an administrator checks/unchecks attendance boxes:
 }
 ```
 
-**Required Fields:** classId (must match class_details.classUniqueId), week (integer 1-21), createdOn (MongoDB date), paymentId (must match payment_details.\_id), addedBy (e.g. "admin")
+**Required Fields:** `classId` (must match `class_details.classUniqueId`), `week` (integer 1-21), `createdOn` (MongoDB date), `paymentId` (must match `payment_details._id`), `addedBy` (e.g. "admin")
 
-**Deleting Attendance Record** — Collection: class_attendance, Method: deleteOne. Query: `{ paymentId, classId, week }`. Use case: Removing attendance when checkbox is unchecked.
+**Deleting Attendance Record** — Collection: `class_attendance`, Method: `deleteOne`. Query: `{ paymentId, classId, week }`. Use case: Removing attendance when checkbox is unchecked.
 
 #### 6. Data Flow Summary
 
