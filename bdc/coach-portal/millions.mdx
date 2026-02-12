@@ -23,3 +23,73 @@ Coaches can **remove Millions** by clicking the **“–” (minus)** icon. This
 ## Technical
 
 TODO: Explain in detail how this works (APIs, JS files/methods needed to render). Remember, keep this restricted to Webflow (we've already discussed Retool in the Customer Portal)
+
+### **Database**
+
+**millions_transactions** — One document per student; stores cumulative Millions balance and transaction history. Written by the `updatePortalMillions` API when a coach adds or removes Millions; read (and joined) by `getMillionsDetails` to build the coach's student list with balance and student metadata.
+
+| Field            | Description                                                                        |
+| :--------------- | :--------------------------------------------------------------------------------- |
+| **\_id**         | MongoDB ObjectId. Unique transaction record id.                                    |
+| **studentId**    | Student identifier (links to member/student). Used to match records when updating. |
+| **earnAmount**   | Current total Millions balance. Updated on each add/remove operation.              |
+| **createdOn**    | When the document was created.                                                     |
+| **transactions** | Array of transaction entries (see below).                                          |
+
+**transactions** array item:
+
+| Field            | Description                        |
+| :--------------- | :--------------------------------- |
+| **amount**       | Delta added (+) or deducted (-).   |
+| **description**  | Optional text for the transaction. |
+| **lastEarnDate** | Date of the transaction.           |
+
+**API response shape (getMillionsDetails)** — The portal receives `{ message, count, data }`. The `data` array contains one object per student with `name`, `emailId`, `amount` (current balance), `studentId`, and `newStudent` (true if no millions_transactions record exists). The portal uses this to render the student list, search, and add/remove modals.
+
+### **Flow**
+
+#### Coach Millions Page — Rendering
+
+1. **JS — init and request**
+   - File: `millions-coach.js`.
+   - Class `MillionsCoach` is constructed with `apiBaseURL` and `memberId`.
+   - `MillionsCoach.render`:
+     - Hides the informational wrapper and shows a spinner.
+     - Calls **POST** `getMillionsDetails` with `{ memberId, searchText, offset, limit }`.
+     - On success, calls `displayStudentsList(studentsList)` and `displayPagination()`.
+     - On error, hides the spinner, hides the main content, and displays a "no record found" area via `[data-container="no-record-found"]`.
+2. **API — data returned to portal**
+   - `getMillionsDetails` (POST) returns `{ message, count, data }`. Each item in `data` has `name`, `emailId`, `amount`, `studentId`, `newStudent`. Data is scoped to the current academic year/session (students with payments in that term). Only verified coaches (`accountType = "coach"` and `is_verified_coach = true`) are authorized.
+3. **JS — after response**
+   - `displayStudentsList` mounts into `[data-millions="students-list"]` and:
+     - Builds the **student list** (one row per student) with name, email, amount (green/red styling), and **Add** (+ icon) / **Remove** (– icon) action buttons.
+     - Each row uses `createStudentRow(student)`; add/remove buttons call `addStudentAmount` / `deleteStudentAmount`.
+   - **Search** (`#wf-form-Millions-Students-Form`, `#Search`): Submits or debounced input calls `searchStudents(searchText)` → `fetchMillionsStudents(searchText, 0, limit)`.
+   - **Pagination**: `displayPagination()` builds controls; `goToPage(page)` calls `fetchMillionsStudents(currentSearchText, offset, limit)` and re-renders.
+
+#### Add / Remove Millions — Modal Flow
+
+1. **Opening modal**
+   - Coach clicks add (+) or remove (–) icon on a student row.
+   - `addStudentAmount(studentId)` or `deleteStudentAmount(studentId)` finds the student via `findStudentById`, stores `$currentStudent` and `currentAction` ('add' or 'delete'), then shows `#millionsDetails` modal with title "Add Millions Amount" or "Remove Millions Amount".
+2. **Submitting modal**
+   - Coach enters amount and optional description, clicks Save.
+   - `handleModalSubmit` reads `#field` and `#Description`, validates amount \> 0.
+   - Computes `apiAmount`: for add → `prevAmount + amount`; for remove → `prevAmount - amount`.
+   - Calls `updatePortalMillions(description, apiAmount)` → **POST** `updatePortalMillions` with `{ memberId, studentId, newStudent, amount, description, prevAmount }`.
+3. **API — updatePortalMillions**
+   - If `newStudent` is true: inserts new document into `millions_transactions` with `studentId`, `earnAmount`, `createdOn`, and `transactions` array containing one entry.
+   - If `newStudent` is false: updates existing document with `$set` on `earnAmount` and `$push` of transaction entry (delta = `amount - prevAmount`).
+4. **JS — after update**
+   - On success: updates `currentStudentsList` with new `amount`, closes modal, re-renders `displayStudentsList` with updated data.
+
+### **Portal sidebar display**
+
+- When there are students returned by `getMillionsDetails`:
+  - The Millions link in the coach portal sidebar leads to a page where:
+    - The search form and student list are visible.
+    - Coaches can search, paginate, and add/remove Millions for each student.
+- **When there are no students / no data**:
+  - `MillionsCoach.render` shows the "no record found" state instead of the main UI.
+- **Visibility rules (high-level)**:
+  - The Millions page is designed for verified coach users; it appears in the coach-facing portal sidebar. Parents/students view their own Millions in the separate Customer Portal.
