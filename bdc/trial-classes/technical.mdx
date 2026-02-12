@@ -3,3 +3,160 @@ title: "Technical"
 ---
 
 TODO: Webhook from Acuity. Database. Retool pages. Automated emails. Do not describe in detail coach portal, but you can reference it here.
+
+## Acuity Webhook
+
+When a parent registers for a trial class on the [free class page](https://www.bergendebate.com/free-class), Acuity Scheduling sends a webhook to **POST** `/camp/trialClassMemberData`. The Lambda `trialClassMemberData` processes it.
+
+### Webhook payload
+
+- **Body**: URL-encoded form data with `action` and `id`
+- **action**: `scheduled` | `rescheduled` | `cancelled`
+- **id**: Acuity appointment ID
+
+### Processing flow
+
+1. **Parse request** — Decode URL-encoded body into `{ action, id }`
+2. **For scheduled or rescheduled**:
+   - Call Acuity API `GET https://acuityscheduling.com/api/v1/appointments/{id}` to fetch full appointment data
+   - `collectAcuityData(res)` extracts: parent name, phone, student name (field ID 16245312), student grade (17543048), parent email (16245314), appointment type, scheduled date/time, etc.
+   - Only appointments with `"BDC Trial Class"` in `appointmentType` are processed
+3. **Create account** — If no existing record, call `POST /camp/createAccount` with parent/student data and `source: "trial_class"`. Response provides `studentId` and `parentId`
+4. **Database write**:
+   - **scheduled**: Insert into `trial_class_details` with `attended: false`, `appointmentId`, `couponCode: ""`, `status: ""`
+   - **rescheduled**: Update existing document by `appointmentId`
+5. **CRM lead** — Call `POST .../api/v1/external/create-lead` with `tag_name: "trial class - registered"`
+6. **Schedule emails** — For **scheduled** only:
+   - Read `trial_class_email_content` for first stage of "Attended" and "Not Attended"
+   - Create EventBridge Scheduler rules that fire after trial class time + `time` hours:
+     - **Attended** → `scheduleTrialClass` Lambda
+     - **Not Attended** → `scheduleTrialClassForNonAttendees` Lambda
+7. **For cancelled** — Delete document in `trial_class_details` where `appointmentId` matches
+
+---
+
+## Database
+
+### **trial_class_details**
+
+One document per trial class booking. Written by Acuity webhook; read by coach portal, Retool, and email automation.
+
+| Field               | Description                                                                |
+| :------------------ | :------------------------------------------------------------------------- |
+| **\_id**            | MongoDB ObjectId. Unique record id.                                        |
+| **appointmentId**   | Acuity appointment ID. Used for webhook updates and deduplication.         |
+| **parentId**        | ObjectId of parent in `members`.                                           |
+| **studentId**       | ObjectId of student in `members`.                                          |
+| **appointmentType** | e.g. "BDC Trial Class - ...". Filtered in webhook.                         |
+| **scheduledDate**   | Date string (e.g. "August 28, 2025").                                      |
+| **scheduledTime**   | Time string (e.g. "8:00am").                                               |
+| **scheduled**       | ISO datetime string (e.g. "2025-08-28T8:00:00-0400"). Used for scheduling. |
+| **contact_email**   | Parent email; used for sending emails.                                     |
+| **attended**        | Boolean. Set by admin/coach via `updateTrialClass`.                        |
+| **notes**           | Optional notes from coach.                                                 |
+| **status**          | e.g. `""`, `"Purchased"`. Updated by Stripe webhook when parent pays.      |
+| **couponCode**      | Promo code for attended trials; created by `scheduleTrialClass`.           |
+| **createdOn**       | When record was created.                                                   |
+| **email_sent**      | Count of automated emails sent.                                            |
+
+### **trial_class_email_content**
+
+Config for automated emails. Managed via Retool; read by scheduler Lambdas.
+
+| Field                   | Description                                                     |
+| :---------------------- | :-------------------------------------------------------------- |
+| **trialClassAttendend** | `"Attended"` or `"Not Attended"`.                               |
+| **stage**               | Integer stage (1, 2, 3, …). Order of steps in sequence.         |
+| **time**                | Hours after trial class datetime to send this step.             |
+| **subject**             | Email subject. Can use placeholders like `firstName`.           |
+| **content**             | Email body. Placeholders: `firstName`, `couponCode` (Attended). |
+| **active**              | Boolean. Only active steps are scheduled.                       |
+
+### **trial_class_email_log**
+
+Audit log of sent emails.
+
+| Field            | Description                          |
+| :--------------- | :----------------------------------- |
+| **trialClassId** | `_id` of trial_class_details record. |
+| **email**        | Recipient.                           |
+| **subject**      | Sent subject.                        |
+| **content**      | Sent body.                           |
+| **stage**        | Stage number.                        |
+| **sentAt**       | When sent.                           |
+
+---
+
+## Automated Emails
+
+Emails are driven by **EventBridge Scheduler** rules created when the Acuity webhook fires, and by follow-up rules created by the scheduler Lambdas.
+
+### Flow overview
+
+1. **On registration (scheduled)** — `trialClassMemberData` creates two schedules:
+   - One for **Attended** (first stage)
+   - One for **Not Attended** (first stage)
+   - Both run at `scheduled + time` hours (from `trial_class_email_content`)
+2. **At scheduled time** — Admin/coach marks attendance in Retool or coach portal. Emails still run based on _scheduled_ time; `attended` is used when the Lambda executes.
+3. **Attended branch** — `scheduleTrialClass`:
+   - Finds `trial_class_details` with `scheduled`, `attended: true`, `appointmentType` matching "BDC Trial Class"
+   - Creates Stripe promo code (with `firstName` + date), updates `couponCode`
+   - Sends email with subject/content from `trial_class_email_content` (Attended)
+   - Logs to `trial_class_email_log`
+   - Schedules next Attended stages via EventBridge (cumulative `time` delays)
+4. **Not Attended branch** — `scheduleTrialClassForNonAttendees`:
+   - Finds records with `attended: false`
+   - Sends email from `trial_class_email_content` (Not Attended)
+   - Logs and schedules next Not Attended stages
+5. **Purchased check** — Before sending, `sendTrailClassEmailFlow` and `sendNonAttendeesTrialEmail` check if `status == "Purchased"`. If so, they skip sending and delete remaining scheduled follow-ups.
+
+### Lambdas
+
+| Lambda                                | Trigger               | Purpose                                                 |
+| :------------------------------------ | :-------------------- | :------------------------------------------------------ |
+| **trialClassMemberData**              | Acuity webhook POST   | Insert/update trial, create lead, schedule first emails |
+| **scheduleTrialClass**                | EventBridge Scheduler | Send Attended emails, create promo, schedule next       |
+| **scheduleTrialClassForNonAttendees** | EventBridge Scheduler | Send Not Attended emails, schedule next                 |
+| **sendTrailClassEmailFlow**           | EventBridge Scheduler | Send Attended follow-up email (stage 2+)                |
+| **sendNonAttendeesTrialEmail**        | EventBridge Scheduler | Send Not Attended follow-up email (stage 2+)            |
+
+---
+
+## Retool Pages
+
+### Trial Class Details
+
+The [Trial Class Details](https://bergendebate.retool.com/editor/41fed58a-42df-11f0-bba5-fbecf1466f1d/2025%20Phase%20B/trial_class_details/page1) page reads from `trial_class_details` (optionally joined with `members`). Admins can:
+
+- Search and filter by parent, date, attendance, status
+- View parent/student details, class type, scheduled date/time, email-sent indicators
+- View email logs (from `trial_class_email_log`)
+- Add notes
+- Mark trial as purchased or unpurchased (updates `status`)
+
+### Trial Class Email Automation
+
+The [Trial Class Email Automation](https://bergendebate.retool.com/apps/a9f49b14-7e96-11f0-b537-dfd369c571eb/2025%20Phase%20B/Trial%20Class%20Email%20Automation/page1) page manages `trial_class_email_content`. For each step, admins configure:
+
+- **Time delay** (hours after trial class)
+- **Subject** and **content**
+- **Active/Inactive** — Only active steps are scheduled
+
+Two flows: **Attended** and **Non-Attended**, each with its own sequence of stages.
+
+---
+
+## Coach Portal
+
+The coach portal trial class page is documented in [Trial Classes (Coach Portal)](/bdc/coach-portal/trial-classes). In brief:
+
+- **JS**: `trial_class_details.js` (class `TrialClassDetails`)
+- **APIs**: **GET** `getTrialClassDetails/{memberId}` (grouped trial classes), **POST** `updateTrialClass` (attendance + notes)
+- Coaches view trial classes grouped by appointment type/date/time, mark attendance, and add notes. Attendance is set by admins in Retool or by coaches here; `updateTrialClass` also creates CRM leads for attended trials.
+
+---
+
+## Other integrations
+
+- **Stripe webhook** — When a parent pays (e.g. after using trial promo), `stripePaymentListener` updates `trial_class_details.status` to `"Purchased"` so future automated emails are skipped.
+- **CRM** — Leads created at registration (`trial class - registered`) and when attendance is marked (`trial class - attended`).
