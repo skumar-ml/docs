@@ -46,24 +46,24 @@ Explain DB and APIs used + flow
 
 - **Persistent cart record (database)**:\
   When a user reaches checkout with a program in their cart, the backend saves a **checkout record** for that user (keyed by `memberId`).\
-  The record includes (at minimum): `createdOn`, `programStartDate` / `programEndDate` (NSD), `levelId` or `slug`, `locationId` / `location`, `firstName` / `studentName` / `lastName`, and `programCategoryId` (to distinguish residential/commuter/online).
+  For BDC this record includes : `createdOn`, `levelId`, `locationId` / `location`, and `firstName` / `studentName` / `lastName`.
 - **Browser storage (localStorage)**:\
   The frontend mirrors the last checkout record in `localStorage` under the key `checkOutData` so it can show abandoned-cart UI without hitting the API every time.\
   It also stores `isAbandonedModalOpen` and `lastModalClosedDate` to enforce the “show at most once every 7 days” rule.
 
 ### APIs
 
-- **Get abandoned cart by member**
-  - Endpoint (BDC/NSD): `GET {baseUrl}/getCheckoutUrlByMemberId/{memberId}` or `GET {baseUrl}/getCheckoutURLByMemberId/{memberId}`
+- **Get abandoned cart by member (BDC)**
+  - Endpoint: `GET /getCheckoutUrlByMemberId/{memberId}`
   - Used when `checkOutData` is missing from `localStorage`.
-  - Returns a JSON object with the fields listed above (`createdOn`, program dates, label/level, location, student name, slug, `programCategoryId`, etc.).
+  - Returns a JSON object with the fields listed above (`createdOn`, level/location, student name, etc.).
 - The frontend never writes directly to the database; it only **reads** the last checkout for the logged-in member via this API and then caches it in `localStorage`.
 
 ### Frontend flow
 
 1. **Initialization**
    - On most pages (excluding `/cart/*` and `log-in`), the `AbandonedCartModal` JS class runs on page load.
-   - It receives config such as `baseUrl`, `memberId`, `modalId`, and `hour` (minimum age in hours before we consider a cart “abandoned”).
+   - It receives config such as `baseUrl`, `memberId`, `modalId`, and `hour` (minimum age in hours before we consider a cart “abandoned”, currently it's set to 6 hours).
 2. **Load cart data**
    - The script first looks for `checkOutData` in `localStorage`.
    - If not found, it calls the **Get checkout by member** API, then saves the response into `localStorage` as `checkOutData`.
@@ -71,9 +71,10 @@ Explain DB and APIs used + flow
    The modal will only show if **all** of these pass:
    - Cart age is `older than hour hours` (e.g. \> 6 hours) based on `createdOn`.
    - Cart age is **younger than 5 months** (older carts are ignored).
-   - For NSD, `programStartDate` is **strictly in the future**; if the program has already started, no reminder is shown.
    - If the user previously closed the popup (continue browsing or close icon), at least **7 days have passed** since `lastModalClosedDate`.
-   - For BDC, there is an additional check that the current selling session has started; if not, stale `checkOutData` is cleared.
+   - The **current selling session has started**:
+     - If the cart’s `createdOn` is **before** that selling start date **and** today is **on/after** that date, the script treats the cart as belonging to an old season.
+     - In that case it removes `checkOutData` from `localStorage` and does **not** show the abandoned-cart UI, so users are never prompted to finish checkout for last season’s programs.
 4. **Update cart icon / mini-cart**
    - Regardless of whether the modal opens, the script uses the `checkOutData` values to populate the **cart icon hover menu** using elements marked with `data-cart-menu` attributes (e.g. `programName`, `programDate`, `studentName`, and location).
    - If there is no valid cart in `localStorage`, it shows the “No record found” state.
@@ -81,8 +82,7 @@ Explain DB and APIs used + flow
    - If all checks pass, the script:
      - Adds the `show` class to the abandoned-cart modal and sets its display to `flex`.
      - Builds the **“View Cart / Complete Purchase”** link by combining `window.location.origin` with the program identifier from `checkOutData`:
-       - BDC: uses `levelId` to create a `/programs/level-{levelId}?returnType=back` URL.
-       - NSD: uses `slug` and `programCategoryId` to route to the correct `cart/{slug}` URL (residential/commuter/online) with `returnType=back`.
+       - Uses `levelId` to create a `/programs/level-{levelId}?returnType=back` URL.
 6. **User actions & cooldown**
    - When the user closes the modal (close icon or “Continue Browsing”), the script sets `isAbandonedModalOpen=true` and updates `lastModalClosedDate` in `localStorage`.
    - These values are checked on subsequent visits to ensure the reminder is not shown again for **7 days**, even if the cart is still present.
