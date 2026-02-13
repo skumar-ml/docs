@@ -10,3 +10,154 @@ This [page](https://www.bergendebate.com/portal/free-trial-class-details) displa
 
 \
 For general trial class details, please refer to the document: [trial-classes](/bdc/trial-classes/overview)
+
+## Technical
+
+This page lets coaches see all their scheduled trial classes, mark which students attended, and add notes that are saved back to the main trial‑class records.
+
+### **Database**
+
+The database collections powering trial classes are documented in detail in [Trial Classes — Technical](/bdc/trial-classes/technical#database).\
+This coach portal page primarily **reads from** the `trial_class_details` collection and **updates** its `attended` and `notes` fields via the `updateTrialClass` API.
+
+### **APIs & Data Model**
+
+- `GET getTrialClassDetails/{memberId}` — Returns paginated trial‑class appointment types for the logged‑in coach.
+  - **Request (Webflow → API)**: `GET getTrialClassDetails/{memberId}?offset={offset}&limit={limit}`
+  - **Response shape**: `{ message, count, data }`
+    - `count`: total number of appointment type records (for pagination).
+    - `data[]`: one object per **appointment type / time slot** with:
+      - `appointmentType`: label of the trial class (e.g. "Free Trial – Public Speaking").
+      - `scheduledDate`, `scheduledTime`: when the trial class occurs.
+      - `appointments[]`: list of enrolled students for that slot.
+- **Student object (appointments[])**
+  - `_id`: unique identifier for this trial‑class enrollment; used as `trialClassId` when updating.
+  - `parentName`, `parentEmail`
+  - `studentName`, `studentEmail`
+  - `attended` (boolean): whether the student attended this trial class.
+  - `notes` (string, optional): coach’s notes for this student.
+- `POST updateTrialClass` — Updates attendance and/or notes for one or more trial‑class students.
+  - **Request URL**: `{apiBaseURL}updateTrialClass`
+  - **Payload variants**:
+    - **Attendance update**:
+      - `{ memberId, trialClassAttendance: [{ _id, attended }, ...] }`
+      - `_id` is the student’s trial‑class record id; `attended` is the new boolean value.
+    - **Notes update**:
+      - `{ memberId, notes, trialClassId }`
+      - `trialClassId` corresponds to the student’s `_id` from `appointments[]`.
+  - **Response**: `{ message }` indicating success/failure; message is used by the frontend to confirm updates.
+
+> Back‑end storage is typically implemented with a trial‑class collection (storing appointment type, schedule, and appointments list) plus per‑student trial‑class records that keep `attended` and `notes` in sync with the above APIs.
+
+### **Flow**
+
+#### Coach Trial Classes Page — Rendering
+
+1. **JS init and first load**
+   - File: `trial_class_details.js`.
+   - Class `TrialClassDetails` is constructed with `{ apiBaseURL, memberId }`.
+   - `render()`:
+     - Hides the informational wrapper (`.portal-info-wrapper`) and shows the spinner (`#half-circle-spinner`).
+     - Calls `fetchTrialClassDetails(offset, limit)` → **GET** `getTrialClassDetails/{memberId}` with query params `offset` and `limit`.
+     - On success:
+       - Sets `totalAppointmentTypes` from `response.count` or `response.data.length`.
+       - Calls `displayAppointmentTypes(data)` to render the **left‑hand trial class list**.
+       - Calls `displayPagination()` to show page controls for appointment types.
+       - Automatically selects the **first appointment type** via `selectAppointmentType(data[0])`, which populates the **right‑hand student list**.
+     - On error or empty data:
+       - Shows the "no record found" area (`[data-container="no-record-found"]`).
+       - Hides the main content area and spinner.
+2. **Appointment type list (left pane)**
+   - `displayAppointmentTypes(appointmentTypes)`:
+     - Clears `[data-trial-class-details="appointmentTypeList"]`.
+     - For each item, calls `createAppointmentTypeRow(appointmentType, index)` which:
+       - Creates a row (`.trial-class-details-row-block`) with:
+         - Main label: `appointmentType.appointmentType`.
+         - Sub‑text: `scheduledDate` + `scheduledTime` and student count.
+       - Stores metadata with attributes:
+         - `data-appointment-type`, `data-scheduled-date`, `data-scheduled-time`.
+       - Attaches a click handler that calls `selectAppointmentType(appointmentType)`.
+   - `selectAppointmentType(appointmentType)`:
+     - Persists the current appointment type’s state (students, original attendance states, and local changes) into `appointmentTypeStates` using a composite key:
+       - `appointmentType.appointmentType + "_" + scheduledDate + "_" + scheduledTime`.
+     - Removes the `selected` class from all rows and adds it to the clicked one to highlight the active trial class.
+     - Either:
+       - Restores previous state for this appointment type (if already visited), or
+       - Uses `appointmentType.appointments` as the source list for a fresh load.
+3. **Student list (right pane)**
+   - `displayStudentsList(studentsList, preserveOriginalStates = false)`:
+     - Stores `studentsList` in `currentStudentsList`.
+     - If `preserveOriginalStates` is `false`, captures initial `attended` values in `originalAttendanceStates` (`Map<studentId, boolean>`).
+     - Clears and repopulates `[data-trial-class-details="trialClassStudentList"]`.
+     - For each student, `createStudentRow(student)` builds a row:
+       - Shows **parent name + email** and **student name + email**.
+       - Renders an **attendance icon** whose class and SVG differ for checked vs unchecked.
+       - Shows an **Add Notes / Update Notes** button depending on whether `student.notes` already has content.
+       - Binds:
+         - `[data-action="toggle-attendance"]` → `toggleAttendance(student._id)`.
+         - `[data-action="add-notes"]` → `addNotes(student._id)`.
+     - Calls `updateMarkAttendanceButtonVisibility()` so the **Mark Attendance** button only appears when there are unsaved changes.
+4. **Pagination for appointment types**
+   - `displayPagination()`:
+     - Computes `totalPages = ceil(totalAppointmentTypes / limit)`.
+     - Renders previous/next arrows and page number buttons inside `[data-trial-class-details="pagination"]`.
+     - Binds click events to move `currentPage` and re‑call `render()` or a helper that fetches the corresponding page via `fetchTrialClassDetails(offset, limit)`.
+
+#### Attendance Toggling & Save Flow
+
+1. **Local toggle**
+   - Clicking the attendance icon triggers `toggleAttendance(studentId)`:
+     - Finds the student in `currentStudentsList`.
+     - Flips `student.attended`.
+     - Compares against `originalAttendanceStates`:
+       - If back to the original value → removes entry from `localAttendanceChanges`.
+       - If different from original → stores `{ studentId → attended }` in `localAttendanceChanges`.
+     - Re‑renders the student list (`displayStudentsList(..., true)`) to update UI and keeps original states map intact.
+     - Calls `updateMarkAttendanceButtonVisibility()`; if there is at least one local change, the **Mark Attendance** button (`[data-action="update-attendance"]`) is shown.
+2. **Persisting attendance**
+   - Clicking **Mark Attendance** calls `handleMarkAttendance()`:
+     - Builds `studentsWithAttendance` from `localAttendanceChanges` as `{ _id, attended }` objects.
+     - Sends a single **POST** to `updateTrialClass` with:
+       - `{ memberId, trialClassAttendance: [{ _id, attended }, ...] }`.
+     - Puts the button into a loading state (`"Updating..."`, disabled, lowered opacity).
+     - On success:
+       - Clears `localAttendanceChanges`.
+       - Updates each matching student in `currentStudentsList` to the new `attended` value.
+       - Updates `originalAttendanceStates` to match the saved state.
+       - Re‑renders `displayStudentsList` (preserving original states) and hides the Mark Attendance button again.
+       - Saves the updated state back into `appointmentTypeStates` for the current appointmentType key, so that navigating away and back preserves the same UI and data.
+
+#### Notes Modal Flow
+
+1. **Opening the modal**
+   - `addNotes(studentId)`:
+     - Locates the student in `currentStudentsList`.
+     - Fetches the existing modal `#trial-class-add-notes-modal`.
+     - Sets the modal title (`.poppins-heading`) to **“Add Notes for ”** or **“Update Notes for ”** depending on existing notes.
+     - Pre‑fills the textarea `#notesText` with the current `student.notes` (or empty string).
+     - Updates the save button label (`#saveNotes`) to **“Save Notes”** or **“Update Notes”**.
+     - Stores `data-current-student-id` on the modal and then calls `showModal(modal)` to display it.
+2. **Saving notes**
+   - `setupModalEventListeners(modal, student)`:
+     - Resets `#saveNotes` click handler to avoid duplicate listeners.
+     - On save:
+       - Reads `notes` from `#notesText`.
+       - Builds payload `{ memberId, notes, trialClassId: studentId }`.
+       - Puts the button into a loading state (`"Updating..."` and disabled).
+       - Calls `updateTrialClass(apiData)` (POST).
+       - On success:
+         - Updates `student.notes` locally.
+         - Updates the corresponding **Add/Update Notes** button in the list for that student based on whether notes is now empty or not.
+         - Hides the modal with `hideModal(modal)`.
+       - Restores the button label and enabled state in `finally`.
+3. **Closing the modal**
+   - `#modal-close` and `#login-modal-bg` clicks both call `hideModal(modal)` to dismiss the dialog without saving.
+
+### **Portal Sidebar & Visibility (Coach Portal)**
+
+- The **Free Trial Class** item in the coach portal sidebar routes to this page.
+- When `getTrialClassDetails` returns at least one appointment type:
+  - The left pane shows the list of trial‑class appointment types with date, time, and student count.
+  - The right pane shows per‑student rows with attendance icons and notes actions.
+- When there is **no data** or an error:
+  - The main content is hidden and the "no record found" / error view (`[data-container="no-record-found"]`) is displayed instead.
