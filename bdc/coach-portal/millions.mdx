@@ -22,8 +22,6 @@ Coaches can **remove Millions** by clicking the **“–” (minus)** icon. This
 
 ## Technical
 
-TODO: Explain in detail how this works (APIs, JS files/methods needed to render). Remember, keep this restricted to Webflow (we've already discussed Retool in the Customer Portal)
-
 ### **Database**
 
 **millions_transactions** — One document per student; stores cumulative Millions balance and transaction history. Written by the `updatePortalMillions` API when a coach adds or removes Millions; read (and joined) by `getMillionsDetails` to build the coach's student list with balance and student metadata.
