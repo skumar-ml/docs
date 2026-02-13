@@ -3,3 +3,154 @@ title: "Technical"
 ---
 
 TODO: Explain scraping process in detail. Database setup, and APIs
+
+## Overview
+
+The **Homework Checker** system connects each enrolled student’s portal account to a Google Doc that contains their homework. Admins paste homework Google Doc links into internal tools (Retool "Form Completion" / homework link workflows), and the system:
+
+- **Stores the link per payment/student**
+- **Surfaces the link in the BDC portal** so families can open it in a lightbox or a new tab
+- **Periodically reads Google Doc comments** and stores a structured summary for reporting and coaching workflows
+
+Everything is driven from the student’s **payment record**, so there is a 1:1 relationship between a payment and its homework document.
+
+---
+
+## Data & Storage
+
+### `payment_details` (source of truth for the link)
+
+Homework links are stored on the existing `payment_details` collection:
+
+- **Collection**: `payment_details`
+- **Field**: `home_work_link` (string, optional)
+  - A full Google Docs URL pasted by an admin (e.g. `https://docs.google.com/document/d/...`).
+  - Stored on the payment row that corresponds to a specific student + class.
+- **How it is set**:
+  - Internal Retool pages (Form Completion / Homework tools) update the `home_work_link` field for the relevant payment.
+  - Once updated, downstream services (portal + scheduler) automatically pick it up.
+
+### `homework_details` (aggregated comments per payment)
+
+Instructor comments and homework metadata are stored separately in a dedicated collection:
+
+- **Collection**: `homework_details`
+- **Key**: `paymentId` (string; the `_id` of the originating `payment_details` record)
+- **Main fields**:
+  - `paymentId`: string
+  - `class`: human-readable class label such as `"Level 3 Tue 5:00 PM"` (looked up from `class_details`)
+  - `lastEdited`: timestamp of the last Google Docs revision for the file
+  - `lastComment`: timestamp of the latest instructor comment the system has seen
+  - `comments[]`: array of comment objects:
+    - `comment`: raw comment text from Google Docs
+    - `commenter`: Google display name of the commenter
+    - `commentedText`: text from the doc that was commented on
+    - `homeworkText`: the homework section header this comment belongs to (e.g. `"Homework 1 – Flow Aff"`)
+    - `commentedOn`: ISO datetime string from Google
+    - `instructor`: extracted initials from the end of the comment (e.g. `"AB"` from `"... - AB"`)
+  - `createdOn`, `updatedOn`: timestamps maintained by the scheduler
+
+If no valid document is found for a payment, `homework_details` still stores a row with empty `comments`, and `class`, `lastEdited`, and `lastComment` set to `None` so downstream tools can distinguish “no homework” vs “no data yet”.
+
+---
+
+## APIs
+
+### Portal API – `getPortalDetail`
+
+- **Endpoint**: `GET {apiBaseURL}getPortalDetail/{memberId}`
+- **Service**: `bcdc_aws/member-service`
+- **Usage**:
+  - The BCDC portal JS (`portal_staging.js` / `portal_new_ui.js`) calls this endpoint to build the student tabs and per-student panels.
+  - For each **current session** payment, the response includes:
+    - `studentDetail.home_work_link`: string URL or empty string.
+- **Behavior**:
+  - If `home_work_link` is missing on the payment record, the API simply returns `""`, and the frontend hides the homework UI for that student.
+
+### Scheduler – Google Docs Homework Comments
+
+Homework comments are pulled by a scheduled process rather than on-demand portal requests.
+
+- **Lambda / Script**: `bcdc_aws/scheduler_service/api/getGoogleDocComments.py`
+- **Authentication**:
+  - Uses OAuth2 credentials for a Google Workspace account configured in `token.json` (project id `homework-checker-441005`).
+  - Tokens are cached in S3 (`BUCKET_NAME` + `TOKEN_FILE_KEY`) and refreshed when expired.
+- **Input data**:
+  - Queries `payment_details` for current-year, in-session payments.
+  - Reads `home_work_link` from each payment document.
+
+Flow per payment (`process_payment` + `get_comments`):
+
+1. **Resolve document ID**
+   - Extracts `file_id` from `home_work_link` (splitting on `/d/{fileId}/`).
+   - If the link is missing or malformed, `file_id` is treated as empty.
+2. `Fetch document + comments (when file_id is present)`
+   - Instantiates `drive = build("drive", "v3", ...)` and `docs = build("docs", "v1", ...)`.
+   - Calls `get_ranges(docs, file_id)`:
+     - Scans the document body.
+     - Finds paragraphs whose text starts with `"Homework"` or `"Assignment"`.
+     - Records their `startIndex` and the exact header text into:
+       - `ranges`: list of numeric indices
+       - `rangesWithText`: list of `{ index, text }`.
+   - Fetches comments via the Drive API:
+     - `drive.comments().list(fileId=file_id, fields="comments(content,anchor, author(displayName),createdTime,quotedFileContent)")`
+   - Fetches full document metadata via `docs.documents().get(documentId=file_id)`.
+   - Computes `last_edited` using `get_last_edited_date` (max `modifiedTime` among Drive revisions).
+3. **Match comments to homework sections**
+   - Prior comments (if any) for this `paymentId` are loaded from `homework_details.comments` to avoid duplicates.
+   - `find_matching_text_location(document, comments, ranges)`:
+     - For each comment:
+       - Tries to match the `quotedFileContent.value` to a text run in the document.
+       - Assigns a `search_index` corresponding to the nearest homework/assignment section (using `ranges`).
+       - Falls back to the first section index if no exact match is found.
+   - `getLatestComments(...)`:
+     - Builds/updates the `instructorComments` array:
+       - Skips duplicates already in the DB (same `comment` + `commentedText`).
+       - For each new comment, adds a record with:
+         - `comment`, `commenter`, `commentedText`
+         - `homeworkText` (from `rangesWithText` using `search_index`)
+         - `commentedOn`
+         - `instructor` initials extracted via `extract_and_remove_initial`.
+     - Sorts comments by `commentedOn` descending.
+     - Builds the final payload with:
+       - `paymentId`, `class` (from `class_details`), `lastEdited`, `lastComment`, and `comments`.
+4. `Persist to homework_details`
+   - Upserts into `db.homework_details` by `paymentId`:
+     - Sets the homework metadata and comments.
+     - Adds `createdOn` on first insert and always updates `updatedOn`.
+
+If `file_id` is empty (no valid link), the script still upserts a minimal `homework_details` record with:
+
+- `paymentId` set
+- `class = None`
+- `lastEdited = None`
+- `lastComment = None`
+- `comments = []`
+
+This ensures downstream tools can rely on `homework_details` existing for all in-scope payments.
+
+---
+
+## Frontend Behavior (Portal)
+
+The student portal shows a homework icon only when a valid link exists.
+
+- **File**: `bcdc/portal_staging.js` and `bcdc/portal_new_ui.js`
+- **Method**: `renderHomeworkLink(tabPane, student)`
+
+Behavior:
+
+- Locates the homework container in the current student tab:
+  - `const homeworkDiv = tabPane.querySelector('[data-portal="homework-link"]');`
+  - `homeworkImg` – the main homework icon (`[data-portal="homework-link-image"]`)
+  - `homeworkNewTabIcon` – the external-link icon (`[data-portal="homework-new-tab-icon"]`)
+- If `student.studentDetail.home_work_link` is **truthy**:
+  - Shows the container (`homeworkDiv.style.display = 'flex'`).
+  - Binds a click handler to `homeworkImg` (only once, using a `_copyHandlerAttached` guard):
+    - Opens a Webflow lightbox (`#lightbox`) and sets the iframe `src` to the homework link.
+  - Binds a click handler to `homeworkNewTabIcon`:
+    - Calls `window.open(student.studentDetail.home_work_link, '_blank')` to open the doc in a new tab.
+- If `home_work_link` is **falsy/empty**:
+  - Hides the container (`homeworkDiv.style.display = 'none'`), so families see no homework icon for that student.
+
+The portal itself does **not** read from `homework_details`; it only needs the raw Google Docs URL. Any reporting or staff-facing UI that needs comment history should query `homework_details` directly (typically via Retool or additional internal APIs).
