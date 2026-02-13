@@ -47,8 +47,6 @@ This coach portal page primarily **reads from** the `trial_class_details` collec
       - `trialClassId` corresponds to the student’s `_id` from `appointments[]`.
   - **Response**: `{ message }` indicating success/failure; message is used by the frontend to confirm updates.
 
-> Back‑end storage is typically implemented with a trial‑class collection (storing appointment type, schedule, and appointments list) plus per‑student trial‑class records that keep `attended` and `notes` in sync with the above APIs.
-
 ### **Flow**
 
 #### Coach Trial Classes Page — Rendering
