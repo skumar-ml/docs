@@ -4,8 +4,6 @@ title: "Abandoned Cart"
 
 ## Non-Technical
 
-TODO: Talk about pop-up and cart icon in top right of navbar.
-
 This feature reminds users to complete their purchase if they added a program to the cart but did not finish the checkout.
 
 ### Where the user sees this
@@ -32,7 +30,7 @@ This feature reminds users to complete their purchase if they added a program to
 **2. Abandoned Popup**\
 When the user revisits the site or opens the dashboard with a pending cart:
 
-- A popup appears showing: Program, Location, User name, **Complete Purchase** and **Continue Browsing. **Clicking **Complete Purchase** will take you to the program’s checkout page.\
+- A popup appears showing: Program, Location, User name, **Complete Purchase** and **Continue Browsing**. Clicking **Complete Purchase** will take you to the program’s checkout page.\
   Clicking **Continue Browsing** will close the popup.
 - It appears only if your saved cart is still recent and you haven’t dismissed the popup recently.
 
@@ -42,16 +40,18 @@ When the user revisits the site or opens the dashboard with a pending cart:
 
 ## Technical
 
-Explain DB and APIs used + flow. Feel free to refer to docs we already have explainaing stripe_checkout_customer. If there's anything lacking in those docs, please fill in gaps here
-
 ### Data & Storage
 
 - **Persistent cart record (database)**:\
-  When a user reaches checkout with a program in their cart, the backend saves a **checkout record** for that user (keyed by `memberId`).\
-  For BDC this record includes : `createdOn`, `levelId`, `locationId` / `location`, and `firstName` / `studentName` / `lastName`.
+  When a user reaches checkout with a program in their cart, the backend saves a **checkout record** for that user (keyed by `memberId`). This record includes : `createdOn`, `levelId`, `locationId` / `location`, and `firstName` / `studentName` / `lastName`.
+
+<Note>
+  TODO: In which collection is it saved?
+</Note>
+
 - **Browser storage (localStorage)**:\
-  The frontend mirrors the last checkout record in `localStorage` under the key `checkOutData` so it can show abandoned-cart UI without hitting the API every time.\
-  It also stores `isAbandonedModalOpen` and `lastModalClosedDate` to enforce the “show at most once every 7 days” rule.
+  The frontend mirrors the last checkout record in `localStorage` under the key `checkOutData` to show the abandoned-cart UI without hitting the API.\
+  It also stores `isAbandonedModalOpen` and `lastModalClosedDate` to enforce a “show at most once every 7 days” rule.
 
 ### APIs
 
@@ -71,7 +71,7 @@ Explain DB and APIs used + flow. Feel free to refer to docs we already have expl
    - If not found, it calls the **Get checkout by member** API, then saves the response into `localStorage` as `checkOutData`.
 3. **Eligibility checks before showing anything**\
    The modal will only show if **all** of these pass:
-   - Cart age is `older than hour hours` (e.g. \> 6 hours) based on `createdOn`.
+   - Cart age is older than `hour` hours (e.g. \> 6 hours) based on `createdOn`.
    - Cart age is **younger than 5 months** (older carts are ignored).
    - If the user previously closed the popup (continue browsing or close icon), at least **7 days have passed** since `lastModalClosedDate`.
    - The **current selling session has started**:
