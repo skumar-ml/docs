@@ -2,8 +2,6 @@
 title: "Technical"
 ---
 
-TODO: Explain scraping process in detail. Database setup, and APIs
-
 ## Overview
 
 The **Homework Checker** system connects each enrolled student’s portal account to a Google Doc that contains their homework. Admins paste homework Google Doc links into internal tools (Retool "Form Completion" / homework link workflows), and the system:
@@ -150,7 +148,7 @@ Behavior:
     - Opens a Webflow lightbox (`#lightbox`) and sets the iframe `src` to the homework link.
   - Binds a click handler to `homeworkNewTabIcon`:
     - Calls `window.open(student.studentDetail.home_work_link, '_blank')` to open the doc in a new tab.
-- If `home_work_link` is **falsy/empty**:
+- If `home_work_link` is **false/empty**:
   - Hides the container (`homeworkDiv.style.display = 'none'`), so families see no homework icon for that student.
 
 The portal itself does **not** read from `homework_details`; it only needs the raw Google Docs URL. Any reporting or staff-facing UI that needs comment history should query `homework_details` directly (typically via Retool or additional internal APIs).
