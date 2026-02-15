@@ -61,7 +61,7 @@ If no valid document is found for a payment, `homework_details` still stores a r
 - **Endpoint**: `GET {apiBaseURL}getPortalDetail/{memberId}`
 - **Service**: `bcdc_aws/member-service`
 - **Usage**:
-  - The BCDC portal JS (`portal_staging.js` / `portal_new_ui.js`) calls this endpoint to build the student tabs and per-student panels.
+  - The BDC portal JS (`portal_staging.js` / `portal_new_ui.js`) calls this endpoint to build the student tabs and per-student panels.
   - For each **current session** payment, the response includes:
     - `studentDetail.home_work_link`: string URL or empty string.
 - **Behavior**:
@@ -69,7 +69,7 @@ If no valid document is found for a payment, `homework_details` still stores a r
 
 ### Scheduler – Google Docs Homework Comments
 
-Homework comments are pulled by a scheduled process rather than on-demand portal requests.
+Homework comments are pulled by a scheduled process.
 
 - **Lambda / Script**: `bcdc_aws/scheduler_service/api/getGoogleDocComments.py`
 - **Authentication**:
@@ -84,7 +84,7 @@ Flow per payment (`process_payment` + `get_comments`):
 1. **Resolve document ID**
    - Extracts `file_id` from `home_work_link` (splitting on `/d/{fileId}/`).
    - If the link is missing or malformed, `file_id` is treated as empty.
-2. `Fetch document + comments (when file_id is present)`
+2. Fetch document + comments (when `file_id` is present)
    - Instantiates `drive = build("drive", "v3", ...)` and `docs = build("docs", "v1", ...)`.
    - Calls `get_ranges(docs, file_id)`:
      - Scans the document body.
