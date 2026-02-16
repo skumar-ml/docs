@@ -43,10 +43,12 @@ When the user revisits the site or opens the dashboard with a pending cart:
 ### Data & Storage
 
 - **Persistent cart record (database)**:\
-  When a user reaches checkout with a program in their cart, the backend saves a **checkout record** for that user (keyed by `memberId`). This record includes : `createdOn`, `levelId`, `locationId` / `location`, and `firstName` / `studentName` / `lastName`.
+  When a user reaches checkout with a program in their cart, the backend saves a **checkout record** for that user (keyed by `memberId`) in the `stripe_checkout_customer` collection. This record includes : `createdOn`, `levelId`, `locationId` / `location`, and `firstName` / `studentName` / `lastName`.
 
 <Note>
-  TODO: In which collection is it saved?
+  TODO: In which collection is it saved? 
+
+  **stripe_checkout_customer**
 </Note>
 
 - **Browser storage (localStorage)**:\
