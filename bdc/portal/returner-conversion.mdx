@@ -36,7 +36,7 @@ Once pre-registration ends, the banner updates to reflect the new registration s
   <Card title="Next Recommended Program Info">
     Highlights the next recommended program along with available offers, expiry countdown, and guidance on the next step.
   </Card>
-  <Card title="Next Recommended Program Banner ">
+  <Card title="Next Recommended Program Banner">
     ![Image 50](/images/image-50.png)
   </Card>
 </Columns>
@@ -101,27 +101,26 @@ Full schema for **payment_details** (and related collections) is covered in [Sem
    - File: `portal_new_ui.js`; class: `Portal`, which fetches `getPortalDetails` once.
 2. **API (getPortalDetails/)**
    - Returns all student records for the family, including current recommendation program data. For each student in the family and the **current** session, if the student's recommendation has `publish == True`, the API returns `recommendedLevel` (see table above). Also returns `futureSession` per student (from payment/upsell data; see table above). Used for pre-reg timing and "has bundle" logic.
-3. **JS (Portal)** — after response
-   3. Display logic uses two time windows: **pre-registration** (from `futureSession`) and **registration** (from `recommendedLevel`). Below, we detail when each section and button appears.
+3. **JS (Portal)** — Display logic uses two time windows: **pre-registration** (from `futureSession`) and **registration** (from `recommendedLevel`). Below, we detail when each section and button appears.
 
-      #### Section display
+   #### Section display
 
-      | Section                                    | Shown when                                                                                                                                                         |
-      | :----------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-      | **Next Recommended Program**               | API returned `recommendedLevel` for the student **and** today is in the registration window (`preRegStartDate` → `registrationEndDate`).                           |
-      | **Pre-register block** (banner, countdown) | Student has a future-session **bundle** (`futureSession` with no `classId`) **and** today is in the pre-reg window (`preRegStartDate` → `programDates.startDate`). |
-      | _(Nothing)_                                | If neither row above is true, the whole returner-conversion area is hidden.                                                                                        |
+   | Section                                    | Shown when                                                                                                                                                         |
+   | :----------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | **Next Recommended Program**               | API returned `recommendedLevel` for the student **and** today is in the registration window (`preRegStartDate` → `registrationEndDate`) and has a bundle program.  |
+   | **Pre-register block** (banner, countdown) | Student has a future-session **bundle** (`futureSession` with no `classId`) **and** today is in the pre-reg window (`preRegStartDate` → `programDates.startDate`). |
+   | _(Nothing)_                                | If neither row above is true, the whole returner-conversion area is hidden.                                                                                        |
 
-      <Warning>
-        TODO: Shouldn't "Next Recommended Program" only show if user can register (meaning, user-specific registration window)
-      </Warning>
-      #### Button display (Register Now vs Learn More)
+   <Warning>
+     TODO: Shouldn't "Next Recommended Program" only show if user can register (meaning, user-specific registration window)
+   </Warning>
+   #### Button display (Register Now vs Learn More)
 
-      | Button           | Shown when                                                                                                                                                                |
-      | :--------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-      | **Register Now** | Pre-reg: student has a bundle **and** today is in the pre-reg window. **Or** registration: API returned **recommendedLevel** **and** today is in the registration window. |
-      | **Learn More**   | API returned **recommendedLevel** **and** today is in the registration window.                                                                                            |
+   | Button           | Shown when                                                                                                                                                                |
+   | :--------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+   | **Register Now** | Pre-reg: student has a bundle **and** today is in the pre-reg window. **Or** registration: API returned **recommendedLevel** **and** today is in the registration window. |
+   | **Learn More**   | API returned **recommendedLevel** **and** today is in the registration window.                                                                                            |
 
-      #### Click behavior
-      - **Register Now** — Link is set from `recommendedLevel` and the current registration window. When returner conversion is active and today is within the registration window: link is `https://www.bergendebate.com/programs/{levelUrl}` (e.g. `programs/level-3b` for Level 3B); user opens that program/level page in a new tab. Otherwise: link is `https://www.bergendebate.com/classes-overview`; user opens the classes overview in a new tab.
-      - **Learn More** — Opens the Next Recommended Program modal. The modal shows: title "Next Step for [student name]"; recommended line "Recommended: [session year | level]"; early-bird countdown if **recommendedLevel** has `earlyBirdDeadlineDate`; an Enroll Now button (same link logic as Register Now); and "Why This Program" copy. Closing the modal (backdrop or close control) hides it; the modal does not navigate the page.
+   #### Click behavior
+   - **Register Now** — Link is set from `recommendedLevel` and the current registration window. When returner conversion is active and today is within the registration window: link is `https://www.bergendebate.com/programs/{levelUrl}` (e.g. `programs/level-3b` for Level 3B); user opens that program/level page in a new tab. Otherwise: link is `https://www.bergendebate.com/classes-overview`; user opens the classes overview in a new tab.
+   - **Learn More** — Opens the Next Recommended Program modal. The modal shows: title "Next Step for [student name]"; recommended line "Recommended: [session year | level]"; early-bird countdown if **recommendedLevel** has `earlyBirdDeadlineDate`; an Enroll Now button (same link logic as Register Now); and "Why This Program" copy. Closing the modal (backdrop or close control) hides it; the modal does not navigate the page.
