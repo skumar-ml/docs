@@ -25,3 +25,34 @@ There currently does not exist any mechanism for the admin or user to change the
 "Creating an Account", "Edit Account Info"
 
 Not sure yet where to put family management stuff
+
+## Technical Details
+
+### Memberstack
+
+Memberstack handles all of the member logic for the NSD site. This includes sign-in auth, password encryption, log-in redirects, gated content, and member-specific pages. NSD uses Memberstack V1; the account can be accessed via https://app.memberstack.io/login. Configuration and member data are separate from BDC.
+
+### Family Architecture
+
+Parent and student accounts are connected through a unique `familyId` that links family members together. This supports multiple students under (at least one) parent account and handles various sign-up scenarios.
+
+The logic is centralized in the account-creation flow and behaves as follows:
+
+**1. Parent-first ownership model**
+
+- The **parent record is the source of truth** for `familyId`.
+- When a signup includes a `parentEmail`, the system first looks up an existing parent by that email.
+
+**2. FamilyId generation**
+
+- If no existing parent is found:
+  - A new `familyId` is generated (non-guessable, derived from parent email and digits) and assigned at parent account creation.
+- If an existing parent is found:
+  - If the parent already has a valid `familyId`, it is reused.
+  - If the parent exists but has an empty or `"null"` familyId, a new one is generated and backfilled.
+
+**3. Student linkage**
+
+- Students are linked to a parent via `familyId`.
+- Student lookup uses `studentEmail` (if provided and different from parent) or else `studentName + familyId`.
+- If a student record exists without a `familyId`, it is updated with the parent’s `familyId`. If no student record exists, a new one is created with that `familyId`.
