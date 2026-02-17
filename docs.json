@@ -170,11 +170,18 @@
           },
           {
             "group": "Camp Checkout",
-            "pages": []
+            "pages": [
+              "nsd/camp-checkout/camp-overview",
+              "nsd/camp-checkout/non-technical-checkout-flow",
+              "nsd/camp-checkout/upsells"
+            ]
           },
           {
             "group": "Briefs Checkout",
-            "pages": []
+            "pages": [
+              "nsd/briefs-checkout/program-page",
+              "nsd/briefs-checkout/checkout"
+            ]
           },
           {
             "group": "Customer Portal",
