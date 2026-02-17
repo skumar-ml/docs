@@ -47,7 +47,7 @@ When the user clicks **Next** on the student details form:
 
 **Session Data Retrieval:**
 
-On page load, the `CheckOutWebflow` class calls `getSummerSessionDetails/{memberId}/{programId}` API, which:
+On page load, the `CheckOutWebflow` class calls `getSummerSessionDetails?programId={programId}` API, which:
 
 - Retrieves all summer program sessions for the given `programId` and current `yearId`
 - For each session, fetches inventory data from `summer_inventory_caps` collection
@@ -74,7 +74,7 @@ After the user selects a session and location, clicking **Next** triggers `updat
 We have specific logic to handle the case of PF Labs (which is restricted to specific users) and the MUN & YES full-day purchase (which represents a merged program of seperate classes of MUN and YES).
 
 <AccordionGroup>
-  <Accordion title="PF Labs ">
+  <Accordion title="PF Labs">
     **Unique to Summer:** For PF Labs (`programId`: 101), an additional validation step occurs before allowing the user to proceed to session selection.
 
     When the user clicks **Next** on the student details form:
