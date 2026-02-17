@@ -165,7 +165,9 @@
           {
             "group": "Members",
             "pages": [
-              "nsd/members/introduction"
+              "nsd/members/introduction",
+              "nsd/members/creating-an-account",
+              "nsd/members/edit-account-info"
             ]
           },
           {

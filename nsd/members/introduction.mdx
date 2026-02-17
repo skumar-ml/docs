@@ -4,6 +4,56 @@ title: "Introduction"
 
 TODO: Mirror BDC
 
+## Signing up or Logging in
+
+Users can create fresh accounts on our [sign-up page](https://www.nsdebatecamp.com/sign-up); users with existing accounts can log-in on our [log-in page](https://www.nsdebatecamp.com/log-in). Accounts are uniquely associated with an email address.
+
+Users that have forgotten their password can do a password reset on the log-in page.
+
+## Account Types
+
+The most important distinction between accounts is the `accountType`, which can be `parent`,  `student`, or `coach`. We support multiple account types to ensure role-based access and family linking:
+
+These distinctions control the following:
+
+- Only `parent` accounts can register for BDC classes. A `student` account will be asked to log out and sign-in to a `parent` account during the checkout process.
+  - `student` and `parent` accounts see the same portal.
+- Only `coach` accounts can access the BDC Coach Portal, which (upon verification) allows them to access functionality like semester class attendance & trial class attendance and the millions.
+
+There currently does not exist any mechanism for the admin or user to change the `accountType`. If a need arises, please inform the tech team, and we'll do it manually.
+
 "Creating an Account", "Edit Account Info"
 
-- Not sure yet where to put family management stuff
+Not sure yet where to put family management stuff
+
+## Creating an Account
+
+## How-To
+
+1. Navigate to the sign-up page.
+2. Fill in the required fields (including a valid email address)
+5. Create a password & submit the form to create your account.
+
+<Info>
+  A valid email address has the format **local-part@domain**, where the local part contains allowed characters (letters, numbers, dots, etc.) and the domain is a real domain with a valid extension (like `.com)`.
+</Info>
+
+The platform supports multiple account types to ensure proper role-based access and family linking.
+
+### Parent Accounts
+
+**Required Fields:** First & Last Name, Email Address
+
+### Student Accounts
+
+**Required Fields:** First & Last Name, Parent Name &  Email Address
+
+**Note:** The parent email address is used to link the student account to a parent account via the `familyId`.
+
+### Coach Accounts
+
+**Required Fields:** First & Last Name, Email Address
+
+<Warning>
+  There is no way for an admin to create an account for a user. This is contemplated future functionality. If such a need arises, let the tech team know, and we can manually do this
+</Warning>
