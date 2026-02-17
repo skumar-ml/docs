@@ -50,9 +50,11 @@ The [Payment History](#) page allows parents to view students, track outstanding
 **invoice_records** — One document per invoice . Looked up by `invoice_id` in aggregation. <u>Purpose:</u> stores the invoice’s core details (title, year/session, flags) so other collections can reference it by `invoice_id` and display consistent invoice info.
 
 <Note>
-  TODO: What is the point of this collection? \<@SK updated discription, please have a look\>
+  TODO: What is the point of this collection? \<@SK updated description, please have a look\>
 
   TODO: We should describe how the bucketed invoices work
+
+  @SK, Added invoice rates explanation above the "Database changes after sending an Invoice via Retool" section
 </Note>
 
 | Field              | Description                                                  |
@@ -119,6 +121,235 @@ The [Payment History](#) page allows parents to view students, track outstanding
 | **status**         | Checkout status.         |
 | **payment_intent** | Stripe payment intent.   |
 
+### How to calculate the invoice bucket rates amount?
+
+<Accordion title="Invoice Bucket System Explanation" icon="">
+  ### What is an "Invoice Bucket"?
+
+  An **Invoice Bucket** is a pre-calculated pricing table that stores all possible invoice amounts for a given session and year based on different combinations of student attributes. Think of it as a lookup table that eliminates the need to calculate prices on-the-fly when creating invoices.
+
+  ### How Amount Gets Calculated
+
+  The `amount` for each bucket entry is **calculated entirely by Retool.**  Here's the step-by-step process:
+
+  #### 1. Input Parameters (from the modal form):
+
+  - **Base Price**: Starting price for a returning student with no discounts/fees
+  - **New Student Fee**: Flat fee added for new students
+  - **Sibling Discount**: Percentage discount (e.g., 10%)
+  - **Early Bird Discount**: Flat discount amount
+  - **Deposit Amount**: Flat deposit to subtract from final amount
+
+  #### 2. Bucket Generation Logic:
+
+  The system generates **8 different invoice scenarios** representing all possible combinations of three boolean attributes
+
+  ```
+  [true, false, false],   // Returning student, no sibling, no early bird
+  [false, true, false],   // New student, has sibling, no early bird
+  [true, true, false],    // Returning student, has sibling, no early bird
+  [false, false, true],   // New student, no sibling, has early bird
+  [true, false, true],    // Returning student, no sibling, has early bird
+  [false, true, true],    // New student, has sibling, has early bird
+  [true, true, true],     // Returning student, has sibling, has early bird
+  [false, false, false]   // New student, no sibling, no early bird
+  ```
+
+  #### 3. Amount Calculation Formula (from`calculateAmount`function):
+
+  For each scenario, the amount is calculated in this exact order
+
+  ```
+  1. Start with base price
+  2. IF early bird → subtract early bird discount
+  3. IF NOT returning → add new student fee
+  4. IF sibling → subtract (current amount × sibling discount percentage / 100)
+  5. Finally → subtract deposit amount
+  6. IF result is negative → set to 0
+  ```
+
+  **Example Calculation:**
+
+  - Base Price: \$2000
+  - New Student Fee: \$100
+  - Sibling Discount: 10%
+  - Early Bird Discount: \$100
+  - Deposit: \$500
+
+  For a **new student with sibling and early bird** [false, true, true]
+
+  ```
+  1. Start: $2000
+  2. Early bird: $2000 - $100 = $1900
+  3. New student: $1900 + $100 = $2000
+  4. Sibling (10%): $2000 - ($2000 × 0.10) = $1800
+  5. Deposit: $1800 - $500 = $1300
+  Final Amount: $1300
+  ```
+
+  ### Bucket-Specific Technical Differences
+
+  **Database Collections:**
+
+  1. `invoice_rates`: Stores the **input parameters** (1 record per session/year)
+     - basePrice, newStudent, siblingDiscPercentage, earlyBirdsDiscount, depositAmount
+  2. `invoice_bucket`: Stores the **pre-calculated amounts** (8 records per session/year)
+     - returner (boolean), sibling (boolean), earlyBirds (boolean), amount (calculated)
+
+  **Why Two Collections?**
+
+  - `invoice_rates`: Allows you to edit/update pricing rules later
+  - `invoice_bucket`: Provides fast lookup when creating actual invoices (no recalculation needed)
+</Accordion>
+
+### Database changes after sending an Invoice via Retool
+
+When an admin clicks **"Send"** to create a new invoice, here's the complete database operation sequence:
+
+<AccordionGroup>
+  <Accordion title="Invoice Creation Flow (New Invoice)" icon="file-invoice">
+    #### **Step 1: Create Master Invoice Record**
+
+    **Collection:** `invoice_records`
+
+    **Data Structure Created:**
+
+    ```
+    {
+      title: "Invoice Title" or "Session (Year): Returner | Early Bird",
+      group_id: <selected group ID>,
+      invoice_type_id: <invoice type ID or 7 for bucket>,
+      payment_type: 'stripe' | 'jotform' | 'bucket' | 'Single' | 'Multiple',
+      created_on: <current timestamp>,
+      currentYear: <selected year ID>,
+      classSessionId: <selected session ID>,
+      // For bucket payments only:
+      returner: true/false,
+      sibling: true/false,
+      earlyBirds: true/false
+    }
+    ```
+
+    **Result:** Returns the newly created invoice's `_id` (ObjectId) which is used in subsequent operations.
+
+    #### **Step 2: Create Notification Records**
+
+    **Collection:** `invoice_notifications`\
+    **What Happens:**
+
+    - One notification record is created **for each student** in the current student list
+    - Links each student's payment record to the invoice using the created invoice_td
+
+    **Data Structure (per student):**
+
+    ```
+    {
+      paymentId: <student's payment_details _id>,
+      created_on: <current timestamp>,
+      is_read: false,
+      is_completed: false,
+      invoice_id: <newly created invoice _id from Step 1>
+    }
+    ```
+
+    **Count:** If you have 50 students selected, this creates **50 records**.
+
+    #### **Step 3: Create Payment Link Records**
+
+    **Collection:** `invoice_payment_link`\
+    **What Happens:**\
+    The structure depends on the payment method selected:
+
+    **A) JotForm Payment Method:**
+
+    - Creates one record per JotForm URL configured
+    - Each record contains the form ID, URL, and payment type
+
+    ```
+    {
+      formid: <extracted JotForm ID>,
+      jotFormUrl: <full JotForm URL>,
+      paymentType: 'jotform',
+      invoice_id: <invoice _id from Step 1>
+    }
+    ```
+
+    **B) Stripe Payment Method (Single or Multiple):**
+
+    - Creates **2 records**: one for card, one for bank transfer
+
+    ```
+    [
+      {
+        amount: <card payment amount>,
+        paymentType: 'card',
+        invoice_id: <invoice _id>,
+        title: <card payment title>,
+        formid: '',
+        jotFormUrl: ''
+      },
+      {
+        amount: <bank transfer amount>,
+        paymentType: 'us_bank_account',
+        invoice_id: <invoice _id>,
+        title: <bank transfer title>,
+        formid: '',
+        jotFormUrl: ''
+      }
+    ]
+    ```
+
+    **C) Bucket Payment Method:**
+
+    - Creates 1-2 records depending on which amounts are non-zero
+    - Similar structure to Stripe, but uses bucket-specific amounts
+  </Accordion>
+  <Accordion title="Invoice Update Flow (Existing Invoice)" icon="file-invoice-dollar">
+    When an admin clicks **"Save"** on an existing invoice, here's what happens:
+
+    #### **Step 1: Update Master Invoice Record**
+
+    **Collection:** `invoice_records`
+
+    **What Gets Updated:**
+
+    ```
+    {
+      $set: {
+        title: <updated title>,
+        invoice_type_id: <updated type>,
+        payment_type: <updated payment method>
+      }
+    }
+    ```
+
+    **Filter:** `{ _id: { $oid: <invoiceId from URL params> } }`
+
+    #### **Step 2: Update New Payment Links**
+
+    **Collection:** `invoice_payment_link`\
+    **What Happens:**
+
+    - Update payment link
+
+    #### **Step 3 : Updated Notification Records**
+
+    **Collection:** `invoice_notifications`\
+    **What Happens:**
+
+    - Preserves existing notification records for students still in the list (keeps original `created_on` timestamp)
+    - Creates new notification records for newly added students
+    - Removes notifications for students removed from the list
+  </Accordion>
+  <Accordion title="Database Collections Summary" icon="database">
+    | Collection              | Purpose                            | Records per Invoice                         |
+    | :---------------------- | :--------------------------------- | :------------------------------------------ |
+    | `invoice_records`       | Master invoice metadata            | **1 record** per invoice                    |
+    | `invoice_notifications` | Links invoices to students/parents | **N records** (1 per student)               |
+    | `invoice_payment_link`  | Payment method configurations      | **1-N records** (depends on payment method) |
+  </Accordion>
+</AccordionGroup>
+
 ### Dashboard
 
 The main portal Dashboard uses `getPortalDetail` and shows invoices in an accordion for each student tab.
@@ -164,6 +395,13 @@ The main portal Dashboard uses `getPortalDetail` and shows invoices in an accord
    - Show the invoice accordion: for each invoice show name, “Invoice Breakdown” link, and Pay buttons (Bank Transfer, Credit/Debit Card) for unpaid ones. Show “Needs to be completed” or “All Paid” and “X of Y invoices complete”.
    - When the user clicks Pay (Bank Transfer, Credit/Debit Card) , call `createCheckoutUrl` and redirect to Stripe.
    - **TODO: What MongoDB writes happen after payment...**
+     - After the user completes payment on Stripe, the `stripePaymentListener` webhook receives the event. For **invoice payments** (when the checkout is not class, summer, upsell, or topic), it calls `updateInvoiceResponses()`.
+     - `invoice_responses`: Insert or update the record using `payment_intent`, `invoiceId`, `memberId`, `paymentId`, and `status`.\
+       On **Complete**, optionally store `receipt_url` and rate/credit-related fields.
+     - `stripe_checkout_customer`: Update the checkout session with `payment_intent` and the current `status`.
+     - On **Complete**, if **BDC credit** was used, update `member_credit_amount` (`credit_balance` and `credit_history`).
+     - On **Failed**, delete the corresponding `invoice_responses` record and update `stripe_checkout_customer` status to **Failed**.
+     - A **success email** is sent to the parent when the status is **Complete** (card payments) or **Processing** (bank transfer).
 
 ##### **Itemized Invoice breakdown**
 
