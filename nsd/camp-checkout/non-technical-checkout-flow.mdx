@@ -8,7 +8,7 @@ title: "Non-Technical: Checkout Flow"
 
    **The checkout flow follows a multi-step process:**
 
-   Login / Sign-up → Student Details → Briefs Selection → Class Selection & Payment
+   Login / Sign-up → Student Details → Briefs Selection → Payment Method/Pay
 
    Each step must be completed before proceeding to the next.
 
@@ -40,29 +40,22 @@ title: "Non-Technical: Checkout Flow"
 
 Refer to Upsells page.
 
-### Step 4: Class Selection & Payment
+### Step 4: Payment Methods
 
-**Select Class Location:** Users must first choose a location (e.g., Glen Rock, Fort Lee, Livingston, Online)
+<Frame>
+  ![Image](/images/image-158.png)
+</Frame>
 
-**Select Class Time:** Available time slots appear after selecting a location. Example times:
+Users select their preferred payment option:
 
-- Friday 4:00 PM – 6:00 PM
-- Sunday 9:30 AM – 11:30 AM
+- ACH / Bank Transfer
+- Credit / Debit Card
+- Buy Now, Pay Later (via Affirm)
 
-**Seat Availability Messages**
+### Pay Button
 
-Depending on how many spots are left in the class, users may see messages such as:
-
-- **Limited Availability:** "Hurry! Register now. Seats filling up fast! Only 1 spot left.”
-- **Sold Out:** “Seats are full. You can fill out the waitlist form.”
-
-## Payment Options
-
-Payment options become available once a class time and location are selected and seats are available. We support **Bank Transfer** and **Credit Card** payment methods. To pay, users:
-
-1. Select a payment method & click **Buy Now**.
-3. They are **redirected to a secure Stripe checkout page**, where they enter payment details & complete payment
+Clicking the **Pay Now** button in the **Order Details** section redirects the user to the secure **Stripe payment page**, where all added programs and briefs are displayed to complete the transaction.
 
 ### After Payment
 
-Upon successful payment, the user is redirected to a [confirmation (success) page](https://www.bergendebate.com/payment-confirmation?type=Academic&programName=Glen%20Rock%20%7C%20Level%201A%20%7C%20Saturday%209:30AM%20-%2011:30AM&pType=card&transactionID=cs_live_b1ZBFBo5RsbbfPvJHdutwSFnk3f0oGxPQTZbsVAqgoGR5YxQJbk4zYt3IW). The student is officially registered for the class.
+Upon successful payment, the user is redirected to a [confirmation (success) page](https://www.nsdebatecamp.com/payment-confirmation?programId=5&transactionID=cs_live_b1R679Kpw5yC6PbDFDEE1nOxB6KjKhhca54xbIe7TJjdYbcEzSEhoFCLqJ) and the student is officially registered for the class.
