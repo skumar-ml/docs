@@ -111,8 +111,7 @@
               "bdc/portal/referrals-copied-1",
               "bdc/portal/portal-upsell",
               "bdc/portal/returner-conversion",
-              "bdc/portal/briefs",
-              "bdc/portal/announcements"
+              "bdc/portal/briefs"
             ]
           },
           {
@@ -122,7 +121,8 @@
               "bdc/coach-portal/overview",
               "bdc/coach-portal/attendance",
               "bdc/coach-portal/millions",
-              "bdc/coach-portal/trial-classes"
+              "bdc/coach-portal/trial-classes",
+              "bdc/portal/announcements"
             ]
           },
           {
