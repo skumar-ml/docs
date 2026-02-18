@@ -2,7 +2,7 @@
 title: "Edit Account Info"
 ---
 
-Admins can edit parent, student, and coach information using Retool. 
+Admins can edit parent, student, and coach information using Retool.
 
 ### Case 1: Editing from the Student Registration Details Page
 
@@ -28,3 +28,39 @@ If the member is not accesible via the Student Registration Details, admin can d
 | Lambda Function       | Yes              | No                  |
 | Database Update       | Yes              | Yes                 |
 | Account Login Enabled | Yes              | No                  |
+
+### Technical Details
+
+To execute edits for **Full Accounts**, Retool calls the `POST /camp/updateMemberStack` API. That Lambda updates the member in all three places: **Memberstack**, **Webflow** (Member collection), and **MongoDB** (`members`). The request body includes `memberId`, `itemId`, and old/new values for first name, last name, email, phone, and (for students) grade.
+
+For **Partial Accounts**, Retool updates the `members collection in MongoDB only` (no Memberstack or Webflow update).
+
+## Users
+
+Members can update their own profile from the NSD portal.
+
+### How to update your profile
+
+1. Log in to the portal and go to the **Dashboard** .
+2. On the Dashboard, next to the welcome message (e.g. "WELCOME, [NAME]!"), click the **Update Profile** button.
+3. The **Edit Profile Data** modal opens with your current information pre-filled.
+4. Edit any of these fields as needed:
+   - **First Name**
+   - **Last Name**
+   - **Email Address**
+   - **Parent Phone Number**
+5. Click **Save** to submit your changes. Use the **X** in the top-right of the modal to close without saving.
+
+The modal shows your existing values so you can change only what you need and save.
+
+### Implementation
+
+The portal update-profile flow is implemented by `update_profile.js` (class `updateMember`). This script:
+
+- Fetches the logged-in member’s data from the `getItemId/{memberId}` API and pre-fills the Edit Profile Data form.
+- Listens for clicks on elements with class `.update_profile` (the Update Profile button) and opens the **Edit Profile Data** modal (`#update-profile-modal`).
+- On **Save** (`#editMemberBtn`), sends a `POST` request to `updateMemberStack` with `memberId`, `itemId`, and old/new values for first name, last name, email, phone, and (for students) grade—the same API used by the admin Retool flow for full accounts.
+- For **parent** accounts the form shows Parent Phone Number and hides Student Grade; for **student** accounts it can show Grade where applicable.
+- On success, the modal closes and the welcome heading (e.g. "Welcome, [Name]!") is updated via elements with `[data-portal='heading']`.
+
+There are no dependent JS files; the script is self-contained and expects `memberId` and `baseUrl` to be passed when the `updateMember` class is instantiated.
