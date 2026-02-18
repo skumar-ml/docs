@@ -5,3 +5,28 @@ title: "Non-Technical: Checkout Flow"
 1. Create Account
 2. Student Details
 3. Payment Method + Pay
+
+   The checkout flow follows a **multi-step form**:
+   1. Login / Sign-up via cart page
+   1. Student Details
+   2. Optional Bundle Program Selection
+   3. Class Selection & Payment
+
+   Each step must be completed before moving to the next.
+
+   ### Step 1: Login / Sign-up via the cart page
+
+   When a user reaches the **Cart flow**, they must create or access a **Parent Account** before continuing.
+
+   **Option 1: Existing Parent (Login)**
+   - At the top of the page, the user sees:\
+     **“Already have an account?”** with a **Login** button.
+   - Clicking **Login** opens a **login modal**.
+   - The parent enters their credentials and logs in.
+   - On successful login, the user automatically advances to the **Student Details** step.
+
+   **Option 2: New Parent (Create Account)**
+   - If the user does not have an account, they complete the **Create Account** form.
+   - On successful account creation:
+     - The parent account is created and logged in automatically.
+     - The flow advances to the **Student Details** step.
