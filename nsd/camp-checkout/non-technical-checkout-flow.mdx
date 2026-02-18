@@ -6,27 +6,86 @@ title: "Non-Technical: Checkout Flow"
 2. Student Details
 3. Payment Method + Pay
 
-   The checkout flow follows a **multi-step form**:
-   1. Login / Sign-up via cart page
-   1. Student Details
-   2. Optional Bundle Program Selection
-   3. Class Selection & Payment
+   **The checkout flow follows a multi-step process:**
 
-   Each step must be completed before moving to the next.
+   Login / Sign-up → Student Details → Briefs Selection → Class Selection & Payment
+
+   Each step must be completed before proceeding to the next.
 
    ### Step 1: Login / Sign-up via the cart page
 
-   When a user reaches the **Cart flow**, they must create or access a **Parent Account** before continuing.
+   When a user enters the checkout flow, they must log in or create a **Parent Account** before continuing.
 
-   **Option 1: Existing Parent (Login)**
-   - At the top of the page, the user sees:\
-     **“Already have an account?”** with a **Login** button.
-   - Clicking **Login** opens a **login modal**.
-   - The parent enters their credentials and logs in.
-   - On successful login, the user automatically advances to the **Student Details** step.
+   <Frame>
+     ![Image](/images/image-150.png)
+   </Frame>
+   - **Existing Parent(Login):**
 
-   **Option 2: New Parent (Create Account)**
-   - If the user does not have an account, they complete the **Create Account** form.
-   - On successful account creation:
-     - The parent account is created and logged in automatically.
-     - The flow advances to the **Student Details** step.
+     At the top of the page, users see:
+
+   **“Already have an account?”**  with a **Login** button.\
+   Users click _Login_, enter credentials, and on successful login are moved to the Student Details        step.
+   - **New Parent(Create Account):**\
+     Users complete the _Create Account_ form.\
+     Upon successful creation, they are automatically logged in and moved to the Student Details step.
+
+### Step 2: Student Details
+
+<Frame>
+  ![Image](/images/image-152.png)
+</Frame>
+
+Parents begin by entering or selecting student information.
+
+### Saved Student Profiles
+
+- Parents enter or select student information.
+- Existing student profiles can be selected from a dropdown, which auto-fills the form.
+- Required details include:\
+  Student Name, Email, Grade, School, and Gender.
+- Clicking **Next** saves the information and triggers a popup offering discounted bundle programs for future sessions.
+
+### Step 3: Bundle Program (Optional)
+
+Refer to Upsells page.
+
+### Step 4: Class Selection & Payment
+
+**Select Class Location:** Users must first choose a location (e.g., Glen Rock, Fort Lee, Livingston, Online)
+
+**Select Class Time:** Available time slots appear after selecting a location. Example times:
+
+- Friday 4:00 PM – 6:00 PM
+- Sunday 9:30 AM – 11:30 AM
+
+**Seat Availability Messages**
+
+Depending on how many spots are left in the class, users may see messages such as:
+
+- **Limited Availability:** "Hurry! Register now. Seats filling up fast! Only 1 spot left.”
+- **Sold Out:** “Seats are full. You can fill out the waitlist form.”
+
+## Payment Options
+
+Payment options become available once a class time and location are selected and seats are available. We support **Bank Transfer** and **Credit Card** payment methods. To pay, users:
+
+1. Select a payment method & click **Buy Now**.
+3. They are **redirected to a secure Stripe checkout page**, where they enter payment details & complete payment
+
+### After Payment
+
+Upon successful payment, the user is redirected to a [confirmation (success) page](https://www.bergendebate.com/payment-confirmation?type=Academic&programName=Glen%20Rock%20%7C%20Level%201A%20%7C%20Saturday%209:30AM%20-%2011:30AM&pType=card&transactionID=cs_live_b1ZBFBo5RsbbfPvJHdutwSFnk3f0oGxPQTZbsVAqgoGR5YxQJbk4zYt3IW). The student is officially registered for the class.
+
+## Additional UI Elements of Checkout Flow
+
+**Bundle Program Banner:** On the class level & location select screen. This displays the currently (if there are any) selected bundle programs. It allows users to add or remove their selections prior to payment.
+
+**Bergen Briefs:** On the right-hand sidebar, optional learning briefs can be added alongside class registration. Users can choose full or light versions.
+
+**Student Info Panel:** Displays the selected student’s information for confirmation, also allowed to edit the student's information.
+
+**Order Details Panel:** Shows:
+
+- selected class, time and location
+- any upsells (bundle future semesters or briefs)
+- pricing and totals
