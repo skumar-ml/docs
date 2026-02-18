@@ -175,7 +175,15 @@
             "pages": [
               "nsd/camp-checkout/camp-overview",
               "nsd/camp-checkout/non-technical-checkout-flow",
-              "nsd/camp-checkout/upsells"
+              "nsd/camp-checkout/upsells",
+              {
+                "group": "Technical",
+                "pages": [
+                  "pre-payment",
+                  "payment",
+                  "post-payment"
+                ]
+              }
             ]
           },
           {

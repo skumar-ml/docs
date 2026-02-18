@@ -1,0 +1,90 @@
+---
+title: "Payment"
+---
+
+This section explains the available payment options, how Stripe checkout links are created, when student details are written to the DB, and how the system handles redirects to Stripe and returning from the Stripe payment page.
+
+### Available Payment Methods
+
+The NSD camp checkout provides three payment options:
+
+**1. Bank Transfer (ACH):** Stripe-hosted ACH flow. Base price. No bank details are stored by us.
+
+**2. Card:** Standard card payment via Stripe. Processing fee may be applied depending on backend configuration.
+
+**3. Pay Later:** Pay-later option; Stripe checkout session is created and the URL is returned as **`payLaterUrl`**. Terms and fulfillment are handled by the NSD camp backend.
+
+### When Payment Options Are Displayed
+
+Payment options appear on the **`checkout_payment`** tab after:
+
+- The user has completed the **student details** form and clicked **Next**.
+- Form validation and **`checkUniqueStudentEmail()`** have passed.
+- **`initializeStripePayment()`** has completed and returned **`achUrl`**, **`cardUrl`**, and **`payLaterUrl`**.
+- **`updateStudentDetails(checkoutUrl)`** has been called to persist student data and URLs.
+
+The payment buttons (**`ach_payment`**, **`card_payment`**, **`paylater_payment`**) are then enabled and show "Checkout". Clicking one redirects the user to the corresponding Stripe URL.
+
+## Checkout Link System
+
+When the user proceeds to payment, the system creates Stripe checkout sessions in one step (when the user clicks **Next** on the student details tab). The entry point is **`initializeStripePayment()`** in **`nsd/checkout_with_abandoned.js`** (called from **`addEventForPrevNaxt()`**).
+
+### Data Preparation for the Checkout Link
+
+The following data is sent in **`POST .../camp/createCheckoutUrlsByProgram`** (from **`initializeStripePayment()`**):
+
+| Field                    | Purpose                                                                 |
+| :----------------------- | :---------------------------------------------------------------------- |
+| email                    | Parent/member email (from `memberData.email`)                          |
+| label                    | Program name                                                            |
+| programId                | Camp program identifier                                                |
+| successUrl               | Redirect after successful payment                                      |
+| cancelUrl                | Redirect if user cancels                                               |
+| memberId                 | Logged-in member (parent) ID                                           |
+| programCategoryId        | Program category                                                       |
+| supplementaryProgramIds  | Selected supplementary program IDs (from **`suppProIds`** hidden field)  |
+| productType              | e.g. camp vs supplementary                                             |
+| programStartDate         | Formatted program start date                                           |
+| programEndDate           | Formatted program end date                                             |
+| achAmount                | Amount for ACH                                                         |
+| cardAmount               | Amount for card                                                        |
+| payLaterAmount           | Amount for pay-later                                                   |
+| briefEventIds            | Selected brief event IDs (admin only)                                  |
+| source                   | `"cart_page"` for first-time creation                                  |
+| device / deviceUserAgent | Device and user agent (optional)                                       |
+
+### API Call: Create Checkout URLs
+
+**API:** **`POST .../camp/createCheckoutUrlsByProgram`**  
+**Backend:** **`nsd_aws/api/createCheckoutUrlsByProgram.py`** — **`lambda_handler`** (see **`nsd_aws/serverless.yml`**).
+
+**What happens:** **`getCustomerId(email)`** looks up or creates Stripe customer (**`stripe_customer`** collection). **`createCheckoutSessionUrl(...)`** builds a 16-char **`checkoutId`**, creates Stripe Checkout sessions for **card**, **us_bank_account**, **affirm** (ACH, Card, Pay Later), and for each inserts a document into **`stripe_checkout_customer`** with **memberId**, **programId**, **programCategoryId**, **paymentType**, **sessionId**, **customerId**, **checkoutId**, **checkoutUrl**, **parentEmail**, **myProducts**, **supplementaryProgramIds**, **productType**, **device**, **deviceUserAgent**, **programStartDate**, **programEndDate**, **created_on**. Returns **`cardUrl`**, **`achUrl`**, **`payLaterUrl`**, **`checkoutId`**, **`success: true`**.
+
+### API Call: Update Student Details in DB
+
+**When:** Immediately after **`initializeStripePayment()`** resolves.
+
+**API:** **`POST .../camp/updateStripeCheckoutDb`**  
+**Backend:** **`nsd_aws/api/updateStripeCheckoutDb.py`** — **`lambda_handler`**.
+
+**What happens:** When body contains **`checkoutUrls`**, the handler updates **`student_profiles`** (create or update by **studentEmail**) and, for each URL in **checkoutUrls**, finds **`stripe_checkout_customer`** by **`checkoutUrl`** and **`memberId`** and sets **studentEmail**, **studentName**, **grade**, **school**, **gender**, **utm_source**.
+
+**Frontend:** **`updateStudentDetails(checkoutUrl)`** in **`nsd/checkout_with_abandoned.js`** builds the payload from form IDs **`Student-First-Name`**, **`Student-Last-Name`**, **`Student-Email`**, **`Student-Grade`**, **`Student-School`**, **`Student-Gender`** and **memberData**, sends **checkoutUrls** as **`[$this.$checkoutData.achUrl, $this.$checkoutData.cardUrl, $this.$checkoutData.payLaterUrl]`**. On load, merges data into **`checkOutData`** in `localStorage`, sets **`isAbandonedModalOpen = false`**, then calls **`addSessionId()`** (hidden inputs for automation).
+
+### Redirect to Stripe
+
+When the user clicks **ACH**, **Card**, or **Pay Later**, the frontend redirects to the corresponding URL from **`checkOutData`** (**`achUrl`**, **`cardUrl`**, or **`payLaterUrl`**). No additional API call is required. Checkout data remains in `localStorage` so that returning from Stripe (back or cancel) can restore state.
+
+## Returning from Stripe
+
+### 1. Successful Payment
+
+Stripe redirects to the **success URL** passed at session creation, e.g. **`{site_url}payment-confirmation?programId={programId}`**. The user lands on the NSD payment confirmation page. Post-payment processing is driven by **`nsd_aws/api/stripePaymentListener.py`**; see [Post-Payment](/nsd/camp-checkout/technical/post-payment).
+
+### 2. Cancelled Payment
+
+If the user cancels on Stripe, Stripe redirects to the **cancel URL** (e.g. current page with **`returnType=back`**). The checkout page can restore the last program, student details, and payment step from **`checkOutData`** in `localStorage`.
+
+### 3. Abandoned Cart
+
+If the user leaves without completing payment, **`checkOutData`** in `localStorage` (and any backend record keyed by **`memberId`**) is used by the abandoned-cart flow to offer "Resume Checkout" or to pre-fill the form when they return. See **`nsd/checkout_with_abandoned.js`** and **`nsd/abandoned-cart-modal.js`**.
