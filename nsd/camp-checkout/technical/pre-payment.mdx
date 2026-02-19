@@ -29,22 +29,24 @@ There is on-page JS that checks if `redirect_url` exists. If it does, the URL is
 
 Checkout is entered from the [camp overview page](/nsd/camp-checkout/camp-overview) or a program detail page (e.g. via the **Register** button). Program context is passed into the checkout flow as **`memberData`**. If the user leaves before paying, **abandoned-cart** recovery can restore state from `localStorage` (`checkOutData`) or a backend lookup by `memberId`; see [Payment](/nsd/camp-checkout/technical/payment) for returning from Stripe and resuming.
 
-## 2. Program Selection(Landing on cart page)
+## 2. Program Data on Page Load (Landing on Cart Page)
 
-The first checkout tab is **`checkout_program`** (program summary). The user sees the selected camp program; context comes from **`memberData`**, which includes:
+When the user lands on the cart page, program context is loaded from **Webflow CMS program items** and passed into the checkout flow as **`memberData`**. On page load, the following data is collected from the Webflow CMS program item for the selected camp:
 
 - **programId**, **programName**, **programCategoryId**, **slug**
 - **programStartDate**, **programEndDate**
 - **achAmount**, **cardAmount**, **payLaterAmount**
 - **productType**, **site_url**
 
-## 3. Student Profile & Information Collection
+This **`memberData`** is used when creating checkout URLs and updating student details in the backend.
 
-**Form location:** Tab **`checkout_student_details`**. Fields: First Name, Last Name, Email, Grade, School, Gender.
+## 3. Student Details (First Tab)
+
+The **first tab** is the **Student Details** screen  Fields: First Name, Last Name, Email, Grade, School, Gender.
 
 **Validation:** The frontend validates that the student email is unique (e.g. different from parent) via **`checkUniqueStudentEmail()`** (`nsd/checkout_with_abandoned.js`). If validation fails, **`checkout-form-error`** is shown and the user cannot proceed to payment.
 
-When the user clicks **Next** on the student details tab (**`next_page_2`**), inside **`addEventForPrevNaxt()`**:
+When the user clicks **Next** on the Student Details tab (**`next_page_2`**), the user moves to the **second tab** (Payment screen). Inside **`addEventForPrevNaxt()`**:
 
 1. **`storeBasicData()`** saves form data to `localStorage` for pre-fill and abandoned-cart recovery (see **`checkout_with_abandoned.js`**).
 2. **`initializeStripePayment()`** is called — POST to **`.../camp/createCheckoutUrlsByProgram`** (see [Payment](/nsd/camp-checkout/technical/payment)); returns **achUrl**, **cardUrl**, **payLaterUrl**.
@@ -61,4 +63,4 @@ Selected supplementary (add-on) programs are stored in the hidden field **`suppP
 
 ### Briefs Upsell
 
-If **`memberData.isAdmin`** is true, the **BriefsUpsellModal** (from **`BriefsUpsellModal`** in `checkout_with_abandoned.js`) can be shown after the user reaches the payment step. Selected brief events are sent as **`briefEventIds`** in the same **`createCheckoutUrlsByProgram`** request. See [Upsells](/nsd/camp-checkout/upsells) for product-level details.
+If **`memberData.isAdmin`** is true, the **BriefsUpsellModal** (from **`BriefsUpsellModal`** in `checkout_with_abandoned.js`) can be shown after the user reaches the **second tab** (Payment screen). Selected brief events are sent as **`briefEventIds`** in the same **`createCheckoutUrlsByProgram`** request. See [Upsells](/nsd/camp-checkout/upsells) for product-level details.
