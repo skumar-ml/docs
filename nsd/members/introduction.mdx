@@ -54,7 +54,7 @@ The logic is centralized in the account-creation flow and behaves as follows:
 **2. FamilyId generation**
 
 - If no existing parent is found:
-  - For NSD, a **new** `familyId` is generated when a parent completes a payment (e.g. camp checkout) and the parent record has no `familyId` yet. Implementation: `nsd_aws/api/stripePaymentListener.py` and `nsd_aws/api/welcomeEmail.py` use a **16-character random string** built from **parent firstName + digits** (`alphabet = firstName + string.digits`, then `secrets.choice(alphabet)`). So NSD derives it from **parent first name and digits**,  At **signup** (`createWebflowItem.setFamilyId`), the new member does not get a newly generated `familyId`; they are assigned the **existing** parent’s `familyId` after the parent is found via **payment_details** or **invited_member**
+  - For NSD, a **new** `familyId` is generated when a parent completes a payment (e.g. camp checkout) and the parent record has no `familyId` yet. Implementation: `stripePaymentListener.py` and `welcomeEmail.py` use a **16-character random string** built from **parent firstName + digits** (`alphabet = firstName + string.digits`). So NSD derives it from **parent first name and digits**,  At **signup** (`createWebflowItem.setFamilyId`), the new member does not get a newly generated `familyId`; they are assigned the **existing** parent’s `familyId` after the parent is found via **payment_details** or **invited_member**
 
 <Note>
   TODO: How is familyId created for NSD? Is it also derived from parent email & digits? **Updated description**
