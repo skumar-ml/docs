@@ -98,7 +98,7 @@ Pre-existing records (e.g. from Retool or invites) may have empty `familyId` or 
 
 ## Key notes
 
-- The NSD flow keeps **Webflow**, **Memberstack**, and **MongoDB** in sync for the NSD site only; BDC uses a separate stack and APIs.
+- The NSD flow keeps **Webflow**, **Memberstack**, and **MongoDB** in sync.
 - **Webflow** is the source of truth for CMS items; **Memberstack** is updated with `webflow-member-id` after the Webflow item is created.
 - **MongoDB** stores full member records and supports partial records that are completed at signup (e.g. admin-created or invited users).
 - **familyId** is set or backfilled by `setFamilyId` and groups parent–student relationships as described in the [Introduction](/nsd/members/introduction#family-architecture).
