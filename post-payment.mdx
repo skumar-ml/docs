@@ -35,12 +35,12 @@ Stripe events handled:
 **Collection:** **`payment_details`** (database **`nsdebate`**).
 
 - **Insert (first successful payment):** When no record exists for **`payment_intent`**, **`updatePaymentDetails`** inserts one with **`submissionId`**, **`payment_intent`**, **`bankToken`** (balance_transaction), **`programDetailId`**, **`programCategoryId`**, **`paymentTotalChecksum`**, **`studentEmail`**, **`studentGrade`**, **`studentName`**, **`parentEmail`**, **`school`**, **`gender`**, **`myProducts`**, **`briefEventIds`**, **`memberId`**, **`yearId`**, **`utm_source`**, **`device`**, **`deviceUserAgent`**, **`createdOn`** (from **`stripeCheckout`** and **`chargeObj`**).
-- **Update:** On later webhooks (e.g. bank transfer complete), **`receipt_url`** is set via **`db.payment_details.update_one`** (filter by **payment_intent**, **$set** **receipt_url** from the charge object).
+- **Update:** On later webhooks (e.g. bank transfer complete), **`receipt_url`** is set via **`db.payment_details.update_one`** (filter by **payment_intent**, **\$set** **receipt_url** from the charge object).
 - **Failure:** If **status == "Failed"**, **`updatePaymentDetails`** deletes **`payment_details`**, **`supplementary_payment_details`** by **`payment_intent`**, and updates **`stripe_checkout_customer`** with **`status: "Failed"`**.
 
 ### B. `stripe_checkout_customer`
 
-On every webhook, **`stripe_checkout_customer`** is updated by **`sessionId`** using **`update_one`** with the session id and **$set** for **payment_intent** and **status**. Lookup is **`db.stripe_checkout_customer.find_one`** by **sessionId** (see **stripePaymentListener.py**).
+On every webhook, **`stripe_checkout_customer`** is updated by **`sessionId`** using **`update_one`** with the session id and **\$set** for **payment_intent** and **status**. Lookup is **`db.stripe_checkout_customer.find_one`** by **sessionId** (see **stripePaymentListener.py**).
 
 ### C. Supplementary & Briefs
 

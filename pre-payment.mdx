@@ -59,6 +59,6 @@ When the user clicks **Next** on the student details tab (**`next_page_2`**), in
 
 Selected supplementary (add-on) programs are stored in the hidden field **`suppProIds`** (element ID **`suppProIds`** in **`checkout_with_abandoned.js`**; value is a JSON array of program IDs). They are sent in **`createCheckoutUrlsByProgram`** as **`supplementaryProgramIds`** (parsed from **`JSON.parse(suppProIdE.value)`** in **`initializeStripePayment()`**). The checkout UI shows supplementary options in **`checkout-supplimentary-data-2`** and **`checkout-supplimentary-data-desktop`**; selection is tracked and included when creating checkout URLs.
 
-### Briefs Upsell (Admin Only)
+### Briefs Upsell
 
 If **`memberData.isAdmin`** is true, the **BriefsUpsellModal** (from **`BriefsUpsellModal`** in `checkout_with_abandoned.js`) can be shown after the user reaches the payment step. Selected brief events are sent as **`briefEventIds`** in the same **`createCheckoutUrlsByProgram`** request. See [Upsells](/nsd/camp-checkout/upsells) for product-level details.
