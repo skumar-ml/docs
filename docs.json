@@ -180,9 +180,9 @@
                 "group": "Technical",
                 "icon": "folder",
                 "pages": [
-                  "pre-payment",
-                  "payment",
-                  "post-payment"
+                  "nsd/camp-checkout/technical/payment",
+                  "nsd/camp-checkout/technical/post-payment",
+                  "nsd/camp-checkout/technical/pre-payment"
                 ]
               }
             ]
