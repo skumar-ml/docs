@@ -20,11 +20,17 @@ These distinctions control the following:
   - `student` and `parent` accounts see the same portal.
 - Only `coach` accounts can access the NSD Coach Portal, which (upon verification) allows them to access functionality like semester class attendance & trial class attendance and the millions.
 
+<Note>
+  There's some inaccuracies here. We cannot just copy-paste from BDC.
+
+  1. I don't think it's true that "Only parent accounts can register for NSD Classes". That functionality is only for Bergen, right?
+  2. Is it true that student and parent portals are the same?
+  3. There's no "semester class attendance & trial class attendance and the millions" for BDC.
+
+  We need more attention to detail
+</Note>
+
 There currently does not exist any mechanism for the admin or user to change the `accountType`. If a need arises, please inform the tech team, and we'll do it manually.
-
-"Creating an Account", "Edit Account Info"
-
-Not sure yet where to put family management stuff
 
 ## Technical Details
 
@@ -47,12 +53,27 @@ The logic is centralized in the account-creation flow and behaves as follows:
 
 - If no existing parent is found:
   - A new `familyId` is generated (non-guessable, derived from parent email and digits) and assigned at parent account creation.
+
+<Note>
+  TODO: How is familyId created for NSD? Is it also derived from parent email & digits?
+</Note>
+
 - If an existing parent is found:
   - If the parent already has a valid `familyId`, it is reused.
   - If the parent exists but has an empty or `"null"` familyId, a new one is generated and backfilled.
+
+<Note>
+  TODO: Are we sure we are doing "null" check for NSD as well?
+</Note>
 
 **3. Student linkage**
 
 - Students are linked to a parent via `familyId`.
 - Student lookup uses `studentEmail` (if provided and different from parent) or else `studentName + familyId`.
 - If a student record exists without a `familyId`, it is updated with the parent’s `familyId`. If no student record exists, a new one is created with that `familyId`.
+
+<Note>
+  TODO: Isn't this incorrect? Don't we link student accounts based on payment_details? \
+  \
+  There's no studentName + familyId lookup, right? Let's make sure we're being accurate here.
+</Note>
