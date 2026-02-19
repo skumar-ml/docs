@@ -33,7 +33,7 @@ If the member is not accesible via the Student Registration Details, admin can d
 
 To execute edits for **Full Accounts**, Retool calls the `POST /camp/updateMemberStack` API. That Lambda updates the member in all three places: **Memberstack**, **Webflow** (Member collection), and **MongoDB** (`members`). The request body includes `memberId`, `itemId`, and old/new values for first name, last name, email, phone, and (for students) grade.
 
-For **Partial Accounts**, Retool updates the `members collection in MongoDB only` (no Memberstack or Webflow update).
+For **Partial Accounts**, Retool updates the members, payment_details collection in MongoDB only (no Memberstack or Webflow update).
 
 ## Users
 
@@ -55,25 +55,21 @@ The modal shows your existing values so you can change only what you need and sa
 
 <Frame>
   <img
-    src="/images/image-162.png"
-    alt="Image"
     title="Image"
     className="hidden dark:block"
+    src="/images/image-162.png"
+    alt="Image"
   />
   <img
-    src="/images/image-160.png"
-    alt="Image"
     title="Image"
     className="dark:hidden"
+    src="/images/image-160.png"
+    alt="Image"
   />
 </Frame>
 
 <Frame>
-  <img
-    src="/images/image-161.png"
-    alt="Image"
-    title="Image"
-  />
+  ![Image](/images/image-161.png)
 </Frame>
 
 <Note>
