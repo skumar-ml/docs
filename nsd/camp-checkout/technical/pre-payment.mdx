@@ -31,7 +31,7 @@ Checkout is entered from the [camp overview page](/nsd/camp-checkout/camp-overvi
 
 ## 2. Program Data on Page Load (Landing on Cart Page)
 
-When the user lands on the cart page, program context is loaded from **Webflow CMS program items** and passed into the checkout flow as **`memberData`**. On page load, the following data is collected from the Webflow CMS program item for the selected camp:
+There is no separate checkout or program-selection tab. When the user lands on the cart page, program context is loaded from **Webflow CMS program items** and passed into the checkout flow as **`memberData`**. On page load, the following data is collected from the Webflow CMS program item for the selected camp:
 
 - **programId**, **programName**, **programCategoryId**, **slug**
 - **programStartDate**, **programEndDate**
@@ -42,7 +42,7 @@ This **`memberData`** is used when creating checkout URLs and updating student d
 
 ## 3. Student Details (First Tab)
 
-The **first tab** is the **Student Details** screen  Fields: First Name, Last Name, Email, Grade, School, Gender.
+The **first tab** is the **Student Details** screen (**`checkout_student_details`**). Fields: First Name, Last Name, Email, Grade, School, Gender.
 
 **Validation:** The frontend validates that the student email is unique (e.g. different from parent) via **`checkUniqueStudentEmail()`** (`nsd/checkout_with_abandoned.js`). If validation fails, **`checkout-form-error`** is shown and the user cannot proceed to payment.
 
@@ -55,7 +55,21 @@ When the user clicks **Next** on the Student Details tab (**`next_page_2`**), th
 
 **API (create URLs):** **`POST .../camp/createCheckoutUrlsByProgram`** — **`nsd_aws/api/createCheckoutUrlsByProgram.py`** **`lambda_handler`**. Request body (from **`initializeStripePayment()`**): **email**, **label**, **programId**, **successUrl**, **cancelUrl**, **memberId**, **programCategoryId**, **supplementaryProgramIds**, **productType**, **programStartDate**, **programEndDate**, **achAmount**, **cardAmount**, **payLaterAmount**, **briefEventIds** (optional), **device**, **deviceUserAgent**, **source** (e.g. **`"cart_page"`**). Backend uses **`getCustomerId(email)`** and **`createCheckoutSessionUrl(...)`**; inserts into **`stripe_checkout_customer`**; returns **cardUrl**, **achUrl**, **payLaterUrl**, **checkoutId**, **success: true**.
 
-## 4. Optional Supplementary Programs & Briefs
+## 4. Brief Upsell Pop-up (When Clicking Next on Student Details)
+
+When the user clicks the **Next** button on the **Student Details** tab, after form validation and after checkout URLs and student details are saved (steps 1–4 above), the flow moves to the **Payment** screen. At that point, a **brief upsell pop-up** may be displayed.
+
+**When the pop-up is shown:** The pop-up is shown only when all of the following are true:
+
+- **`memberData`** is present (logged-in member context).
+- **`memberData.isAdmin`** is **true** (the logged-in user is an admin).
+- The current flow is **not** an abandoned-cart resume (i.e. **`$isAboundedProgram`** is **false**).
+
+**Implementation:** In **`nsd/checkout_with_abandoned.js`**, inside the **`next_page_2`** click handler in **`addEventForPrevNaxt()`**, the condition **`canShowBriefUpsell = Boolean(memberData && memberData.isAdmin && !$isAboundedProgram)`** is evaluated. If **`canShowBriefUpsell`** is true, **`showBriefsUpsellModal()`** is called (class **`BriefsUpsellModal`**), which displays the briefs upsell modal. The modal also does not show if a brief event was already added for this checkout (**`briefEventAdded`**). If the pop-up is not shown (e.g. not admin or abandoned resume), **`addToCart()`** runs instead and the Payment screen is shown without the modal.
+
+Selected brief events are sent as **`briefEventIds`** in the **`createCheckoutUrlsByProgram`** request when the user proceeds to payment. See [Upsells](/nsd/camp-checkout/upsells) for product-level details.
+
+## 5. Optional Supplementary Programs & Briefs
 
 ### Supplementary Programs
 
@@ -63,4 +77,4 @@ Selected supplementary (add-on) programs are stored in the hidden field **`suppP
 
 ### Briefs Upsell
 
-If **`memberData.isAdmin`** is true, the **BriefsUpsellModal** (from **`BriefsUpsellModal`** in `checkout_with_abandoned.js`) can be shown after the user reaches the **second tab** (Payment screen). Selected brief events are sent as **`briefEventIds`** in the same **`createCheckoutUrlsByProgram`** request. See [Upsells](/nsd/camp-checkout/upsells) for product-level details.
+The briefs upsell modal is shown when the user clicks **Next** on Student Details, based on the conditions in section 4 above. Selected brief events are sent as **`briefEventIds`** in the **`createCheckoutUrlsByProgram`** request. See [Upsells](/nsd/camp-checkout/upsells) for product-level details.
