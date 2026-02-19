@@ -6,15 +6,30 @@ title: "Pre-Payment"
 
 ### Authentication
 
-The user must be logged in (parent account) to access camp checkout. Memberstack detects the active member session on page load. Login/signup sections are shown before authentication; the multi-step checkout is hidden until the user is authenticated.
+Memberstack detects whether a user is logged in by checking for an active member session on page load. Before authentication, login/signup sections (signup form, login modal) are shown, while post-login sections (cart and multi-step checkout process) are hidden using `data-ms-content="!members"` and `data-ms-content="members"`.
+
+For custom logic, the same session is read from `localStorage` (`memberstack`) and the `webflowMemberId` is used to confirm authentication.
+
+```
+var memberstackData = JSON.parse(memberstack);
+var webflowMemberId = memberstackData.information.id;
+if(webflowMemberId != null) {// User Logged In or Sign-up}
+else{// User not Logged In or Sign-up}
+```
 
 **Implementation:** **`nsd/checkout_with_abandoned.js`** (class **`CheckOutWebflow`** extends **`BriefsUpsellModal`**). Backend: **`nsd_aws/api/createCheckoutUrlsByProgram.py`**, **`nsd_aws/api/updateStripeCheckoutDb.py`**.
+
+### Cart Redirection Logic
+
+When a user visits a cart page, we save the cart URL in `localStorage.redirect_url`. After logging-in or signing-up, Memberstack (through a pre-set default) redirects users to `/portal/home`.
+
+There is on-page JS that checks if `redirect_url` exists. If it does, the URL is deleted, and saved in a temp variable, which is used to redirect the user back to the cart page they were originally on.
 
 ### Cart / Checkout Entry
 
 Checkout is entered from the [camp overview page](/nsd/camp-checkout/camp-overview) or a program detail page (e.g. via the **Register** button). Program context is passed into the checkout flow as **`memberData`**. If the user leaves before paying, **abandoned-cart** recovery can restore state from `localStorage` (`checkOutData`) or a backend lookup by `memberId`; see [Payment](/nsd/camp-checkout/technical/payment) for returning from Stripe and resuming.
 
-## 2. Program Selection
+## 2. Program Selection(Landing on cart page)
 
 The first checkout tab is **`checkout_program`** (program summary). The user sees the selected camp program; context comes from **`memberData`**, which includes:
 
@@ -22,8 +37,6 @@ The first checkout tab is **`checkout_program`** (program summary). The user see
 - **programStartDate**, **programEndDate**
 - **achAmount**, **cardAmount**, **payLaterAmount**
 - **productType**, **site_url**
-
-Clicking **Next** on **`next_page_1`** (handled in **`addEventForPrevNaxt()`**) moves to the student details tab (**`checkout_student_details`**).
 
 ## 3. Student Profile & Information Collection
 
