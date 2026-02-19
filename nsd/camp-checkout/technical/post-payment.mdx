@@ -6,16 +6,16 @@ This section explains everything that happens after a payment is made: Stripe we
 
 ## Core Logic Flow
 
-After a payment is completed, Stripe sends a webhook to the NSD camp backend. The webhook handler is **`nsd_aws/api/stripePaymentListener.py`** — **`lambda_handler`** (exposed as **`POST .../camp/stripePaymentListener`** in **`nsd_aws/serverless.yml`**). It reads the event, looks up **`stripe_checkout_customer`** by **`sessionId`**, and routes by **`productType`**. For camp (core program) purchases, **`productType == "core"`** and the handler calls **`updatePaymentDetails(stripeCheckout, status, eventObj, sessionId, currentYear, freeCoupon)`**. Other types: **`supplementary`** → **`updateSuppPaymentDetails`**, **`invoice`** → **`updateInvoiceResponses`**, **`brief`** / **`briefPortal`** → **`updateBriefPaymentDetails`**.
+After a payment is completed, Stripe sends a webhook to the NSD camp backend. The webhook handler is **`stripePaymentListener.py`** — `lambda_handler`. It reads the event, looks up `stripe_checkout_customer` by **`sessionId`**, and routes by **`productType`**. For camp (core program) purchases, **`productType == "core"`** and the handler calls **`updatePaymentDetails(stripeCheckout, status, eventObj, sessionId, currentYear, freeCoupon)`**. Other types: **`supplementary`** → **`updateSuppPaymentDetails`**, **`invoice`** → **`updateInvoiceResponses`**, **`brief`** / **`briefPortal`** → **`updateBriefPaymentDetails`**.
 
 ## `stripePaymentListener` (Stripe Webhook)
 
-**Implementation:** **`nsd_aws/api/stripePaymentListener.py`** — **`lambda_handler`**. Exposed as **`POST .../camp/stripePaymentListener`** (see **`nsd_aws/serverless.yml`**).
+**Implementation:** **`stripePaymentListener.py`** — **`lambda_handler`**. Exposed as **`POST stripePaymentListener.`**
 
 Stripe events handled:
 
 - **`payment_intent`** with **`status == "requires_payment_method"`** → treated as **Failed**: deletes **`invoice_responses`**, **`payment_details`**, **`brief_payment_details`** by **`payment_intent`**; updates **`stripe_checkout_customer`** with **`payment_intent`** and **`status: "Failed"`**.
-- **`charge`** with **`paid == True`** / **`status == "pending"`** / **`status == "failed"`** → status mapped to **Complete** / **Processing** / **Failed**; then the handler calls the update function for **`stripeCheckout["productType"]`** (e.g. **`updatePaymentDetails`** for **core**).
+- **`charge`** with **`paid == True`** / **`status == "pending"`** / **`status == "failed"`** → status mapped to **Complete** / **Processing** / **Failed**; then the handler calls the update function for **`stripeCheckout["productType"]`**
 - **`checkout.session`** with **`payment_status == "paid"`** and **`amount_total == 0`** → zero-amount paid flow; generates a synthetic **`payment_intent`** and runs the same update path.
 
 **Idempotency:** The handler uses **`payment_intent`** as the unique key for **`payment_details`**. **`updatePaymentDetails`** calls **`find_one`** by **payment_intent** (from the charge object); if a record exists, it updates or deletes; if not, it inserts (when status is not Failed).
@@ -28,7 +28,7 @@ Stripe events handled:
 
 ## Database Writes & Updates
 
-**Implementation:** **`nsd_aws/api/stripePaymentListener.py`** — **`updatePaymentDetails()`** for **`productType == "core"`**.
+**Implementation:** **`stripePaymentListener.py`** — **`updatePaymentDetails()`** for **`productType == "core"`**.
 
 ### A. `payment_details`
 
@@ -61,4 +61,4 @@ On success, Stripe redirects the user to the **success URL** that was passed whe
 
 **site_url** + **payment-confirmation?programId=** + **programId**
 
-The user lands on the NSD payment confirmation page for the program they purchased. After successful payment, the frontend may clear **`checkOutData`** (and related keys) from `localStorage` so the next checkout starts fresh.
+The user lands on the NSD payment confirmation page for the program they purchased. After successful payment, the frontend clear **`checkOutData`** from `localStorage` so the next checkout starts fresh.
