@@ -52,30 +52,29 @@ The logic is centralized in the account-creation flow and behaves as follows:
 
 **2. FamilyId generation**
 
-- If no existing parent is found:
-  - For NSD, a **new** `familyId` is generated when a parent completes a payment (e.g. camp checkout) and the parent record has no `familyId` yet. Implementation: `stripePaymentListener.py` and `welcomeEmail.py` use a **16-character random string** built from **parent firstName + digits** (`alphabet = firstName + string.digits`). So NSD derives it from **parent first name and digits**,  At **signup** (`createWebflowItem.setFamilyId`), the new member does not get a newly generated `familyId`; they are assigned the **existing** parent’s `familyId` after the parent is found via **payment_details** or **invited_member**
+- If an existing parent has no family id:
+  - For NSD, a **new** `familyId` is generated when a parent completes a payment (e.g. camp checkout) and the parent record has no `familyId` yet. 
+  - Implementation: `stripePaymentListener.py` and `welcomeEmail.py` use a **16-character random string** built from **parent firstName + digits**.
+  -  At **signup** , the new member does not get a newly generated `familyId`; they are assigned the **existing** parent’s `familyId` after the parent is found via **payment_details** or **invited_member**
 
 <Note>
   TODO: How is familyId created for NSD? Is it also derived from parent email & digits? **Updated description**
 </Note>
 
-- If an existing parent is found:
-  - If the parent already has a valid `familyId`, it is reused.
-  - If the parent exists but has an empty or `"null"` familyId, a new one is generated and backfilled.
-
 <Note>
-  TODO: Are we sure we are doing "null" check for NSD as well?
+  TODO: Are we sure we are doing "null" check for NSD as well? **Removed. it's not valid for NSD**
 </Note>
 
 **3. Student linkage**
 
 - Students are linked to a parent via `familyId`..
-- If a student record exists without a `familyId`, it is updated with the parent’s `familyId`. If no student record exists, a new one is created with that `familyId`.
+- If a student record exists without a `familyId`, it is updated with the parent’s `familyId` after successful registration of camp. 
+- Student linkage at signup is based on payment_details. 
 
 <Note>
   TODO: Isn't this incorrect? Don't we link student accounts based on payment_details? \
   \
   There's no studentName + fa**milyId lookup, right? Let's make sure we're being accurate here.**
 
-  - **Yes. For NSD, student linkage at signup is based on payment_details (or invited_member), not studentName + familyId**
+  - **Yes. For NSD, student linkage at signup is based on payment_details , not studentName + familyId**
 </Note>

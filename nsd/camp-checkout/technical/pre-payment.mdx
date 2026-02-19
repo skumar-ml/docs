@@ -42,18 +42,15 @@ This **`memberData`** is used when creating checkout URLs and updating student d
 
 ## 3. Student Details (First Tab)
 
-The **first tab** is the **Student Details** screen (**`checkout_student_details`**). Fields: First Name, Last Name, Email, Grade, School, Gender.
+The **first tab** is the **Student Details** screen. Fields: **First Name, Last Name, Email, Grade, School, Gender.**
 
 **Validation:** The frontend validates that the student email is unique (e.g. different from parent) via **`checkUniqueStudentEmail()`** (`nsd/checkout_with_abandoned.js`). If validation fails, **`checkout-form-error`** is shown and the user cannot proceed to payment.
 
-When the user clicks **Next** on the Student Details tab (**`next_page_2`**), the user moves to the **second tab** (Payment screen). Inside **`addEventForPrevNaxt()`**:
+When the user clicks **Next** on the Student Details tab (**`next_page_2`**), the user moves to the **second tab** (Payment screen).:
 
 1. **`storeBasicData()`** saves form data to `localStorage` for pre-fill and abandoned-cart recovery (see **`checkout_with_abandoned.js`**).
-2. **`initializeStripePayment()`** is called — POST to **`.../camp/createCheckoutUrlsByProgram`** (see [Payment](/nsd/camp-checkout/technical/payment)); returns **achUrl**, **cardUrl**, **payLaterUrl**.
-3. After the promise resolves, **`updateStudentDetails(checkoutData)`** is called with **`[$this.$checkoutData.achUrl, $this.$checkoutData.cardUrl, $this.$checkoutData.payLaterUrl]`** — POST to **`.../camp/updateStripeCheckoutDb`** (**`nsd_aws/api/updateStripeCheckoutDb.py`**).
-4. **`updateOldStudentList()`** refreshes the saved-student list.
-
-**API (create URLs):** **`POST .../camp/createCheckoutUrlsByProgram`** — **`nsd_aws/api/createCheckoutUrlsByProgram.py`** **`lambda_handler`**. Request body (from **`initializeStripePayment()`**): **email**, **label**, **programId**, **successUrl**, **cancelUrl**, **memberId**, **programCategoryId**, **supplementaryProgramIds**, **productType**, **programStartDate**, **programEndDate**, **achAmount**, **cardAmount**, **payLaterAmount**, **briefEventIds** (optional), **device**, **deviceUserAgent**, **source** (e.g. **`"cart_page"`**). Backend uses **`getCustomerId(email)`** and **`createCheckoutSessionUrl(...)`**; inserts into **`stripe_checkout_customer`**; returns **cardUrl**, **achUrl**, **payLaterUrl**, **checkoutId**, **success: true**.
+2. **`initializeStripePayment()`** is called — POST to **`createCheckoutUrlsByProgram`** (see [Payment](/nsd/camp-checkout/technical/payment)); returns **achUrl**, **cardUrl**, **payLaterUrl**.
+3. After the promise resolves, **`updateStudentDetails()`** is called with **`[$this.$checkoutData.achUrl, $this.$checkoutData.cardUrl, $this.$checkoutData.payLaterUrl]`** — POST to **`.../camp/updateStripeCheckoutDb`** (**`nsd_aws/api/updateStripeCheckoutDb.py`**).
 
 ## 4. Brief Upsell Pop-up (When Clicking Next on Student Details)
 
