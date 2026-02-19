@@ -45,7 +45,7 @@ Entry-point API for NSD account signup. It synchronizes data between Webflow, Me
 **Responsibilities:**
 
 - **Accepts** signup payload from Memberstack: `id` (memberId), `email`, `profile` (e.g. `first-name`, `last-name`, `account-type`, `acquisition`, `sign-up-ref`, `utm-source`, `parent-phone-number`, `student-grade` where applicable). Input matches Memberstack’s webhook/create-member payload.
-- **Webflow CMS:** Builds a Webflow CMS–compatible payload from the profile, inserts into the Webflow **Member** collection (NSD site), and publishes the item. Receives `itemId` from Webflow.
+- **Webflow CMS:** Builds a Webflow CMS–compatible payload from the profile, inserts into the Webflow **Member** collection , and publishes the item. Receives `itemId` from Webflow.
 - **Memberstack linkage:** Updates the Memberstack member record with custom field `webflow-member-id = itemId` so Webflow and Memberstack stay linked.
 - **MongoDB:** If a member with the same `email` already exists (e.g. pre-created by admin or invite), updates that record with `memberId`, `itemId`, `name`, and other profile fields. Otherwise inserts a new document into the `members` collection with the same fields and an initial empty `familyId`.
 - **Family linkage:** Invokes the `setFamilyId` logic (with `email` and the member’s MongoDB `_id`) to assign or backfill `familyId` and link students to parents, as described in the [Introduction](/nsd/members/introduction#family-architecture).
