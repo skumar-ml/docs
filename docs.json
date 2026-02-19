@@ -178,15 +178,12 @@
               "nsd/camp-checkout/upsells",
               {
                 "group": "Technical",
+                "icon": "folder",
                 "pages": [
                   "pre-payment",
                   "payment",
                   "post-payment"
                 ]
-              },
-              {
-                "group": "Technical Documents",
-                "pages": []
               }
             ]
           },
