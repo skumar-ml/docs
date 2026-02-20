@@ -28,8 +28,6 @@ Stripe events handled:
 
 ## Database Writes & Updates
 
-**Implementation:** **`stripePaymentListener.py`** — **`updatePaymentDetails()`** for **`productType == "core"`**.
-
 ### A. `payment_details`
 
 **Collection:** **`payment_details`** (database **`nsdebate`**).
@@ -48,8 +46,6 @@ On every webhook, **`stripe_checkout_customer`** is updated by **`sessionId`** u
 - **Briefs:** If **`briefEventIds`** is present and (status is Complete or Processing with Bank Transfer), **`addBriefPayment(stripeCheckout, status, chargeObj, currentYear)`** is called; brief data is in **`brief_payment_details`**.
 
 ## Emails Triggered
-
-**Implementation:** **`stripePaymentListener.py`** — **`updatePaymentDetails()`**:
 
 - **Admin:** **`sendSuccessEmailToAdmin(stripeCheckout, currentYear["yearId"])`** when status is **Complete** (Card or Pay Later) or **Processing** (Bank Transfer), or zero-amount paid Complete.
 - **User:** **`sendWelcomeEmail(stripeCheckout, currentYear["yearId"])`** under the same conditions.

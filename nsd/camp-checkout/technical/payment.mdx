@@ -55,17 +55,15 @@ The following data is sent in **`POST .../camp/createCheckoutUrlsByProgram`** (f
 
 ### API Call: Create Checkout URLs
 
-**API:** **`POST createCheckoutUrlsByProgram`**\
-**Backend:** **`createCheckoutUrlsByProgram.py`**.
+**API:** **`POST createCheckoutUrlsByProgram`**
 
-**What happens:** **`getCustomerId(email)`** looks up or creates Stripe customer (**`stripe_customer`** collection). **`createCheckoutSessionUrl(...)`** builds a 16-char **`checkoutId`**, creates Stripe Checkout sessions for **card**, **us_bank_account**, **affirm** (ACH, Card, Pay Later), and for each inserts a document into **`stripe_checkout_customer`** with `memberId, programId, programCategoryId, paymentType, sessionId, customerId, checkoutId, checkoutUrl, parentEmail, myProducts, supplementaryProgramIds, productType, device, deviceUserAgent, programStartDate, programEndDate, created_on.` Returns `cardUrl`, `achUrl`, **`payLaterUrl`**, **`checkoutId`**, **`success: true`**.
+**What happens:** **`getCustomerId(email)`** looks up or creates Stripe customer (**`stripe_customer`** collection). **`createCheckoutSessionUrl(...)`** builds a 16-char **`checkoutId`**, creates Stripe Checkout sessions for **card**, **us_bank_account**, **affirm** (ACH, Card, Pay Later), and for each inserts a document into **`stripe_checkout_customer`** with `memberId, programId, programCategoryId, paymentType, sessionId, customerId, checkoutId, checkoutUrl, parentEmail, myProducts, supplementaryProgramIds, productType, device, deviceUserAgent, created_on.` Returns `cardUrl`, `achUrl`, **`payLaterUrl`**, **`checkoutId`**, **`success: true`**.
 
 ### API Call: Update Student Details in DB
 
 **When:** Immediately after **`initializeStripePayment()`** resolves.
 
-**API:** **`POST updateStripeCheckoutDb`**\
-**Backend:** **`updateStripeCheckoutDb.py`** — **`lambda_handler`**.
+**API:** **`POST updateStripeCheckoutDb`**.
 
 **What happens:** When body contains **`checkoutUrls`**, the handler updates **`student_profiles`** and, for each URL in **checkoutUrls**, finds **`stripe_checkout_customer`** by **`checkoutUrl`** and **`memberId`** and sets **studentEmail**, **studentName**, **grade**, **school**, **gender**, **utm_source**.
 
