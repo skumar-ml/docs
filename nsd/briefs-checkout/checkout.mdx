@@ -80,12 +80,12 @@ Users choose one of two plans (accordion-style):
 
 ## Technical
 
-**Frontend:** `nsd/briefs-events-checkout.js` — Class **BriefsEventsCheckout**. Fetches briefs and events from **getBriefDetails**, renders them in accordions, tracks **selectedBriefs** and **selectedEvents**, updates Order Details and total, and on **Pay Now** calls **createCheckoutUrlForBrief** (single briefs) or **createCheckoutUrlForBriefEvent** (annual events) and redirects to **cardUrl** or **achUrl**.
+**Frontend:** `briefs-events-checkout.js` — Class `BriefsEventsCheckout`. Fetches briefs and events from `getBriefDetails`, renders them in accordions, tracks `selectedBriefs` and `selectedEvents`, updates Order Details and total, and on **Pay Now** calls `createCheckoutUrlForBrief` (single briefs) or `createCheckoutUrlForBriefEvent` (annual events) and redirects to `cardUrl` or `achUrl`.
 
 ### API — get brief data
 
-- **Endpoint:** `GET .../camp/getBriefDetails` (no programId in briefs-checkout; optional query **programId** used in camp flow).
-- **Response:** **briefs** (array: single briefs catalog), **briefEvents** (array: annual plans — eventId, title, description, price, displayOrder, saved_amount, highlighted, features), **debateEventId**.
+- **Endpoint:** `GET getBriefDetails` (no programId in briefs-checkout; optional query `programId` used in camp flow).
+- **Response:** **briefs** (array: single briefs catalogue), **briefEvents** (array: annual plans — eventId, title, description, price, displayOrder, saved_amount, highlighted, features), **debateEventId**.
 - **Backend:** **nsd_aws/api/getBriefDetails.py** — reads **briefs** and **brief_events** (active, sorted by display_order). See [Camp Checkout Upsells](/nsd/camp-checkout/upsells) for full field list.
 
 ### Flow (briefs checkout)
