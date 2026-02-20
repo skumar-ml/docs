@@ -12,7 +12,7 @@ After clicking **Next** on the Student Details step, a briefs popup is displayed
   ![Image](/images/image-156.png)
 </Frame>
 
-This popup presents **This Season Briefs (Free) **and **Next Season Briefs (Discounted Price)** to highlight the bundled value.
+This popup presents \*\*This Season Briefs (Free) \*\*and **Next Season Briefs (Discounted Price)** to highlight the bundled value.
 
 **Add to Cart:**\
 Clicking this adds both This Season and Next Season briefs to the cart as a bundle and continues checkout.
@@ -38,3 +38,103 @@ Recommended programs are shown here.
 - **Learn More** opens a popup with detailed program information.
 
 TODO: Technical (briefs + supplementary programs). Subscription implementation can reference [this page](/nsd/briefs-checkout/checkout)
+
+## Technical
+
+### Briefs
+
+**Database Details**
+
+**stripe_checkout_customer** — One document per checkout session (per payment type: Card, Bank Transfer, Pay Later). Used to store checkout state, link to Stripe session, and hold **briefEventIds** and **supplementaryProgramIds** for line items. Looked up by **sessionId** in the webhook; updated by **updateStripeCheckoutDb** with **checkoutId** and **paymentType**.
+
+**brief_payment_details** — One document per successful brief purchase. Written by **stripePaymentListener** via **addBriefPayment** when **briefEventIds** are present (see [Post-Payment](/nsd/camp-checkout/technical/post-payment)). Keyed by **payment_intent** for idempotency.
+
+| Field                    | Description                                   |
+| :----------------------- | :-------------------------------------------- |
+| **\_id**                 | MongoDB ObjectId.                             |
+| **payment_intent**       | Stripe payment intent (unique per payment).   |
+| **submissionId**         | Alias of payment_intent.                      |
+| **briefEventIds**        | Array of brief event ids purchased.           |
+| **briefIds**             | Optional; used for subscription/store briefs. |
+| **paymentTotalChecksum** | Amount (e.g. from charge).                    |
+| **parentEmail**          | Parent email.                                 |
+| **memberId**             | Member id.                                    |
+| **myProducts**           | Product/line-item details.                    |
+| **yearId**               | Academic year.                                |
+| **bankToken**            | Stripe balance_transaction id.                |
+| **receipt_url**          | Set on successful payment.                    |
+| **createdOn**            | When the document was created.                |
+
+**brief_events** — Catalog of brief events. 
+
+| Field             | Description                                                                      |
+| :---------------- | :------------------------------------------------------------------------------- |
+| **\_id**          | MongoDB ObjectId.                                                                |
+| **eventId**       | Brief event id (used in **briefEventIds**).                                      |
+| **title**         | Display name (e.g. "PF Annual").                                                 |
+| **description**   | Short description (e.g. "All PF briefs for the season").                         |
+| **price**         | Price (number).                                                                  |
+| **priceId**       | Stripe price id for the line item.                                               |
+| **saved_amount**  | Discount/savings amount shown in UI.                                             |
+| **yearId**        | Academic year (e.g. 20242025).                                                   |
+| **display_order** | Sort order for listing (e.g. 0).                                                 |
+| **is_active**     | Whether the event is available.                                                  |
+| **highlighted**   | Whether to highlight in UI.                                                      |
+| **features**      | Array of feature strings (e.g. "Single event access", "Comprehensive research"). |
+| **created_at**    | When the document was created.                                                   |
+
+**Flow**
+
+- **API — get brief data:** `GET .../camp/getBriefDetails?programId={programId}`. Query: `programId`. Response: `briefs, briefEvents` (eventId, title, description, price, displayOrder, saved_amount, highlighted, features), `debateEventId` (1=PF, 2=LD, 3=All). Backend: `nsd_getBriefDetails.py` (reads` program_details, briefs, brief_events`).
+- **JS — render brief:** When the briefs popup is shown, `fetchBriefEvents` calls `getBriefDetails(programId)` and stores `briefEvents` (sorted by `display_order`). The script finds `data-cart="briefEvents-container"` (inside `briefs-upsell-modal-container`), clears them, builds a card per brief. The selected brief is written to the selected-brief wrapper via `renderSelectedBriefSummary` and appears in `Order Details`.
+- **JS — init and request (Checkout):** `nsd/checkout_with_abandoned.js` — `BriefsUpsellModal` shows the briefs popup after the user clicks `Next` on Student Details (If brief is not already added). User selection is stored in `selectedBriefEvent`. `getSelectedBriefEventIds()` returns the selected event id(s). When creating or updating checkout URLs, the request payload includes `briefEventIds` (and `supplementaryProgramIds`). Initial request: `createCheckoutUrlsByProgram`. When the user clicks **ACH** / **Card** / **Pay Later**, **initializeStripePayment(paymentType, checkoutId, "updateStripeCheckoutDb")** is called and sends **checkoutId**, **paymentType**, **briefEventIds**, and **supplementaryProgramIds**.
+- **API:** **POST .../camp/createCheckoutUrlsByProgram** creates initial Stripe sessions. **POST .../camp/updateStripeCheckoutDb** (with **checkoutId** and **paymentType**) builds updated Stripe sessions including **briefEventIds** and **supplementaryProgramIds** and returns updated **achUrl**, **cardUrl**, **payLaterUrl**. Backend reads **brief_events** by **eventId** to build line items; stores **briefEventIds** in **stripe_checkout_customer**. After payment, **stripePaymentListener** calls **addBriefPayment** and inserts into **brief_payment_details**.
+- **JS — after response:** Response (URLs and **checkoutId**) is stored in `$checkoutData` and **checkOutData** in `localStorage`. Frontend redirects the user to **achUrl**, **cardUrl**, or **payLaterUrl** for the chosen payment method. Order details and "Added" state in the UI reflect the selection.
+
+**Sidebar and main content**
+
+- **Main content:** Student Details step, then Payment step with **Order Details** (selected briefs and programs), payment method buttons (ACH, Card, Pay Later), and Student Info.
+- **Modal / overlay:** Briefs upsell popup (This Season / Next Season briefs, Add to Cart) appears over the Payment step. "You Might Also Like" (recommended programs) and Add to Cart / Learn More are part of the checkout layout.
+
+### Supplementary programs
+
+**Database Details**
+
+**stripe_checkout_customer** — Same collection as for Briefs (see above). Holds **supplementaryProgramIds** for the checkout session; used when building Stripe line items and after payment. One document per payment type per checkout; **supplementaryProgramIds** is an array of **programDetailId** values.
+
+**supplementary_payment_details** — One document per supplementary program purchased in a single payment. Written by **stripePaymentListener** via **addSupplementaryPaymentDetails** when **supplementaryProgramIds** is non-empty (see [Post-Payment](/nsd/camp-checkout/technical/post-payment)). Multiple documents can share the same **payment_intent**.
+
+| Field                            | Description                                    |
+| :------------------------------- | :--------------------------------------------- |
+| **\_id**                         | MongoDB ObjectId.                              |
+| **payment_intent**               | Stripe payment intent (links to main payment). |
+| **studentName**                  | Student name from checkout.                    |
+| **memberId**                     | Member id.                                     |
+| **parentEmail**                  | Parent email.                                  |
+| **studentEmail**                 | Student email.                                 |
+| **programDetailId**              | Id of the supplementary program.               |
+| **supplementaryProgram**         | Program label (from **program_details**).      |
+| **paymentTotalChecksum**         | "0" for bundle add-ons.                        |
+| **programCategoryId**            | Category (e.g. 3333).                          |
+| **bankToken**                    | Stripe balance_transaction id.                 |
+| **paymentId**                    | Main payment id (e.g. from payment_details).   |
+| **yearId**                       | Academic year.                                 |
+| **device** / **deviceUserAgent** | From checkout.                                 |
+| **createdOn**                    | When the document was created.                 |
+
+**Flow**
+
+- **API — get supplementary program data:** `GET getSupplementaryProgram/{programId}`. Path: `programId`. Response: array of `programDetailId, label, desc, amount, portal_amount, disc_amount, tags, benefits`. Backend: **getSupplementaryProgram.py**
+- **JS — render (supplementary):** On init, **renderPortalData** calls **getSupplementaryProgram(programId)**; the response is stored in **\$suppPro** . The script finds , **checkout-supplimentary-data-desktop**, **checkout-supplimentary-data-mobile** (and **supp-programs-description-wrapper** for Learn More), clears each, builds a slide per program and prepends. Selection is kept in **suppProIds**; **displaySelectedSuppProgram** fills **selected_supplimentary_program** and **selected_supplimentary_program_mob** (shown in **Order Details**). **createCartList** is used for an alternate cart-style row where needed.
+- **JS — init and request (Checkout):** `nsd/checkout_with_abandoned.js` — Selected add-on program ids are kept in the hidden field **suppProIds** (JSON array). **initializeStripePayment** reads **supplementaryProgramIds** from **suppProIds** and sends them in the request body. Same flow as briefs: initial call to **createCheckoutUrlsByProgram** when the user clicks **Next** on Student Details; when the user clicks **ACH** / **Card** / **Pay Later**, **updateStripeCheckoutDb** is called with current **supplementaryProgramIds** (and **briefEventIds**) so the Stripe session includes the latest add-ons.
+- **API:** **POST .../camp/createCheckoutUrlsByProgram** and **POST .../camp/updateStripeCheckoutDb** use **supplementaryProgramIds** to add line items to the Stripe session (via **program_details** / supplementary pricing). **stripe_checkout_customer** stores **supplementaryProgramIds**. After payment, **stripePaymentListener** calls **addSupplementaryPaymentDetails** and inserts into **supplementary_payment_details**.
+- **JS — after response:** Response is stored in **\$checkoutData** and **checkOutData**; user is redirected to the chosen payment URL. Cart and Order Details update when the user changes supplementary selection; the next request (e.g. on payment button click) sends the updated **supplementaryProgramIds**.
+
+**Sidebar and main content**
+
+- **Main content:** Payment step shows selected supplementary programs in Order Details; checkboxes or "Add to Cart" in **checkout-supplimentary-data-2** / **checkout-supplimentary-data-desktop** drive **suppProIds**.
+- **Sidebar / recommendations:** "You Might Also Like" lists recommended programs; Add to Cart adds them to the order and updates **suppProIds**.
+
+### Standalone briefs / subscriptions
+
+For buying briefs or subscriptions outside camp checkout, see [Briefs Checkout](/nsd/briefs-checkout/checkout).
