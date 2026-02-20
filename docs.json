@@ -196,7 +196,9 @@
           },
           {
             "group": "Customer Portal",
-            "pages": []
+            "pages": [
+              "dashboard"
+            ]
           },
           {
             "group": "Coach Portal",
