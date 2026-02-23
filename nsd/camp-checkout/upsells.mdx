@@ -98,15 +98,15 @@ Recommended programs are shown here.
 </Note>
 
 1. **JS — render brief (calls API)**\
-   When the briefs popup is shown, `fetchBriefEvents` calls `GET .../camp/getBriefDetails?programId={programId}` and stores `briefEvents` (sorted by `display_order`). The script finds `data-cart="briefEvents-container"` (inside `briefs-upsell-modal-container`), clears it, builds a card per brief via `buildBriefEventMarkup`, then runs `bindBriefEventCards`, `syncBriefCardsWithSelection`, `restoreBriefSelectionFromStorage`, `filterBriefEventsByDebateId`. Backend: `nsd_aws/api/getBriefDetails.py`.
+   When the briefs popup is shown, `fetchBriefEvents` calls `GET getBriefDetails?programId={programId}` and stores `briefEvents` (sorted by `display_order`). The script finds `data-cart="briefEvents-container"` both modal and banner, clears them, and builds a card per brief.
 2. **Add brief to cart**\
-   User selection is stored in `selectedBriefEvent`. The selected brief is written to the selected-brief wrapper via `renderSelectedBriefSummary` (`buildSelectedBriefSummaryFragment`) and appears in **Order Details**. `getSelectedBriefEventIds()` returns the selected event id(s).
-3. **JS — init and request (Checkout)**\
-   `nsd/checkout_with_abandoned.js` — `BriefsUpsellModal` shows the briefs popup after the user clicks **Next** on Student Details (when a brief is not already added). When creating or updating checkout URLs, the request payload includes `briefEventIds` (and `supplementaryProgramIds`). Initial request: `createCheckoutUrlsByProgram`. When the user clicks **ACH** / **Card** / **Pay Later**, `initializeStripePayment(paymentType, checkoutId, "updateStripeCheckoutDb")` is called and sends `checkoutId`, `paymentType`, `briefEventIds`, and `supplementaryProgramIds`.
+   `BriefsUpsellModal` shows the briefs pop`-`up after the user clicks **Next** on Student Details (when a brief is not already added), and the brief banner can also be available on the payment screen. User selection is stored in `selectedBriefEvent`. The selected brief is written to the selected-brief wrapper via `renderSelectedBriefSummary`and appears in **Order Details**. `getSelectedBriefEventIds()` returns the selected event id(s).
+3. **init and request (Checkout)**\
+   When creating or updating checkout URLs, the request payload includes `briefEventIds`. Initial request: `createCheckoutUrlsByProgram`. When the user clicks **ACH** / **Card** / **Pay Later**, `initializeStripePayment` is called and sends `checkoutId`, `paymentType`,and `briefEventIds`.
 4. **API: POST**\
-   `POST .../camp/createCheckoutUrlsByProgram` creates initial Stripe sessions. `POST .../camp/updateStripeCheckoutDb` (with `checkoutId` and `paymentType`) builds updated Stripe sessions including `briefEventIds` and `supplementaryProgramIds` and returns updated `achUrl`, `cardUrl`, `payLaterUrl`. Backend reads `brief_events` by `eventId` to build line items; stores `briefEventIds` in `stripe_checkout_customer`. After payment, `stripePaymentListener` calls `addBriefPayment` and inserts into `brief_payment_details`.
+   `POST createCheckoutUrlsByProgram` creates initial Stripe sessions. `POST updateStripeCheckoutDb` (with `checkoutId` and `paymentType`) builds updated Stripe sessions including `briefEventIds` and returns updated `achUrl`, `cardUrl`, `payLaterUrl`. Backend reads `brief_events` by `eventId` to build line items; stores `briefEventIds` in `stripe_checkout_customer`. After payment, `stripePaymentListener` calls `addBriefPayment` and inserts into `brief_payment_details`.
 5. **JS — after response**\
-   Response (URLs and `checkoutId`) is stored in `$checkoutData` and `checkOutData` in `localStorage`. Frontend redirects the user to `achUrl`, `cardUrl`, or `payLaterUrl`. Order details and "Added" state in the UI reflect the selection.
+   Response (URLs and `checkoutId`) is stored in `$checkoutData` and `checkOutData` in `localStorage`. Frontend redirects the user to `achUrl`, `cardUrl`, or `payLaterUrl`.
 
 ### Supplementary programs
 
@@ -146,15 +146,15 @@ Recommended programs are shown here.
 </Note>
 
 1. **JS — render (supplementary, calls API)**\
-   On init, `renderPortalData` calls `GET .../camp/getSupplementaryProgram/{programId}`; the response is stored in `$suppPro`. Backend: `nsd_aws/api/getSupplementaryProgram.py`. The script finds `checkout-supplimentary-data-2`, `checkout-supplimentary-data-desktop`, `checkout-supplimentary-data-mobile` (and `supp-programs-description-wrapper` for Learn More), clears each, builds a slide per program via `displaySingleSuppProgram` / `newDisplaySingleSuppProgram` and prepends.
+   On init, `renderPortalData` calls `GET getSupplementaryProgram/{programId}`; the response is stored in `$suppPro`. Backend: `getSupplementaryProgram.py`. The script finds `checkout-supplimentary-data-desktop`, `checkout-supplimentary-data-mobile` (and `supp-programs-description-wrapper` for Learn More), clears each, builds a slide per program via `displaySingleSuppProgram`and prepends.
 2. **Add supplementary programs to cart**\
-   Selection is kept in hidden field `suppProIds` (JSON array). `displaySelectedSuppProgram` fills `selected_supplimentary_program` and `selected_supplimentary_program_mob` (shown in **Order Details**). `createCartList` is used for an alternate cart-style row where needed.
-3. **JS — init and request (Checkout)**\
-   `nsd/checkout_with_abandoned.js` — `initializeStripePayment` reads `supplementaryProgramIds` from `suppProIds` and sends them in the request body. Initial call to `createCheckoutUrlsByProgram` when the user clicks **Next** on Student Details; when the user clicks **ACH** / **Card** / **Pay Later**, `updateStripeCheckoutDb` is called with current `supplementaryProgramIds` (and `briefEventIds`) so the Stripe session includes the latest add-ons.
+   Selection is kept in hidden field `suppProIds` (JSON array). `displaySelectedSuppProgram` fills `selected_supplimentary_program` and `selected_supplimentary_program_mob` (shown in **Order Details**).
+3. **init and request (Checkout)**\
+   `initializeStripePayment` reads `supplementaryProgramIds` from `suppProIds` and sends them in the request body. Initial call to `createCheckoutUrlsByProgram` when the user clicks **Next** on Student Details; when the user clicks **ACH** / **Card** / **Pay Later**, `updateStripeCheckoutDb` is called with current `supplementaryProgramIds` so the Stripe session includes the latest add-ons.
 4. **API: POST**\
-   `POST .../camp/createCheckoutUrlsByProgram` and `POST .../camp/updateStripeCheckoutDb` use `supplementaryProgramIds` to add line items to the Stripe session (via `program_details` / supplementary pricing). `stripe_checkout_customer` stores `supplementaryProgramIds`. After payment, `stripePaymentListener` calls `addSupplementaryPaymentDetails` and inserts into `supplementary_payment_details`.
+   `POST createCheckoutUrlsByProgram` and `POST updateStripeCheckoutDb` use `supplementaryProgramIds` to add line items to the Stripe session (via `program_details` / **supplementary** pricing). `stripe_checkout_customer` stores `supplementaryProgramIds`. After payment, `stripePaymentListener` calls `addSupplementaryPaymentDetails` and inserts into `supplementary_payment_details`.
 5. **JS — after response**\
-   Response is stored in `$checkoutData` and `checkOutData`; user is redirected to the chosen payment URL. Cart and Order Details update when the user changes supplementary selection; the next request (e.g. on payment button click) sends the updated `supplementaryProgramIds`
+   Response is stored in `$checkoutData` and `checkOutData`; user is redirected to the chosen payment URL..
 
 ### Standalone briefs / subscriptions
 
