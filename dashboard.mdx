@@ -133,10 +133,10 @@ The Briefs tab allows users to:
 
 ### API — getPortalDetails
 
-- **Endpoint:** `GET .../camp/getPortalDetails/{memberId}`
+- **Endpoint:** `GET getPortalDetails/{memberId}`
 - **Path:** `memberId` — Webflow/member id (logged-in parent).
 - **Response:** JSON with `studentData` (array of `{ studentName: { currentSession, futureSession, pastSession } }`; each session includes **programDetail**, **studentDetail**, **formList**, **formCompletedList**, **uploadedContent**, etc.) and `brief` (array of briefs: **title**, **pdf_url**, **doc_url**, **subscription**). Used to render Camp tab content and Briefs list and to drive **hidePortalData**.
-- **Backend:** `nsd_aws/api/getPortalDetails.py` — Reads **members** (by **memberId**, then **familyId** for all family members); **brief_payment_details** (for **brief** list; uses **briefs** collection for title/urls); **payment_details** via **getStudentpaymentDetails(ids)**; **program_details**, **program_category**, **registration_data**, **registration_year** for session/form data. Returns **studentData** and **brief**.
+- **Backend:** `getPortalDetails.py` — Reads **members** (by **memberId**, then **familyId** for all family members); **brief_payment_details** (for **brief** list; uses **briefs** collection for title/urls); **payment_details** via **getStudentpaymentDetails(ids)**; **program_details**, **program_category**, **registration_data**, **registration_year** for session/form data. Returns **studentData** and **brief**.
 
 ### API — getInvoiceList
 
