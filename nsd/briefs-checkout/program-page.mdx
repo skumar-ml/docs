@@ -6,8 +6,6 @@ https://www.nsdebatecamp.com/briefs
 
 The [**NSD Briefs program page**](https://www.nsdebatecamp.com/briefs) is a marketing and catalog page for debate briefs. It shows subscription options (annual plans and single brief) and a **VIEW OUR BRIEFS** section where individual briefs are loaded by an embedded script that calls **getBriefDetails**, renders cards, and opens a Preview modal. This page does not handle checkout—users go to [**Briefs Checkout**](https://dashboard.mintlify.com/nsd/briefs-checkout/checkout) to purchase.
 
----
-
 ## **Non-Technical**
 
 ### **What the user sees**
@@ -22,9 +20,9 @@ The [**NSD Briefs program page**](https://www.nsdebatecamp.com/briefs) is a mark
 
 - Subheading: e.g. “Enroll in an annual subscription to get first access to NSD briefs for each topic, all year long.”
 - Four static cards (content is from the page):
-  - **LD + PF Bundle (Annual)** — e.g. 350.00/year,Save350.00/_year_,_Save_130; “Both formats, one great price”; LD & PF formats, All season topics, Comprehensive research.
-  - **PF Annual** — e.g. 220.00/year,Save220.00/_year_,_Save_60; “All PF briefs for the season”; Single event access, All briefs in the season, Comprehensive research.
-  - **LD Annual** — e.g. 160.00/year,Save160.00/_year_,_Save_40; “All LD briefs for the season”; same style features.
+  - **LD + PF Bundle (Annual)** — e.g. 350.00/year,Save350.00/_year_,\_Save_130; “Both formats, one great price”; LD & PF formats, All season topics, Comprehensive research.
+  - **PF Annual** — e.g. 220.00/year,Save220.00/_year_,\_Save_60; “All PF briefs for the season”; Single event access, All briefs in the season, Comprehensive research.
+  - **LD Annual** — e.g. 160.00/year,Save160.00/_year_,\_Save_40; “All LD briefs for the season”; same style features.
   - **Single Brief** — e.g. \$40.00/brief; “Perfect for trying our briefs”; 120+ cards, Curated by NSD’s elite faculty, Instant download.
 - **Get Your Briefs Now** button (typically links to checkout or briefs-checkout).
 
@@ -47,8 +45,6 @@ The [**NSD Briefs program page**](https://www.nsdebatecamp.com/briefs) is a mark
 
 - Footer, trust/statistics (e.g. #1 Rated Debate Camp, alumni count), and a “Leave us a message” chat widget are typical; they are not driven by the embed script.
 
----
-
 ## **Technical**
 
 ### **Overview**
@@ -59,7 +55,7 @@ The page includes an **inline script** that runs on **DOMContentLoaded**. It def
 2. Renders cards into a fixed container and attaches Preview click handlers.
 3. Shows a loading spinner during fetch and (optionally) while the preview PDF loads; shows errors via `alert` or similar if the request fails or returns no briefs.
 
-There is **no separate build step**—the script is embedded in the page (e.g. Webflow embed or inline `<script>`). 
+There is **no separate build step**—the script is embedded in the page (e.g. Webflow embed or inline `<script>`).
 
 ### **API — get brief data**
 
