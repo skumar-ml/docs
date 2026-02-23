@@ -203,7 +203,7 @@ The Briefs tab allows users to:
 1. **Init**\
    Constructor receives **memberData** (**accountEmail**, **memberId**, **accountType**, **baseApiUrl**). Reads **localStorage** key `googleReviewData` (base64-decoded JSON). If **studentEmail** in stored data differs from current **accountEmail**, storage is cleared. Then `isEligibleForReview()` runs.
 2. **Eligibility — account type**\
-   Modal is shown only when `memberData.accountType === "student"` (`this.isStudent`). If the user is not a student, **checkConditionsAndShowModal** returns without showing.
+   Modal is shown only when `memberData.accountType === "student"`. If the user is not a student, **checkConditionsAndShowModal** returns without showing.
 3. **Eligibility — program data**\
    If **googleReviewData** is empty, the script calls `GET .../camp/getCompletedForm/{memberId}/current`. Response **studentData** is searched for the current user by **studentDetail.studentEmail === this.studentEmail**. If not found, modal is never shown. If found, **programDetail.startDate** and **programDetail.endDate** are stored in **googleReviewData** (and in **localStorage** via **updateGoogleReviewData**), then **checkConditionsAndShowModal()** runs.
 4. **Timing conditions (checkConditionsAndShowModal)**
