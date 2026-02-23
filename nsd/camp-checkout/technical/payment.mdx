@@ -59,10 +59,10 @@ The following data is sent in **`POST .../camp/createCheckoutUrlsByProgram`** (f
 
 **API:** **`POST createCheckoutUrlsByProgram`**
 
-**What happens:** **`getCustomerId(email)`** looks up or creates Stripe customer (**`stripe_customer`** collection). **`createCheckoutSessionUrl(...)`** builds a 16-char **`checkoutId`**, creates Stripe Checkout sessions for **card**, **us_bank_account**, **affirm** (ACH, Card, Pay Later), and for each inserts a document into **`stripe_checkout_customer`** with `memberId, programId, programCategoryId, paymentType, sessionId, customerId, checkoutId, checkoutUrl, parentEmail, myProducts, supplementaryProgramIds, productType, device, deviceUserAgent, created_on.` Returns `cardUrl`, `achUrl`, **`payLaterUrl`**, **`checkoutId`**, **`success: true`**.
+**What happens:** **`getCustomerId(email)`** looks up or creates Stripe customer (**`stripe_customer`** collection). **`createCheckoutSessionUrl(...)`** builds a 16-char **`checkoutId`**, creates Stripe Checkout sessions for **card**, **us_bank_account**, **affirm** (ACH, Card, Pay Later), and for each inserts a document into **`stripe_checkout_customer`** with `memberId, paymentType, sessionId, checkoutId, checkoutUrl.` Returns `cardUrl`, `achUrl`, **`payLaterUrl`**, **`checkoutId`**, **`success: true`**.
 
 <Note>
-  TODO: Not sure it it's useful to write out all the things that get inserted into `stripe_checkout_cusotmer`
+  TODO: Not sure it it's useful to write out all the things that get inserted into `stripe_checkout_cusotmer. Removed`
 </Note>
 
 ### API Call: Update Student Details in DB
