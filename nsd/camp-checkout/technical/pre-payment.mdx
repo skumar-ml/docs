@@ -42,6 +42,24 @@ This data is used when creating checkout URLs and updating student details in th
   TODO: I think there's some content missing here describing how residential vs. commuter is handled via URL params
 </Note>
 
+### Residential vs. commuter vs. online
+
+The cart page runs **inline JS** on `DOMContentLoaded` that reads `productType` from the URL (`URLSearchParams`) and drives both **programCategoryId** and which UI/pricing is shown.
+
+1. **URL → programCategoryId**
+   - `?productType=residential` → **programCategoryId** `1111`.
+   - `?productType=commuter` (or `?productType=pf`) → **programCategoryId** `2222`.
+   - Default (no param or other) → `1111`.\
+     Cart links from abandoned-cart (`abandoned-cart-modal.js`) use the same mapping: `1111` → `?productType=residential`, `2222` → `?productType=commuter`, `3333` → no `productType` (online).
+2. **Optional form hiding**\
+   If **hide_residential** or **hide_commuter** is `'true'`, **hideContent()** hides the main checkout form (`cart-main-div`, `card-grid-main`) and shows the info block (`cart-info-div`), and **CheckOutWebflow** is not instantiated.
+3. **Commuter vs residential UI and pricing**
+   - **Commuter** (`product === "commuter"` or `product === "pf"`): show commuter order summary, commuter form, commuter core price; set **achAmount**, **cardAmount**, **payLaterAmount** to commuter values.
+   - **Else**: show residential order summary, residential form, residential core price; set amounts to residential values.\
+     The **core_product_price** input and payment-tab handlers keep these amounts in sync when the user switches payment method.
+4. **Data passed to CheckOutWebflow Class**\
+   The backend receives **productType** (`core` vs `supplementary`) and **programCategoryId** (1111 vs 2222 vs 3333), so residential vs commuter vs online is fully determined by the cart URL and this inline script.
+
 ## 3. Student Details (First Tab)
 
 The **first tab** is the **Student Details** screen. Fields: **First Name, Last Name, Email, Grade, School, Gender.**
