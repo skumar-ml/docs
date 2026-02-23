@@ -12,7 +12,7 @@ Users who have forgotten their password can reset it using the **Forgot Password
 
 ## Account Types
 
-The most important distinction between accounts is the **account type**, which can be **parent, student, **or**coach** . We support multiple account types to ensure role-based access.
+The most important distinction between accounts is the **account type**, which can be ****parent, student, orcoach**** . We support multiple account types to ensure role-based access.
 
 These distinctions determine what each account type can access and do:
 
@@ -38,14 +38,14 @@ The logic is centralized in the account-creation flow and behaves as follows:
 
 - The **parent record is the source of truth** for `familyId`.
 
-**2. **`familyId`**generation** 
+**2.**`familyId`**generation**
 
 - A **new** `familyId` is generated when a parent completes a payment (e.g. camp checkout) and the parent record has no `familyId` yet.
-- Implementation: `stripePaymentListener.py` and `welcomeEmail.py` use a **16-character random string** built from **parent **`firstName`**\+ digits** .
+- Implementation: `stripePaymentListener.py` and `welcomeEmail.py` use a **16-character random string** built from ****`parent firstName+ digits`**** .
 - At **signup** , the new member does not get a newly generated `familyId`; they are assigned the **existing** parent’s `familyId` if the parent is found via **payment_details** or **invited_member**
 
 **3. Student linkage**
 
-- Students are linked to a parent via `familyId` 
+- Students are linked to a parent via `familyId`
 - If a student record exists without a `familyId`, it is updated with the parent’s `familyId` after successful registration of the camp.
 - Student linkage during account creation is based on **payment_details**.
