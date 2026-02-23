@@ -33,25 +33,27 @@ When the user proceeds to payment, the system creates Stripe checkout sessions i
 
 The following data is sent in **`POST .../camp/createCheckoutUrlsByProgram`** (from **`initializeStripePayment()`**):
 
-| Field                    | Purpose                                                                 |
-| :----------------------- | :---------------------------------------------------------------------- |
-| email                    | Parent/member email (from `memberData.email`)                           |
-| label                    | Program name                                                            |
-| programId                | Camp program identifier                                                 |
-| successUrl               | Redirect after successful payment                                       |
-| cancelUrl                | Redirect if user cancels                                                |
-| memberId                 | Logged-in member (parent) ID                                            |
-| programCategoryId        | Program category                                                        |
-| supplementaryProgramIds  | Selected supplementary program IDs (from **`suppProIds`** hidden field) |
-| productType              | e.g. camp vs supplementary                                              |
-| programStartDate         | Formatted program start date                                            |
-| programEndDate           | Formatted program end date                                              |
-| achAmount                | Amount for ACH                                                          |
-| cardAmount               | Amount for card                                                         |
-| payLaterAmount           | Amount for pay-later                                                    |
-| briefEventIds            | Selected brief event IDs (admin only)                                   |
-| source                   | `"cart_page"` for first-time creation                                   |
-| device / deviceUserAgent | Device and user agent (optional)                                        |
+<Accordion title="Payload">
+  | Field                    | Purpose                                                                 |
+  | :----------------------- | :---------------------------------------------------------------------- |
+  | email                    | Parent/member email (from `memberData.email`)                           |
+  | label                    | Program name                                                            |
+  | programId                | Camp program identifier                                                 |
+  | successUrl               | Redirect after successful payment                                       |
+  | cancelUrl                | Redirect if user cancels                                                |
+  | memberId                 | Logged-in member (parent) ID                                            |
+  | programCategoryId        | Program category                                                        |
+  | supplementaryProgramIds  | Selected supplementary program IDs (from **`suppProIds`** hidden field) |
+  | productType              | e.g. camp vs supplementary                                              |
+  | programStartDate         | Formatted program start date                                            |
+  | programEndDate           | Formatted program end date                                              |
+  | achAmount                | Amount for ACH                                                          |
+  | cardAmount               | Amount for card                                                         |
+  | payLaterAmount           | Amount for pay-later                                                    |
+  | briefEventIds            | Selected brief event IDs (admin only)                                   |
+  | source                   | `"cart_page"` for first-time creation                                   |
+  | device / deviceUserAgent | Device and user agent (optional)                                        |
+</Accordion>
 
 ### API Call: Create Checkout URLs
 
@@ -59,19 +61,23 @@ The following data is sent in **`POST .../camp/createCheckoutUrlsByProgram`** (f
 
 **What happens:** **`getCustomerId(email)`** looks up or creates Stripe customer (**`stripe_customer`** collection). **`createCheckoutSessionUrl(...)`** builds a 16-char **`checkoutId`**, creates Stripe Checkout sessions for **card**, **us_bank_account**, **affirm** (ACH, Card, Pay Later), and for each inserts a document into **`stripe_checkout_customer`** with `memberId, programId, programCategoryId, paymentType, sessionId, customerId, checkoutId, checkoutUrl, parentEmail, myProducts, supplementaryProgramIds, productType, device, deviceUserAgent, created_on.` Returns `cardUrl`, `achUrl`, **`payLaterUrl`**, **`checkoutId`**, **`success: true`**.
 
+<Note>
+  TODO: Not sure it it's useful to write out all the things that get inserted into `stripe_checkout_cusotmer`
+</Note>
+
 ### API Call: Update Student Details in DB
 
 **When:** Immediately after **`initializeStripePayment()`** resolves.
 
 **API:** **`POST updateStripeCheckoutDb`**.
 
-**What happens:** When body contains **`checkoutUrls`**, the handler updates **`student_profiles`** and, for each URL in **checkoutUrls**, finds **`stripe_checkout_customer`** by **`checkoutUrl`** and **`memberId`** and sets **studentEmail**, **studentName**, **grade**, **school**, **gender**, **utm_source**.
+**What happens:** When body contains **`checkoutUrls`**, the handler updates **`student_profiles`** and, for each URL in **checkoutUrls**, finds **`stripe_checkout_customer`** by **`checkoutUrl`** and **`memberId`** and sets `studentEmail`, `studentName`, `grade`, `school`, `gender`, `utm_source`.
 
 **Frontend:** `updateStudentDetails(checkoutUrl)` in`checkout_with_abandoned.js` builds the payload from form IDs **`Student-First-Name`**, **`Student-Last-Name`**, **`Student-Email`**, **`Student-Grade`**, **`Student-School`**, **`Student-Gender`** and **memberData**, sends **checkoutUrls** as `[$this.$checkoutData.achUrl, $this.$checkoutData.cardUrl, $this.$checkoutData.payLaterUrl]`.
 
 ### Redirect to Stripe
 
-When the user clicks **ACH**, **Card**, or **Pay Later**, the frontend calls the API again (with the current **checkoutId** and payment type) to get checkout URLs that include the latest cart — including any **brief upsell** or **supplementary program** the user added on the Payment screen. The backend returns updated **achUrl**, **cardUrl**, or **payLaterUrl**; the frontend stores them and redirects the user to the chosen payment URL. So if the user adds a brief or a supplementary program after reaching the Payment step, that selection is included when they click a payment button. Checkout data stays in `localStorage` so that returning from Stripe (back or cancel) can restore state.
+When the user clicks **ACH**, **Card**, or **Pay Later**, the frontend calls the API again (with the current **checkoutId** and payment type) to get checkout URLs that include the latest cart — including any **brief upsell** or **supplementary program** the user added on the Payment screen. The backend returns updated `achUrl`, `cardUrl`, or `payLaterUrl`; the frontend stores them and redirects the user to the chosen payment URL. So if the user adds a brief or a supplementary program after reaching the Payment step, that selection is included when they click a payment button. Checkout data stays in `localStorage` so that returning from Stripe (back or cancel) can restore state.
 
 ## Returning from Stripe
 

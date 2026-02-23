@@ -21,13 +21,11 @@ else{// User not Logged In or Sign-up}
 
 ### Cart Redirection Logic
 
-When a user visits a cart page, we save the cart URL in `localStorage.redirect_url`. After logging-in or signing-up, Memberstack (through a pre-set default) redirects users to `/portal/home`.
-
-There is on-page JS that checks if `redirect_url` exists. If it does, the URL is deleted, and saved in a temp variable, which is used to redirect the user back to the cart page they were originally on.
+When a user visits a cart page, we save the cart URL in `localStorage.redirect_url`. After logging-in or signing-up, Memberstack (through a pre-set default) redirects users to `/portal/home`, which has on-page JS that checks if `redirect_url` exists. If it does, the URL is deleted, and saved in a temp variable, which is used to redirect the user back to the cart page they were originally on.
 
 ### Cart / Checkout Entry
 
-Checkout is entered from the [camp overview page](/nsd/camp-checkout/camp-overview) or a program detail page (e.g. via the **Register** button).  If the user leaves before paying, **abandoned-cart** recovery can restore state from `localStorage` (`checkOutData`) or a backend lookup by `memberId`; see [Payment](/nsd/camp-checkout/technical/payment) for returning from Stripe and resuming.
+Checkout is entered from the [camp overview page](/nsd/camp-checkout/camp-overview) or a program detail page (e.g. via the **Register** button).  If the user leaves before paying, the **abandoned-cart** recovery can restore state from `localStorage` (`checkOutData`) or a backend lookup by `memberId`; see [Payment](/nsd/camp-checkout/technical/payment) for returning from Stripe and resuming.
 
 ## 2. Program Data on Page Load (Landing on Cart Page)
 
@@ -39,6 +37,10 @@ When the user lands on the cart page, program context is loaded from **Webflow C
 - **productType**, **site_url**
 
 This data is used when creating checkout URLs and updating student details in the backend.
+
+<Note>
+  TODO: I think there's some content missing here describing how residential vs. commuter is handled via URL params
+</Note>
 
 ## 3. Student Details (First Tab)
 
@@ -58,7 +60,7 @@ When the user clicks **Next** on the **Student Details** tab, the flow moves to 
 
 **When the pop-up shows:** Only if the user has **not** already added a brief event for this checkout. If one was already added, the pop-up does not show.
 
-Selected brief events are sent as `briefEventIds` when the user proceeds to payment. See [Upsells](/nsd/camp-checkout/upsells) for details.
+Selected brief events are sent as `briefEventIds` when the user proceeds to payment. See [Upsells](/nsd/camp-checkout/upsells) for more details.
 
 ## 5. Optional Supplementary Programs & Briefs
 
