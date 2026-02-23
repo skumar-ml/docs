@@ -134,7 +134,7 @@ If these conditions are not met, the popup does not appear.
 
 ## Technical
 
-**Frontend:** `nsd/new_portal.js` — Class `NSDPortal`. On init, `loadPortalData()` fetches `getPortalDetails/{memberId}` and `getInvoiceList/{memberId}/current`. Response drives **free vs registered** view (show/hide **Camp** and **Briefs** tabs, **Free Resources** vs **paid resources**). `hidePortalData(responseText, briefsData)` controls visibility. **Camp** content is rendered from `studentData` (sessions, forms, invoice); **Briefs** tab is populated by **BriefManager** when `brief` array is non-empty. Discounted Programs sidebar uses `nsd/portal-supp-program.js` (**DisplaySuppProgram**), which calls `getSupplementaryProgram/{memberId}`.
+**Frontend:** `new_portal.js` — Class `NSDPortal`. On init, `loadPortalData()` fetches `getPortalDetails/{memberId}` and `getInvoiceList/{memberId}/current`. Response drives **free vs registered** view (show/hide **Camp** and **Briefs** tabs, **Free Resources** vs **paid resources**). `hidePortalData(responseText, briefsData)` controls visibility. **Camp** content is rendered from `studentData` (sessions, forms, invoice); **Briefs** tab is populated by **BriefManager** when `brief` array is non-empty. Discounted Programs sidebar uses `nsd/portal-supp-program.js` (**DisplaySuppProgram**), which calls `getSupplementaryProgram/{memberId}`.
 
 ### Free vs registered view
 
@@ -148,14 +148,14 @@ If these conditions are not met, the popup does not appear.
 
 - **Endpoint:** `GET getPortalDetails/{memberId}`
 - **Path:** `memberId` — Webflow/member id (logged-in parent).
-- **Response:** JSON with `studentData` (array of `{ studentName: { currentSession, futureSession, pastSession } }`; each session includes **programDetail**, **studentDetail**, **formList**, **formCompletedList**, **uploadedContent**, etc.) and `brief` (array of briefs: **title**, **pdf_url**, **doc_url**, **subscription**). Used to render Camp tab content and Briefs list and to drive **hidePortalData**.
-- **Backend:** `getPortalDetails.py` — Reads **members** (by **memberId**, then **familyId** for all family members); **brief_payment_details** (for **brief** list; uses **briefs** collection for title/urls); **payment_details** via **getStudentpaymentDetails(ids)**; **program_details**, **program_category**, **registration_data**, **registration_year** for session/form data. Returns **studentData** and **brief**.
+- **Response:** JSON with `studentData` (array of `{ studentName: { currentSession, futureSession, pastSession } }`; each session includes `programDetail, studentDetail, formList, formCompletedList, uploadedContent`, etc.) and `brief` (array of briefs: `title, pdf_url, doc_url, subscription`). Used to render Camp tab content and Briefs list and to drive `hidePortalData`.
+- **Backend:** `getPortalDetails.py` — Reads `members` (by `memberId`, then `familyId` for all family members); `brief_payment_details` (for `brief` list; uses `briefs` collection for title/urls); `payment_details` via `getStudentpaymentDetails(ids)`; `program_details, program_category, registration_data, registration_year` for session/form data. Returns `studentData` and `brief`.
 
 ### API — getInvoiceList
 
-- **Endpoint:** `GET .../camp/getInvoiceList/{memberId}/{session}`
+- **Endpoint:** `GET getInvoiceList/{memberId}/{session}`
 - **Path:** `memberId`, `session` (e.g. `current`).
-- **Purpose:** Returns invoice list for the portal sidebar; **Go to Invoice** uses this data.
+- **Purpose:** Returns invoice 
 
 ### Database / collections (portal)
 
@@ -175,9 +175,9 @@ If these conditions are not met, the popup does not appear.
 ### Flow (dashboard load)
 
 1. **JS — init**\
-   `NSDPortal` constructor receives **memberId**, **accountEmail**, **baseUrl**; calls `loadPortalData()`.
+   `NSDPortal` constructor receives `memberId, accountEmail, baseUrl;` calls `loadPortalData()`.
 2. **API — getPortalDetails**\
-   `` fetchData(\getPortalDetails/$`)` `` → response **studentData**, **brief**.
+   `` fetchData(\getPortalDetails/$`)` `` → response `studentData, brief`.
 3. **API — getInvoiceList**\
    `` fetchData(\getInvoiceList/$/current`)` `` → **invoiceData** stored for sidebar.
 4. **JS — transform and store**\
@@ -189,14 +189,14 @@ If these conditions are not met, the popup does not appear.
 
 ### Camp tab (technical)
 
-- **Data source:** **studentData** from **getPortalDetails** (sessions from **payment_details**, **program_details**, **program_category**).
+- **Data source:** **studentData** from **getPortalDetails** 
 - **Rendering:** `renderPortal()` → **groupSessionsByStudent()**, **createStudentTabsContainer()**, **initializeWebflowTabs()**. Containers: **#nsdPortal**.
-- **Forms:** **formList**, **formCompletedList** from API; **Go to Form** / **Go to Invoice** link to form or invoice popup (invoice from **getInvoiceList** or stored **invoiceData**).
+- **Forms:** **formList**, **formCompletedList** from API; **Go to Form** / **Go to Invoice** link to form or invoice.
 
 ### Briefs tab (technical)
 
 - **Data source:** **brief** array from **getPortalDetails** (built from **brief_payment_details** + **briefs**).
-- **Rendering:** **BriefManager** (in **new_portal.js** or separate script) renders dropdown/list; user selects brief and can download **pdf_url** or **doc_url**.
+- **Rendering:** **BriefManager**  renders dropdown/list; user selects brief and can download **pdf_url** or **doc_url**.
 
 ### Discounted programs (sidebar)
 
