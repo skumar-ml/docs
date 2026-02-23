@@ -12,25 +12,13 @@ Users who have forgotten their password can reset it using the **Forgot Password
 
 ## Account Types
 
-The most important distinction between accounts is the **account type**, which can be **parent, student, or coach**. We support multiple account types to ensure role-based access.
+The most important distinction between accounts is the **account type**, which can be **parent, student, **or**coach** . We support multiple account types to ensure role-based access.
 
 These distinctions determine what each account type can access and do:
 
 - Both **parent** and **student** accounts can register for NSD classes.
 - **Parent** and **student** accounts see the same portal.
 - Only coach accounts can access the NSD Coach Portal, which we need to work on.
-
-<Note>
-  There's some inaccuracies here. We cannot just copy-paste from BDC.
-
-  1. I don't think it's true that "Only parent accounts can register for NSD Classes". That functionality is only for Bergen, right?
-  2. Is it true that student and parent portals are the same?
-
-     KS : yes
-  3. There's no "semester class attendance & trial class attendance and the millions" for BDC.
-
-  We need more attention to detail
-</Note>
 
 There currently does not exist any mechanism for the admin or user to change the `accountType`. If a need arises, please inform the tech team, and we'll do it manually.
 
@@ -50,30 +38,14 @@ The logic is centralized in the account-creation flow and behaves as follows:
 
 - The **parent record is the source of truth** for `familyId`.
 
-**2. FamilyId generation**
+**2. **`familyId`**generation** 
 
-- For NSD, a **new** `familyId` is generated when a parent completes a payment (e.g. camp checkout) and the parent record has no `familyId` yet.
-- Implementation: `stripePaymentListener.py` and `welcomeEmail.py` use a **16-character random string** built from **parent firstName + digits**.
-- At **signup** , the new member does not get a newly generated `familyId`; they are assigned the **existing** parent’s `familyId` after the parent is found via **payment_details** or **invited_member**
-
-<Note>
-  TODO: How is familyId created for NSD? Is it also derived from parent email & digits? **Updated description**
-</Note>
-
-<Note>
-  TODO: Are we sure we are doing "null" check for NSD as well? **Removed. it's not valid for NSD**
-</Note>
+- A **new** `familyId` is generated when a parent completes a payment (e.g. camp checkout) and the parent record has no `familyId` yet.
+- Implementation: `stripePaymentListener.py` and `welcomeEmail.py` use a **16-character random string** built from **parent **`firstName`**\+ digits** .
+- At **signup** , the new member does not get a newly generated `familyId`; they are assigned the **existing** parent’s `familyId` if the parent is found via **payment_details** or **invited_member**
 
 **3. Student linkage**
 
-- Students are linked to a parent via `familyId`..
+- Students are linked to a parent via `familyId` 
 - If a student record exists without a `familyId`, it is updated with the parent’s `familyId` after successful registration of the camp.
-- Student linkage at signup is based on payment_details.
-
-<Note>
-  TODO: Isn't this incorrect? Don't we link student accounts based on payment_details? \
-  \
-  There's no studentName + fa**milyId lookup, right? Let's make sure we're being accurate here.**
-
-  - **Yes. For NSD, student linkage at signup is based on payment_details , not studentName + familyId**
-</Note>
+- Student linkage during account creation is based on **payment_details**.
