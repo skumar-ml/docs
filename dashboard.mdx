@@ -155,7 +155,7 @@ If these conditions are not met, the popup does not appear.
 
 - **Endpoint:** `GET getInvoiceList/{memberId}/{session}`
 - **Path:** `memberId`, `session` (e.g. `current`).
-- **Purpose:** Returns invoice
+- **Purpose:** Returns invoice list for the member and session. Each item is keyed by **paymentId** and includes **invoiceList** (`invoice_id`, `invoiceName`, `is_completed`, `status`, `paymentProcessMsg`, `jotFormUrlLink `— payment links with `paymentLinkId, amount, paymentType, title)`. Used to render invoice rows and payment links in the Camp tab.
 
 ### Database / collections (portal)
 
@@ -181,26 +181,33 @@ If these conditions are not met, the popup does not appear.
 3. **API — getInvoiceList**\
    `` fetchData(\getInvoiceList/$/current`)` `` → **invoiceData** stored for sidebar.
 4. **JS — transform and store**\
-   `transformApiResponse(apiResponse)` flattens **studentData** into **allSessions** (current/future/past per student). `this.allSessions`, `this.invoiceData`, **brief** retained.
+   `transformApiResponse(apiResponse)` flattens `studentData` into `allSessions` (current/future/past per student). `this.allSessions`, `this.invoiceData`, **brief** retained.
 5. **JS — free vs registered (hide/show)**\
-   `hidePortalData(apiResponse.studentData, briefsData)` — toggles `[data-portal="camp-tab"]`, `[data-portal="briefs-tab"]`, **#free-resources**, **#paid-resources** as above.
+   `hidePortalData(apiResponse.studentData, briefsData)` — toggles `[data-portal="camp-tab"]`, `[data-portal="briefs-tab"]`, `#free-resources, #paid-resources` as above.
 6. **JS — render**\
-   If **briefsData.length \> 0**, **BriefManager(briefsData, …)** initializes (Briefs tab dropdown/list). `renderPortal()` builds Camp UI from **allSessions** (student tabs, sessions, **Go to Form** / **Go to Invoice**). `updateHeading()` runs.
+   If `briefsData.length > 0, BriefManager(briefsData, …)` initializes (Briefs tab dropdown/list). `renderPortal()` builds Camp UI from `allSessions` (student tabs, sessions, `Go to Form / Go to Invoice`). `updateHeading()` runs.
 
-### Camp tab (technical)
+### Camp tab
 
-- **Data source:** **studentData** from **getPortalDetails**
-- **Rendering:** `renderPortal()` → **groupSessionsByStudent()**, **createStudentTabsContainer()**, **initializeWebflowTabs()**. Containers: **#nsdPortal**.
-- **Forms:** **formList**, **formCompletedList** from API; **Go to Form** / **Go to Invoice** link to form or invoice.
+- **Data source:** `studentData` from `getPortalDetails`
+- **Rendering:** `renderPortal()` → `groupSessionsByStudent(), createStudentTabsContainer(), initializeWebflowTabs()`. Containers: `#nsdPortal`.
+- **Forms:** `formList, formCompletedList` from API; `Go to Form / Go to Invoice` link to form or invoice.
 
-### Briefs tab (technical)
+### Forms and invoices
 
-- **Data source:** **brief** array from **getPortalDetails** (built from **brief_payment_details** + **briefs**).
-- **Rendering:** **BriefManager**  renders dropdown/list; user selects brief and can download **pdf_url** or **doc_url**.
+- **How forms are rendered:** `formList` (from `program_category.formIds`) is sorted by `sequence`; each category’s **forms** are rendered by `renderSingleForm()`. Completed state comes from `formCompletedList` (match by `formId`); link text is **Go to Form** (not started), **Edit Form** (completed + live program + editable), or **View Form** (completed, read-only). Progress uses `countTotalForms()` (invoice-type forms `dropoff_invoice / pickup_invoice` excluded). Invoice section is built only when not all invoices are completed; `filterInvoiceForms()` can hide invoice forms until dropoff/pickup is done.
+- **How forms open:** `renderSingleForm()` sets `href` to `form.jotform.com/` (new) or `jotform.com/edit/ / jotform.com/submission/` (completed), with query params `memberId`, `studentEmail`, `accountEmail`, `paymentId`, `programDetailId`. Links with class `iframe-lightbox-link` (live form, viewport width \> 1200, not added_by_admin) are wrapped in `IframeLightbox` in `initiateLightbox()` after render — click opens the form URL in an overlay; otherwise the link navigates normally.
+- **How invoices are rendered:** **invoiceData** is matched to session by `paymentId` (`session.studentDetail.uniqueIdentification` or `session.paymentId`). `createInvoicesSection()` creates container `#invoice_${paymentId}`; `updateInvoiceList() / createSingleInvoiceElement()` render each invoice (name, status icon, **jotFormUrlLink** as payment links or “Go to Invoice” when empty). `getCheckedInvoiceIcon()` picks icon by status (Complete / Processing / Failed). `attachInvoicePaymentHandlers()` runs after DOM is in place.
+- **How invoices are paid:** Click on a payment link (element with `data-invoice-id, data-payment-link-id, data-amount, data-payment-id`) triggers `initializeStripePaymentS`. That method POSTs to `createCheckoutUrlForInvoice` with body `email`, `name`, `label`, `paymentType`, `amount` (cents), `invoiceId`, `paymentId`, `paymentLinkId`, `memberId`, `successUrl`, `cancelUrl`. On success the response’s **stripe_url** is used for `window.location.href`; user returns to dashboard from Stripe via success/cancel URLs.
+
+### Briefs tab 
+
+- **Data source:** **brief** array from `getPortalDetails` (built from `brief_payment_details + briefs`).
+- **Rendering:** `BriefManager`  renders dropdown/list; user selects brief and can download `pdf_url or doc_url.`
 
 ### Discounted programs (sidebar)
 
-- **Script:** `nsd/portal-supp-program.js` — **DisplaySuppProgram**. Calls `getSupplementaryProgram/{memberId}` (same endpoint as camp checkout; **memberId** used here for portal context).
+- **Script:** `nsd/portal-supp-program.js` — `DisplaySuppProgram`. Calls `getSupplementaryProgram/{memberId}` (same endpoint as camp checkout; `memberId` used here for portal context).
 - **Containers:** `.discounted-programs-slick-slider`, `.desktop-slider-div`, `.supp-programs-description-wrapper` (modal). **Buy Now** / **Learn More** open purchase popup or program detail.
 
 ### Update Profile
