@@ -134,11 +134,11 @@ If these conditions are not met, the popup does not appear.
 
 ## Technical
 
-**Frontend:** `new_portal.js` — Class `NSDPortal`. On init, `loadPortalData()` fetches `getPortalDetails/{memberId}` and `getInvoiceList/{memberId}/current`. Response drives **free vs registered** view (show/hide **Camp** and **Briefs** tabs, **Free Resources** vs **paid resources**). `hidePortalData(responseText, briefsData)` controls visibility. **Camp** content is rendered from `studentData` (sessions, forms, invoice); **Briefs** tab is populated by **BriefManager** when `brief` array is non-empty. Discounted Programs sidebar uses `nsd/portal-supp-program.js` (**DisplaySuppProgram**), which calls `getSupplementaryProgram/{memberId}`.
+**Frontend:** `new_portal.js` — Class `NSDPortal`. On init, `loadPortalData()` fetches `getPortalDetails/{memberId}` and `getInvoiceList/{memberId}/current`. Response drives **free vs registered** view (show/hide **Camp** and **Briefs** tabs, **Free Resources** vs **paid resources**). `hidePortalData(responseText, briefsData)` controls visibility. **Camp** content is rendered from `studentData` (sessions, forms, invoice); `Briefs` tab is populated by `BriefManager` when `brief` array is non-empty. Discounted Programs sidebar uses `nsd/portal-supp-program.js` (`DisplaySuppProgram`), which calls `getSupplementaryProgram/{memberId}`.
 
 ### Free vs registered view
 
-- **Determination:** `hidePortalData(apiResponse.studentData, briefsData)` is called with `studentData` and `brief` from **getPortalDetails**.
+- **Determination:** `hidePortalData(apiResponse.studentData, briefsData)` is called with `studentData` and `brief` from `getPortalDetails`.
 - **Camp tab:** Elements `[data-portal="camp-tab"]` are shown (`display: flex`) when `hasStudentData` is true — i.e. `studentData` is a non-empty array and not `"No data Found"`. Otherwise Camp tab is hidden (free user).
 - **Briefs tab:** Elements `[data-portal="briefs-tab"]` are shown when `briefsData.length > 0`. Otherwise hidden.
 - **Free Resources:** `#free-resources` is shown when `responseText === "No data Found"` or `responseText.length === 0` (no student/payment data).
