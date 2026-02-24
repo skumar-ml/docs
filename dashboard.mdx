@@ -19,8 +19,8 @@ It shows all registered students along with their enrolled programs such as camp
 
 If the parent has not purchased or registered for any camp:
 
-- Displays **Free Resources** (articles, debate guides, educational content). This is a read-only, informational view.
-- “View More” buttons navigate to detailed resource pages.
+- Displays **Free Resources** (articles, debate guides, educational content etc). This is a read-only, informational view.
+- “View More” buttons navigate to their respective detailed resource pages.
 
 <Frame>
   ![Image](/images/image-185.png)
@@ -200,7 +200,7 @@ If these conditions are not met, the popup does not appear.
 - **How invoices are rendered:** **invoiceData** is matched to session by `paymentId` (`session.studentDetail.uniqueIdentification` or `session.paymentId`). `createInvoicesSection()` creates container `#invoice_${paymentId}`; `updateInvoiceList() / createSingleInvoiceElement()` render each invoice (name, status icon, **jotFormUrlLink** as payment links or “Go to Invoice” when empty). `getCheckedInvoiceIcon()` picks icon by status (Complete / Processing / Failed). `attachInvoicePaymentHandlers()` runs after DOM is in place.
 - **How invoices are paid:** Click on a payment link (element with `data-invoice-id, data-payment-link-id, data-amount, data-payment-id`) triggers `initializeStripePaymentS`. That method POSTs to `createCheckoutUrlForInvoice` with body `email`, `name`, `label`, `paymentType`, `amount` (cents), `invoiceId`, `paymentId`, `paymentLinkId`, `memberId`, `successUrl`, `cancelUrl`. On success the response’s **stripe_url** is used for `window.location.href`; user returns to dashboard from Stripe via success/cancel URLs.
 
-### Briefs tab 
+### Briefs tab
 
 - **Data source:** **brief** array from `getPortalDetails` (built from `brief_payment_details + briefs`).
 - **Rendering:** `BriefManager`  renders dropdown/list; user selects brief and can download `pdf_url or doc_url.`
