@@ -155,7 +155,7 @@ If these conditions are not met, the popup does not appear.
 
 - **Endpoint:** `GET getInvoiceList/{memberId}/{session}`
 - **Path:** `memberId`, `session` (e.g. `current`).
-- **Purpose:** Returns invoice 
+- **Purpose:** Returns invoice
 
 ### Database / collections (portal)
 
@@ -189,7 +189,7 @@ If these conditions are not met, the popup does not appear.
 
 ### Camp tab (technical)
 
-- **Data source:** **studentData** from **getPortalDetails** 
+- **Data source:** **studentData** from **getPortalDetails**
 - **Rendering:** `renderPortal()` → **groupSessionsByStudent()**, **createStudentTabsContainer()**, **initializeWebflowTabs()**. Containers: **#nsdPortal**.
 - **Forms:** **formList**, **formCompletedList** from API; **Go to Form** / **Go to Invoice** link to form or invoice.
 
@@ -209,30 +209,30 @@ If these conditions are not met, the popup does not appear.
 
 ### Google review modal
 
-**Script:** `nsd/google_review_modal.js` — Class `GoogleReviewModal`. Invites **students** (not parents) to leave a Google review after completing a program. Modal is shown only when eligibility and timing conditions are met; state is stored in **localStorage** to avoid repeated prompts.
+**Script:** `google_review_modal.js` — Class `GoogleReviewModal`. Invites **students** (not parents) to leave a Google review after completing a program. Modal is shown only when eligibility and timing conditions are met; state is stored in `localStorage` to avoid repeated prompts.
 
 **When it displays (logic)**
 
 1. **Init**\
-   Constructor receives **memberData** (**accountEmail**, **memberId**, **accountType**, **baseApiUrl**). Reads **localStorage** key `googleReviewData` (base64-decoded JSON). If **studentEmail** in stored data differs from current **accountEmail**, storage is cleared. Then `isEligibleForReview()` runs.
+   Constructor receives `memberData (accountEmail, memberId, accountType, baseApiUrl)`. Reads `localStorage` key `googleReviewData` (base64-decoded JSON). If **studentEmail** in stored data differs from current `accountEmail`, storage is cleared. Then `isEligibleForReview()` runs.
 2. **Eligibility — account type**\
-   Modal is shown only when `memberData.accountType === "student"`. If the user is not a student, **checkConditionsAndShowModal** returns without showing.
+   Modal is shown only when `memberData.accountType === "student"`. If the user is not a student, `checkConditionsAndShowModal` returns without showing.
 3. **Eligibility — program data**\
-   If **googleReviewData** is empty, the script calls `GET .../camp/getCompletedForm/{memberId}/current`. Response **studentData** is searched for the current user by **studentDetail.studentEmail === this.studentEmail**. If not found, modal is never shown. If found, **programDetail.startDate** and **programDetail.endDate** are stored in **googleReviewData** (and in **localStorage** via **updateGoogleReviewData**), then **checkConditionsAndShowModal()** runs.
+   If `googleReviewData` is empty, the script calls `GET camp/getCompletedForm/{memberId}/current`. Response **studentData** is searched for the current user by `studentDetail.studentEmail === this.studentEmail`. If not found, modal is never shown. If found, `programDetail.startDate` and `programDetail.endDate` are stored in `googleReviewData` (and in `localStorage` via `updateGoogleReviewData`), then `checkConditionsAndShowModal()` runs.
 4. **Timing conditions (checkConditionsAndShowModal)**
-   - **Camp not started:** If **currentDate \< startDate**, return (no modal).
-   - **Camp in progress:** Compute **completionPercentage** = (elapsed / total camp duration) × 100. Modal is allowed only if **camp is finished** (**currentDate \>= endDate**) or **at least halfway through** (**completionPercentage \>= 50** and **currentDate \< endDate**). Otherwise return.
-   - **Throttle:** If **googleReviewData.lastShownDate** exists and is **within the last 30 days**, return (do not show again).\
-     If all checks pass, **showModal()** runs and **lastShownDate** is set to today and saved to **localStorage**.
+   - **Camp not started:** If `currentDate < startDate`, return (no modal).
+   - **Camp in progress:** Compute `completionPercentage = (elapsed / total camp duration) × 100`. Modal is allowed only if **camp is finished** (`currentDate >= endDate`) or **at least halfway through** (`completionPercentage >= 50 and currentDate < endDate`). Otherwise return.
+   - **Throttle:** If `googleReviewData.lastShownDate` exists and is **within the last 30 days**, return (do not show again).\
+     If all checks pass, `showModal()` runs and `lastShownDate` is set to today and saved to `localStorage`.
 5. **Display**\
-   **showModal()** adds class **show** to **#google-review-modal** and sets **style.display = "flex"**. Close buttons (**.google-review-close-link**, **#may-be-later**) call **closeModal()** (remove **show**, **display = "none"**).
+   `showModal()` adds class **show** to `#google-review-modal` and sets `style.display = "flex"`. Close buttons (`.google-review-close-link, #may-be-later`) call `closeModal()` (remove `show`, `display = "none"`).
 
 **API — getCompletedForm**
 
-- **Endpoint:** `GET .../camp/getCompletedForm/{memberId}/current`
-- **Purpose:** Returns **studentData** for the current member/session; used to get **programDetail.startDate** and **programDetail.endDate** for the logged-in student so the modal can decide if the camp has started and if it is halfway or finished.
+- **Endpoint:** `GET getCompletedForm/{memberId}/current`
+- **Purpose:** Returns `studentData` for the current member/session; used to get `programDetail.startDate` and `programDetail.endDate` for the logged-in student so the modal can decide if the camp has started and if it is halfway or finished.
 
 **localStorage**
 
-- **Key:** `googleReviewData` — value is **base64-encoded** JSON (**btoa(JSON.stringify(...))**, read with **atob** + **JSON.parse**).
-- **Stored fields:** **startDate**, **endDate**, **memberId**, **studentEmail**, **lastShownDate**. **lastShownDate** (YYYY-MM-DD) is used to throttle: do not show again within 30 days.
+- **Key:** `googleReviewData` — value is **base64-encoded** JSON (`btoa(JSON.stringify(...)`**)**, read with `atob + JSON.parse`).
+- **Stored fields:** `startDate, endDate, memberId, studentEmail, lastShownDate. lastShownDate (YYYY-MM-DD)` is used to throttle: do not show again within 30 days.
