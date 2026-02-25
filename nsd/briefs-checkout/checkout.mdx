@@ -69,45 +69,43 @@ Once a payment method is selected, the user clicks **Next** to proceed to the St
 ### API — get brief data
 
 - **Endpoint:** `GET getBriefDetails` (no `programId` in briefs-checkout; optional query `programId` used in camp flow).
-- **Response:** **briefs** (array: single briefs catalogue), **briefEvents** (array: annual plans — `eventId`, `title`, `description`, `price`, `displayOrder`, `saved_amount`, `highlighted`, `features`), **debateEventId**.
-- **Backend:** **nsd_aws/api/getBriefDetails.py** — reads **briefs** and **brief_events** (active, sorted by display_order). See [Camp Checkout Upsells](/nsd/camp-checkout/upsells) for full field list.
+- **Response:** `briefs` (array: single briefs catalogue), `briefEvents` (array: annual plans — `eventId`, `title`, `description`, `price`, `displayOrder`, `saved_amount`, `highlighted`, `features`), `debateEventId`.
+- **Backend:** `getBriefDetails.py` — reads `briefs` and `brief_events` (active, sorted by display_order). See [Camp Checkout Upsells](/nsd/camp-checkout/upsells) for full field list.
 
 ### Flow (briefs checkout)
 
-- **API — get brief data:** Page load calls **getBriefDetails**; response stored in **this.data.briefs** and **this.data.briefEvents**.
-- **JS — render:** **getBriefsAndEvents()** clears accordion bodies, then:
+- **API — get brief data:** Page load calls `getBriefDetails`; response stored in `this.data.briefs` and `this.data.briefEvents`.
+- **JS — render:** `getBriefsAndEvents()` clears accordion bodies, then:
 
   <Note>
-    TODO: Everything below this needs to be formatted properly with code format instead of bold. I'm at a loss as to why this keeps happening. Please let me know what the issue is.
+    TODO: Everything below this needs to be formatted properly with code format instead of bold. I'm at a loss as to why this keeps happening. Please let me know what the issue is. **Sorry, Shubham, I will take care of it**
   </Note>
-  - **Annual:** **renderEvents(this.data.briefEvents)** → container `[data-brief="annual-events-accordion"] .annual-subs-item-body`; for each event **createEventCard(event)**; sorted by **displayOrder**.
-  - **Single:** **renderBriefs(this.data.briefs)** → container `[data-brief="single-briefs-accordion"] .briefs-accordion-item-body`; for each brief **createBriefCard(brief)**; **data-brief-id** = **brief.briefId**; sorted by **displayOrder**.
-
-
-- **JS — init and request (Checkout):** User selects items (checkboxes / Add to Cart / Remove). **selectedBriefs** and **selectedEvents** updated; **updateTotal()** writes JSON to hidden **suppProIds**, updates **Order Details** (**data-briefs-checkout="briefs-order-details"**), and **updateOrderTotalDisplay(total)**. **Next** → **showPaymentMethod()** (validates at least one item); **Prev** → **showBriefsSelection()**. Payment tabs (ACH vs Card) trigger **debouncedUpdateTotal** and **refreshOrderDetails()** (credit card fee logic if applicable).
-- **API: POST (create checkout URL):** On **Pay Now**, **payNow()** builds **checkoutData** (email, **briefIds** or **briefEventIds**, memberId, productType, device, deviceUserAgent, successUrl, cancelUrl, source: `"brief-checkout"`, utm_source). If **selectedEvents.length \> 0** → **POST .../camp/createCheckoutUrlForBriefEvent**; else → **POST .../camp/createCheckoutUrlForBrief**. Backend creates Stripe Checkout Session(s), returns **success**, **cardUrl**, **achUrl**.
-- **JS — after response:** If **responseText.success**, redirect to **responseText.cardUrl** (credit card) or **responseText.achUrl** (ACH). Success URL typically includes `?briefsPayment=true` for portal/dashboard.
+  - **Annual:** `renderEvents(this.data.briefEvents)` → container [data-brief="annual-events-accordion"]` .annual-subs-item-body`; for each event `createEventCard(event)`; sorted by `displayOrder`.
+  - **Single:** `renderBriefs(this.data.briefs) `→ container `[data-brief="single-briefs-accordion"] .briefs-accordion-item-body`; for each brief `createBriefCard(brief)`; `data-brief-id = brief.briefId`; sorted by `displayOrder`.
+- **JS — init and request (Checkout):** User selects items (checkboxes / Add to Cart / Remove). `selectedBriefs` and `selectedEvents` updated; `updateTotal()` writes JSON to hidden `suppProIds`, updates` Order Details (data-briefs-checkout="briefs-order-details")`, and `updateOrderTotalDisplay(total)`. **Next** → `showPaymentMethod() `(validates at least one item); **Prev** → `showBriefsSelection()`. Payment tabs (ACH vs Card) trigger `debouncedUpdateTotal` and `refreshOrderDetails()` (credit card fee logic if applicable).
+- **API: POST (create checkout URL):** On **Pay Now**, `payNow()` builds `checkoutData` (email, `briefIds` or `briefEventIds`, memberId, productType, device, deviceUserAgent, successUrl, cancelUrl, source: `"brief-checkout"`, utm_source). If **selectedEvents.length \> 0** → **POST** `createCheckoutUrlForBriefEvent`; else → **POST** `createCheckoutUrlForBrief`. Backend creates Stripe Checkout Session(s), returns `success, cardUrl, achUrl`.
+- **JS —** `after response`**:** If `responseText.success`, redirect to `responseText.cardUrl `(credit card) or `responseText.achUrl` (ACH). Success URL typically includes `?briefsPayment=true` for portal/dashboard.
 
 ### Data attributes and sections
 
-- **data-briefs-checkout="select-briefs"** — Wrapper for the PDF Briefs step (accordions + Next).
-- **data-briefs-checkout="select-payment-method"** — Wrapper for the Pay step (payment tabs + Pay Now).
-- **data-briefs-checkout="pay-now"** — Pay Now button(s); id **pay-now-link-3** also used.
-- **data-briefs-checkout="empty-order-details"** — Shown when no items selected.
-- **data-briefs-checkout="briefs-order-details"** — Order Details list (**.brief-flex-wrapper** items, **.total-price-bold**).
-- **data-brief="annual-events-accordion"** / **data-brief="single-briefs-accordion"** — Accordion sections for Annual vs Single.
+- `data-briefs-checkout="select-briefs"` — Wrapper for the PDF Briefs step (accordions + Next).
+- `data-briefs-checkout="select-payment-method"` — Wrapper for the Pay step (payment tabs + Pay Now).
+- `data-briefs-checkout="pay-now"` — Pay Now button(s); id **pay-now-link-3** also used.
+- `data-briefs-checkout="empty-order-details"` — Shown when no items selected.
+- `data-briefs-checkout="briefs-order-details"` — Order Details list (**.brief-flex-wrapper** items, `.total-price-bold`).
+- `data-brief="annual-events-accordion"` / `data-brief="single-briefs-accordion"` — Accordion sections for Annual vs Single.
 
 ### Backend — create checkout URLs
 
-- **createCheckoutUrlForBrief** (**nsd_aws/api/createChecoutUrlForBrief.py**): Body **email**, **briefIds** (array of brief \_ids for single briefs), **memberId**, **productType**, **device**, **deviceUserAgent**, **successUrl**, **cancelUrl**, **source**, **utm_source**. Creates Stripe Checkout Session for single-brief purchase; returns **cardUrl**, **achUrl**, **success**.
-- **createCheckoutUrlForBriefEvent** (**nsd_aws/api/createCheckoutUrlForBriefEvent.py**): Same plus **briefEventIds** (array of event ids for annual plans). Creates Stripe Checkout Session for annual subscription; returns **cardUrl**, **achUrl**, **success**.
+- `createCheckoutUrlForBrief (createChecoutUrlForBrief.py)`: Body `email`, `briefIds` (array of brief \_ids for single briefs), `memberId, productType, device, deviceUserAgent, successUrl, cancelUrl, source, utm_source`. Creates Stripe Checkout Session for single-brief purchase; returns `cardUrl, achUrl, success`.
+- `createCheckoutUrlForBriefEvent (createCheckoutUrlForBriefEvent.py)`: Same plus `briefEventIds` (array of event ids for annual plans). Creates Stripe Checkout Session for annual subscription; returns `cardUrl, achUrl, success.`
 
 ### Subscription / Stripe
 
-- Payment methods: **card** and **us_bank_account** (ACH). Session is created with **payment_method_types** and success/cancel URLs. No separate “Pay Later” on this flow.
+- Payment methods: `card` and `us_bank_account (ACH)`. Session is created with `payment_method_types` and success/cancel URLs. No separate “Pay Later” on this flow.
 - After payment, Stripe webhooks and backend logic record the purchase (e.g. brief_payment_details or equivalent); user gains access to content (portal/dashboard). Subscription behavior (recurring vs one-time) depends on backend/Stripe product setup.
 
 ### Comparison with camp checkout
 
-- **Camp checkout** uses **createCheckoutUrlsByProgram** / **updateStripeCheckoutDb** with **programId**, **briefEventIds**, **supplementaryProgramIds**, and Student Details; briefs are an upsell in a multi-step camp flow.
-- **Briefs checkout** uses **createCheckoutUrlForBrief** or **createCheckoutUrlForBriefEvent** with **briefIds** or **briefEventIds**, no programId, no Student Details; it is a standalone briefs-only flow with Create Account → PDF Briefs → Pay → Access Content.
+- **Camp checkout** uses `createCheckoutUrlsByProgram` / `updateStripeCheckoutDb` with `programId, briefEventIds, supplementaryProgramIds`, and Student Details; briefs are an upsell in a multi-step camp flow.
+- **Briefs checkout** uses `createCheckoutUrlForBrief` or `createCheckoutUrlForBriefEvent` with `briefIds` or `briefEventIds`, no programId, no Student Details; it is a standalone briefs-only flow with Create Account → PDF Briefs → Pay → Access Content.
