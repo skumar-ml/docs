@@ -23,11 +23,8 @@ Stripe events handled:
 ### Behaviour by Payment Status
 
 - **Complete:** Post-payment processing in **`updatePaymentDetails()`** runs: DB writes to **`payment_details`**, **`supplementary_payment_details`** (if supplementary programs), **`brief_payment_details`** (if briefs), **`stripe_checkout_customer`** update, **sendSuccessEmailToAdmin()**, **sendWelcomeEmail()**, and **`receipt_url`** update when present.
-- **Processing:** Payment is stored as pending (e.g. bank transfer); **`stripe_checkout_customer.status`** is set to **Processing**; status is updated when the charge completes.
+- **Processing:** Payment is stored as pending (e.g. bank transfer); **`stripe_checkout_customer.status`** is set to **Processing**; status is updated when the charge completes. Does all tasks mentioned in the "Complete" section.
 
-<Note>
-  TODO: Doesn't processing also do all tasks from "Complete"? Yes, it does all tasks like Complete
-</Note>
 
 - **Failed:** **`updatePaymentDetails()`** deletes **`payment_details`** and **`supplementary_payment_details`** by **`payment_intent`**, and sets **`stripe_checkout_customer.status`** to **Failed**. No enrollment or further processing.
 
@@ -39,9 +36,6 @@ Stripe events handled:
 
 - **Insert (first successful payment):** When no record exists for **`payment_intent`**, **`updatePaymentDetails`** inserts one with  `payment_intent`, `studentEmail`, `studentName`, `parentEmail`, `memberId`.
 
-<Note>
-  TODO: Not sure if it's useful to list out all fields that get inserted. **Updated**
-</Note>
 
 - **Update:** On later webhooks (e.g. bank transfer complete), **`receipt_url`** is set via **`db.payment_details.update_one`** (filter by **payment_intent**, **\$set** **receipt_url** from the charge object).
 - **Failure:** If **status == "Failed"**, **`updatePaymentDetails`** deletes **`payment_details`**, **`supplementary_payment_details`** by **`payment_intent`**, and updates **`stripe_checkout_customer`** with **`status: "Failed"`**.

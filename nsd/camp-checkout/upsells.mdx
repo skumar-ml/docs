@@ -85,22 +85,10 @@ Recommended programs are shown here.
 
 **Flow**
 
-<Note>
-  This is not written in a very logical way: Order can be:
-
-  1. Render Brief (which calls API)
-  2. Add brief to cart stored in selectedBriefEvent
-  3. Then include Checkout stuff
-  4. POST
-  5. After response
-
-  You need to format with code formatting. Shouldn't be a recurring issue.
-</Note>
-
 1. **JS — render brief (calls API)**\
    When the briefs popup is shown, `fetchBriefEvents` calls `GET getBriefDetails?programId={programId}` and stores `briefEvents` (sorted by `display_order`). The script finds `data-cart="briefEvents-container"` both modal and banner, clears them, and builds a card per brief.
 2. **Add brief to cart**\
-   `BriefsUpsellModal` shows the briefs pop`-`up after the user clicks **Next** on Student Details (when a brief is not already added), and the brief banner can also be available on the payment screen. User selection is stored in `selectedBriefEvent`. The selected brief is written to the selected-brief wrapper via `renderSelectedBriefSummary`and appears in **Order Details**. `getSelectedBriefEventIds()` returns the selected event id(s).
+   `BriefsUpsellModal` shows the briefs pop-up after the user clicks **Next** on Student Details (when a brief is not already added), and the brief banner can also be available on the payment screen. User selection is stored in `selectedBriefEvent`. The selected brief is written to the selected-brief wrapper via `renderSelectedBriefSummary`and appears in **Order Details**. `getSelectedBriefEventIds()` returns the selected event id(s).
 3. **init and request (Checkout)**\
    When creating or updating checkout URLs, the request payload includes `briefEventIds`. Initial request: `createCheckoutUrlsByProgram`. When the user clicks **ACH** / **Card** / **Pay Later**, `initializeStripePayment` is called and sends `checkoutId`, `paymentType`,and `briefEventIds`.
 4. **API: POST**\
@@ -137,13 +125,6 @@ Recommended programs are shown here.
 </Accordion>
 
 **Flow**
-
-<Note>
-  TODO
-
-  1. Similar thing. Let's reformat order. Not useful to include a. list of things that gets returned by an API.
-  2. Format as code
-</Note>
 
 1. **JS — render (supplementary, calls API)**\
    On init, `renderPortalData` calls `GET getSupplementaryProgram/{programId}`; the response is stored in `$suppPro`. Backend: `getSupplementaryProgram.py`. The script finds `checkout-supplimentary-data-desktop`, `checkout-supplimentary-data-mobile` (and `supp-programs-description-wrapper` for Learn More), clears each, builds a slide per program via `displaySingleSuppProgram`and prepends.

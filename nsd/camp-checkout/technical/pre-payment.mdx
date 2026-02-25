@@ -44,7 +44,7 @@ This data is used when creating checkout URLs and updating student details in th
 
 ### Residential vs. commuter vs. online
 
-The cart page runs **inline JS** on `DOMContentLoaded` that reads `productType` from the URL (`URLSearchParams`) and drives both **programCategoryId** and which UI/pricing is shown.
+The cart page runs **inline JS** on `DOMContentLoaded` that reads `productType` from the URL (`URLSearchParams`) and drives both `programCategoryId` and which UI/pricing is shown.
 
 1. **URL → programCategoryId**
    - `?productType=residential` → **programCategoryId** `1111`.
@@ -52,7 +52,7 @@ The cart page runs **inline JS** on `DOMContentLoaded` that reads `productType` 
    - Default (no param or other) → `1111`.\
      Cart links from abandoned-cart (`abandoned-cart-modal.js`) use the same mapping: `1111` → `?productType=residential`, `2222` → `?productType=commuter`, `3333` → no `productType` (online).
 2. **Optional form hiding**\
-   If **hide_residential** or **hide_commuter** is `'true'`, **hideContent()** hides the main checkout form (`cart-main-div`, `card-grid-main`) and shows the info block (`cart-info-div`), and **CheckOutWebflow** is not instantiated.
+   If `hide_residential` or `hide_commuter` is `'true'`, **hideContent()** hides the main checkout form (`cart-main-div`, `card-grid-main`) and shows the info block (`cart-info-div`), and **CheckOutWebflow** is not instantiated.
 3. **Commuter vs residential UI and pricing**
    - **Commuter** (`product === "commuter"` or `product === "pf"`): show commuter order summary, commuter form, commuter core price; set **achAmount**, **cardAmount**, **payLaterAmount** to commuter values.
    - **Else**: show residential order summary, residential form, residential core price; set amounts to residential values.\
