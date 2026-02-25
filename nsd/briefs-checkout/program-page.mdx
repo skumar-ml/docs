@@ -4,9 +4,15 @@ title: "Program Page"
 
 https://www.nsdebatecamp.com/briefs
 
-The [**NSD Briefs program page**](https://www.nsdebatecamp.com/briefs) is a marketing and catalog page for debate briefs. It shows subscription options (annual plans and single brief) and a **VIEW OUR BRIEFS** section where individual briefs are loaded by an embedded script that calls **getBriefDetails**, renders cards, and opens a Preview modal. This page does not handle checkout—users go to [**Briefs Checkout**](https://dashboard.mintlify.com/nsd/briefs-checkout/checkout) to purchase.
+The [**NSD Briefs program page**](https://www.nsdebatecamp.com/briefs) is a marketing and catalog page for debate briefs. It shows subscription options (annual plans and single brief) and a **VIEW OUR BRIEFS** section where individual briefs are loaded by an embedded script that calls `getBriefDetails`, renders cards, and opens a Preview modal. This page does not handle checkout—users go to [**Briefs Checkout**](https://dashboard.mintlify.com/nsd/briefs-checkout/checkout) to purchase.
 
 ## **Non-Technical**
+
+<Note>
+  TODO: Katyayani, you can include a picture instead of giginv gos much description of the UI. We've already discussed this. 
+
+  This reads like it was AI-generated without any proofreading from our end
+</Note>
 
 ### **What the user sees**
 
@@ -49,9 +55,9 @@ The [**NSD Briefs program page**](https://www.nsdebatecamp.com/briefs) is a mark
 
 ### **Overview**
 
-The page includes an **inline script** that runs on **DOMContentLoaded**. It defines a **Briefs** class that:
+The page includes an **inline script** that runs on `DOMContentLoaded`. It defines a `Briefs` class that:
 
-1. Calls **getBriefDetails** (no query params) to get the **briefs** array.
+1. Calls `getBriefDetails` (no query params) to get the **briefs** array.
 2. Renders cards into a fixed container and attaches Preview click handlers.
 3. Shows a loading spinner during fetch and (optionally) while the preview PDF loads; shows errors via `alert` or similar if the request fails or returns no briefs.
 
@@ -69,7 +75,7 @@ There is **no separate build step**—the script is embedded in the page (e.g. W
 - `getBriefs()`**:** `showLoading()` (spinner), `fetchData("getBriefDetails"),` then:
   - If `response && response.briefs` and length \> 0: `renderBriefs(response.briefs)`, `attachPreviewHandlers(response.briefs).`
   - Else: `showError(...)` (“No briefs are currently available.” or “Unable to load briefs…”).
-  - `finally: hideLoading().`
+  - finally: `hideLoading().`
 - **renderBriefs(briefs):** Finds container `.view-briefs-cards-container .view-briefs-inner-flex`, sets `innerHTML = ""`, sorts by `displayOrder`, then for each brief appends `createBriefCard(brief, false).`
 - `createBriefCard(brief, isSelected)`**:** Creates a `div.brief-card-info` with `data-brief-id = brief.briefId` and inner HTML: title (`.pdf-briefs-title`), PDF icon, description (**.**`pdf-brief-text-medium`), “Topic: …” (**.**`pdf-brief-text-small`), price (**.**`pdf-brief-price`), and a **Preview** link (**.**`briefs-preview-btn` with `data-brief-id`). Returns the card element (selection state is not used for purchase on this page).
 - **attachPreviewHandlers(briefs):** For each `.briefs-preview-btn`, on click: resolve **brief** from **briefs** by `data-brief-id`; if `brief.preview_pdf_url` exists, `showLoading(),` set `modal.style.display = "flex"`, set `iframe.src = brief.preview_pdf_url`, and `hideLoading()` in `iframe.onload`; else set button text to “Not Available” and `hideLoading()` after a short delay. Close button (`.close-preview` or `#close-preview`) sets `modal.style.display = "none"` and `iframe.src = "".`
@@ -82,7 +88,7 @@ There is **no separate build step**—the script is embedded in the page (e.g. W
 
 ### **Data shape (brief object)**
 
-From **getBriefDetails** (briefs array), each item used in the embed includes:
+From `getBriefDetails` (briefs array), each item used in the embed includes:
 
 - **briefId** — string (e.g. MongoDB ObjectId string); used in **data-brief-id** and to find the brief for Preview.
 - **title** — display title.
