@@ -97,7 +97,7 @@ Once a payment method is selected, the user clicks **Next** to proceed to the St
 
 ### Backend — create checkout URLs
 
-- `createCheckoutUrlForBrief (createChecoutUrlForBrief.py)`: Body `email`, `briefIds` (array of brief \_ids for single briefs), `memberId, productType, successUrl, cancelUrl`. Creates Stripe Checkout Session for single-brief purchase; returns `cardUrl, achUrl, success`.
+- `createCheckoutUrlForBrief (createChecoutUrlForBrief.py)`: Body `email`, `briefIds` (array of brief \_ids for single briefs), `memberId, productType, successUrl, cancelUrl`. Creates Stripe Checkout Session for single brief purchase; returns `cardUrl, achUrl, success`.
 - `createCheckoutUrlForBriefEvent (createCheckoutUrlForBriefEvent.py)`: Same plus `briefEventIds` (array of event ids for annual plans). Creates Stripe Checkout Session for annual subscription; returns `cardUrl, achUrl, success.`
 
 ### Subscription / Stripe
