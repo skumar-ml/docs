@@ -108,4 +108,4 @@ Once a payment method is selected, the user clicks **Next** to proceed to the St
 ### Comparison with camp checkout
 
 - **Camp checkout** uses `createCheckoutUrlsByProgram` / `updateStripeCheckoutDb` with `programId, briefEventIds, supplementaryProgramIds`, and Student Details; briefs are an upsell in a multi-step camp flow.
-- **Briefs checkout** uses `createCheckoutUrlForBrief` or `createCheckoutUrlForBriefEvent` with `briefIds` or `briefEventIds`, no programId, no Student Details; it is a standalone briefs-only flow with Create Account → PDF Briefs → Pay → Access Content.
+- **Briefs checkout** uses `createCheckoutUrlForBrief` or `createCheckoutUrlForBriefEvent` with `briefIds` or `briefEventIds`, no `programId`, no Student Details; it is a standalone briefs-only flow with Create Account → PDF Briefs → Pay → Access Content.
