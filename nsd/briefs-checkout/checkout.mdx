@@ -69,7 +69,7 @@ Once a payment method is selected, the user clicks **Next** to proceed to the St
 ### API — get brief data
 
 - **Endpoint:** `GET getBriefDetails` (no `programId` in briefs-checkout; optional query `programId` used in camp flow).
-- **Response:** `briefs` (array: single briefs catalogue), `briefEvents` (array: annual plans — `eventId`, `title`, `description`, `price`, `displayOrder`, `saved_amount`, `highlighted`, `features`), `debateEventId`.
+- **Response:** `briefs` (array: single briefs catalogue), `briefEvents` (array: annual plans — `eventId`, `title`, `description`, `price`, `displayOrder`, `saved_amount`, `highlighted`, `features`), `debateEventId`.  
 - **Backend:** `getBriefDetails.py` — reads `briefs` and `brief_events` (active, sorted by display_order). See [Camp Checkout Upsells](/nsd/camp-checkout/upsells) for full field list.
 
 ### Flow (briefs checkout)
@@ -80,7 +80,7 @@ Once a payment method is selected, the user clicks **Next** to proceed to the St
   <Note>
     TODO: Everything below this needs to be formatted properly with code format instead of bold. I'm at a loss as to why this keeps happening. Please let me know what the issue is. **Sorry, Shubham, I will take care of it**
   </Note>
-  - **Annual:** `renderEvents(this.data.briefEvents)` → container [data-brief="annual-events-accordion"]` .annual-subs-item-body`; for each event `createEventCard(event)`; sorted by `displayOrder`.
+  - **Annual:** `renderEvents(this.data.briefEvents)` → container `[data-brief="annual-events-accordion"] .annual-subs-item-body`; for each event `createEventCard(event)`; sorted by `displayOrder`.
   - **Single:** `renderBriefs(this.data.briefs) `→ container `[data-brief="single-briefs-accordion"] .briefs-accordion-item-body`; for each brief `createBriefCard(brief)`; `data-brief-id = brief.briefId`; sorted by `displayOrder`.
 - **JS — init and request (Checkout):** User selects items (checkboxes / Add to Cart / Remove). `selectedBriefs` and `selectedEvents` updated; `updateTotal()` writes JSON to hidden `suppProIds`, updates` Order Details (data-briefs-checkout="briefs-order-details")`, and `updateOrderTotalDisplay(total)`. **Next** → `showPaymentMethod() `(validates at least one item); **Prev** → `showBriefsSelection()`. Payment tabs (ACH vs Card) trigger `debouncedUpdateTotal` and `refreshOrderDetails()` (credit card fee logic if applicable).
 - **API: POST (create checkout URL):** On **Pay Now**, `payNow()` builds `checkoutData` (email, `briefIds` or `briefEventIds`, memberId, productType, device, deviceUserAgent, successUrl, cancelUrl, source: `"brief-checkout"`, utm_source). If **selectedEvents.length \> 0** → **POST** `createCheckoutUrlForBriefEvent`; else → **POST** `createCheckoutUrlForBrief`. Backend creates Stripe Checkout Session(s), returns `success, cardUrl, achUrl`.
