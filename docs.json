@@ -206,7 +206,7 @@
           {
             "group": "Coach Portal",
             "pages": [
-              "dashboard"
+              "nsd/coach-portal/dashboard"
             ]
           }
         ]
