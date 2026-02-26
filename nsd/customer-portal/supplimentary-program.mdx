@@ -13,3 +13,35 @@ The [Supplementary Programs](https://www.nsdebatecamp.com/portal/supplementary-p
 </Frame>
 
 Clicking **Register** navigates to the program’s registration page, while **Learn More** opens the detailed information page for that program.
+
+## Technical
+
+**Script:** `nsd/supplementary-programs.js`. Main classes: `SupplementaryProgram` (student dropdown and available programs list), `SupplementaryTabs` (enrolled supplementary forms / to-do list), `SupplementaryForm` (single program’s form categories and form links).
+
+### Flow
+
+**1. Page load (enrolled supplementary forms )**
+
+- **JS — init and request:** `SupplementaryTabs(webflowMemberId, accountEmail, dataType)` runs. `renderFormsData()` shows `#half-circle-spinner`, optionally stores current active tab (`getCurrentActiveTag()`), then GET `camp/getSupplimentaryForm/{webflowMemberId}/{dataType}` (default `dataType` is `""`).
+- **API:** `GET camp/getSupplimentaryForm/{memberId}/{dataType}`. Backend: `getSupplimentaryForm.py`. Resolves family member ids from `members` by `memberId` and `familyId`. Queries `supplementary_payment_details` for those ids (`dataType"all"`). For each payment, builds object with `formCompletedList`, `formList`, `programCategory` (from `program_category`), `studentDetail`, `programDetail` (from `program_details`). Returns array of these objects or `"No data Found"`.
+- **JS — after response:** Spinner hidden. `viewstabs(responseText)` clears `#stabs-container`; if response is `"No data Found"` shows `#free-supplementary-resources` and returns; else shows `#paid-supplementary-resources`, builds tabs (`ul.stabs`) and content divs per item (student name + program name, `#supplementary-{index}`, `#program_dates-{index}`, `#supplementary-footer-{index}`, countdown timer). `initiateTabs()` binds tab click to toggle `.active_tab`. For each item with `formList.length > 0`, `new SupplementaryForm(webflowMemberId, formData, currentIndex, accountEmail)` runs after short timeout. Each `SupplementaryForm` sets `$completedForm`, `$formslist`, `$programDetail`, `$studentDetail`, calls `checkProgramDeadline()`, `programDates()`, `view()` (renders form categories and form rows with “Go to form” / “Edit form” / “View Form” / “Coming Soon”, JotForm URLs, `.iframe-lightbox-link`), `renderSupplementaryHeader()` (progress and deadline in `#supplementary-footer-{index}`), `setPercentage()`, `initiateSupplementary()` (category label toggle), `initiateLightbox()` (IframeLightbox for form links). Then `setCurrentActiveTag()` restores active tab. On lightbox close, spinner is shown and `new SupplementaryTabs(...)` is re-run to refresh.
+
+**2. Page load (student select and available programs)**
+
+- **JS — init and request:** `SupplementaryProgram(webflowMemberId, accountEmail)` runs. `callApi()` shows `#half-circle-spinner-2`, GET `camp/getCompletedForm/{webflowMemberId}/current`.
+- **API:** `GET camp/getCompletedForm/{memberId}/current`. Backend: `getCompletedForm.py`. Returns `studentData` for current session (camp enrollments with form list, program detail, student detail). Same pattern as portal/registration: family ids from `members`, then payment/session data.
+- **JS — after response:** Spinner hidden. If `responseText.studentData` has length, `makeList(responseText.studentData)` builds `#student-select-list` (select) in `#supplementary-program`, with options “Select Student” plus one per item (student name + program name); each option has `data-programName`. `studentList.onchange` calls `selectProgram($this)`.
+
+**3. Student select (show programs list and Register / Learn More)**
+
+- **JS — init and request:** User selects a student from `#student-select-list`. `selectProgram($this)` runs: if no value, adds class `hide` to `#supplementary-program-list`; else removes `hide`, reads selected value, `saveLocalStorageData(selectedValue)` (saves student to `localStorage.supStuEmail`), then for each `.supprolink` sets `href` to `linkUrl[0]+'?productType=supplementary'`, and shows or hides `.minnesota-ld` based on selected option’s `data-programName` (“Minnesota LD”).
+- **API:** None (client-only).
+- **JS — after response:** N/A. **Register** and **Learn More** are links in `#supplementary-program-list`; their `href` is updated with `?productType=supplementary` so checkout or program page receives the correct context.
+
+### Sidebar and main content
+
+- **Student select:** `#supplementary-program` — container for the student dropdown. `#student-select-list` — `<select class="student-select-list w-select">` with options per enrolled student/program.
+- **Program list (add programs):** `#supplementary-program-list` — shown when a student is selected; contains **Register** and **Learn More** links. Links use class `supprolink`; script sets their `href` to include `?productType=supplementary`. `.minnesota-ld` — shown only when selected program is “Minnesota LD”.
+- **Enrolled forms (to-do list):** `#stabs-container` — holds `ul.stabs` (tab list: student name + program name per tab) and `.content-section` with divs `#stab1`, `#stab2`, … Each tab content has `#program_dates-{index}`, “To Do List” heading, `#supplementary-footer-{index}` (progress bar, deadline text), `#supplementary-{index}` (form categories and form rows). Form links use JotForm URLs; desktop uses class `iframe-lightbox-link` and IframeLightbox.
+- **Free vs paid:** `#free-supplementary-resources` — shown when API returns `"No data Found"`. `#paid-supplementary-resources` — shown when there is supplementary form data.
+- **Loaders:** `#half-circle-spinner` — during `getSupplimentaryForm` and after lightbox close. `#half-circle-spinner-2` — during `getCompletedForm` for student list.
