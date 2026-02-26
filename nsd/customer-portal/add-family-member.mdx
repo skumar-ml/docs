@@ -26,7 +26,7 @@ The [Family Members](https://www.nsdebatecamp.com/portal/add-family-member) page
 
 ## Technical
 
-**Scripts:** (1) `nsd/add_family.js` — class `FamilyMember` (list, edit, delete). (2) **Embed JavaScript** in the page — handles **Add Family Member** (invite) form: reads Memberstack from `localStorage`, submits to `camp/addParentEma  il`, then redirects or shows message.
+**Scripts:** (1) `nsd/add_family.js` — class `FamilyMember` (list, edit, delete). (2) **Embed JavaScript** in the page — handles **Add Family Member** (invite) form.
 
 ### Database
 
@@ -45,7 +45,7 @@ The [Family Members](https://www.nsdebatecamp.com/portal/add-family-member) page
 **1. Page load (list family members)**
 
 - **JS — init and request:** `FamilyMember` constructor runs; `displayFamilyMember()` shows `#half-circle-spinner`, then `fetchData("getAllFamilyData/" + this.memberId)`.
-- **API:** `GET camp/getAllFamilyData/{memberId}`. Backend: `getAllFamilyData.py`. Finds `members` by `memberId`; if `familyId` is set, loads all `members` with that `familyId`, gets student records from `payment_details` (for students not in `members`), merges in `invited_member` by `invited_memeber_id`. Returns array of objects: `memberId`, `itemId`, `firstName`, `lastName`, `email`, `accountType`, `parentPhoneNumber`, `studentGrade`, `createdOn` (invited items have no `memberId`/`createdOn`).
+- **API:** `GET getAllFamilyData/{memberId}`. Backend: `getAllFamilyData.py`. Finds `members` by `memberId`; if `familyId` is set, loads all `members` with that `familyId`,  merges in `invited_member` by `invited_memeber_id`. Returns array of objects: `memberId`, `itemId`, `firstName`, `lastName`, `email`, `accountType`, `parentPhoneNumber`, `studentGrade`, `createdOn` (invited items have no `memberId`/`createdOn`).
 - **JS — after response:** `sortDataBasedOnMemberId(familyData, this.memberId)` puts current user first; `.family-member-grid-wrapper` is cleared and each item is rendered via `getSingleFamilyData(element)` and appended. Spinner is hidden. `handleEditMember()` binds `#editMemberBtn` click to `editMemberInfo($editMemberData)`; if `accountType != 'parent'`, `#add-family-member-btn` is hidden.
 
 **2. Add family member (invite) — embed script**
