@@ -23,3 +23,52 @@ The [Family Members](https://www.nsdebatecamp.com/portal/add-family-member) page
     ![Image](/images/image-192.png)
   </Frame>
 - A **Delete** feature is available to remove a family member account.
+
+## Technical
+
+**Scripts:** (1) `nsd/add_family.js` — class `FamilyMember` (list, edit, delete). (2) **Embed JavaScript** in the page — handles **Add Family Member** (invite) form: reads Memberstack from `localStorage`, submits to `camp/addParentEma  il`, then redirects or shows message.
+
+### Database
+
+<Accordion title="Schema">
+  | Collection / source             | Role                                                                                                                                                                                                             |
+  | :------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `members`                       | Family accounts: `memberId`, `familyId`, `itemId`, `firstName`, `lastName`, `email`, `accountType`, `parentPhoneNumber`, `studentGrade`, `createdOn`. Used to list family and to update on edit.                 |
+  | `payment_details`               | Students paid by a parent but not yet in `members` are merged into the family list by `getAllFamilyData`. Updated by `updateMemberStack` when email/name changes (`parentEmail`, `studentEmail`, `studentName`). |
+  | `invited_member`                | Invited (not yet signed up): `invited_memeber_id`, `email_id`, `first_name`, `last_name`, `created_on`. Listed by `getAllFamilyData`; inserted by `addParentEmail`; deleted by `deleteInvitedMember`.            |
+  | `supplementary_payment_details` | Updated by `updateMemberStack` when email/name changes (`parentEmail`, `studentEmail`, `studentName`).                                                                                                           |
+  | `student_profiles`              | Updated by `updateMemberStack` when email/name changes (`studentEmail`, `studentName`).                                                                                                                          |
+</Accordion>
+
+### Flow
+
+**1. Page load (list family members)**
+
+- **JS — init and request:** `FamilyMember` constructor runs; `displayFamilyMember()` shows `#half-circle-spinner`, then `fetchData("getAllFamilyData/" + this.memberId)`.
+- **API:** `GET camp/getAllFamilyData/{memberId}`. Backend: `getAllFamilyData.py`. Finds `members` by `memberId`; if `familyId` is set, loads all `members` with that `familyId`, gets student records from `payment_details` (for students not in `members`), merges in `invited_member` by `invited_memeber_id`. Returns array of objects: `memberId`, `itemId`, `firstName`, `lastName`, `email`, `accountType`, `parentPhoneNumber`, `studentGrade`, `createdOn` (invited items have no `memberId`/`createdOn`).
+- **JS — after response:** `sortDataBasedOnMemberId(familyData, this.memberId)` puts current user first; `.family-member-grid-wrapper` is cleared and each item is rendered via `getSingleFamilyData(element)` and appended. Spinner is hidden. `handleEditMember()` binds `#editMemberBtn` click to `editMemberInfo($editMemberData)`; if `accountType != 'parent'`, `#add-family-member-btn` is hidden.
+
+**2. Add family member (invite) — embed script**
+
+- **JS — init and request:** Inline script runs on page load. Reads `localStorage.getItem("memberstack")`, parses JSON, gets `memberstackData.information.id` and sets it into `#memberIdAddEmail.value`. Form `addEmailForm` has fields `firstName`, `lastName`, `emailId`, and hidden `memberId`. On submit, `validateForm()` runs: if no `memberId`, alerts "Please login to access this page" and returns false. Otherwise sets `#add_email_submit` to "Please wait...", builds `formData` (`firstName`, `lastName`, `memberId`, `emailId`), calls `addEmailToMember(formData)`, and returns false (no full page submit).
+- **API:** `POST camp/addParentEmail`. Backend: `addParentEmail.py`. Body: `firstName`, `lastName`, `memberId`, `emailId`. If email already in `invited_member` → returns 500 with "Member already added". If email exists in `members` but different family → returns "Email belongs to another family". If same family or no family → updates `members.familyId` and sends "add_email_account_exists" email, returns "Email added to family". If email not in `members` → inserts into `invited_member` (`invited_memeber_id`, `first_name`, `last_name`, `email_id`, `created_on`), sends "add_email_account_does_not_exist" invitation email, returns "Email added successfully and sent invitation".
+- **JS — after response:** `xhr.onload` strips quotes from `responseText`. If response equals "Email added successfully and sent invitation", redirects to `/members/{memberstackId}`. Otherwise sets `#message-box` innerHTML to the response, sets `#add_email_submit` back to "Submit", makes `#message-box` visible, and hides it again after 10 seconds. Helper `clearAddEmailForm()` resets `#addEmailForm`.
+
+**3. Edit member**
+
+- **JS — init and request:** User clicks Edit on a card (non-invited). `updateSuppData(data)` fills `#Student-First-Name`, `#Student-Last-Name`, `#Student-Email`, `#Student-Grade`, `#parent-phone` (parent vs student fields shown/hidden by `accountType`); `$editMemberData = data`; `.add-family-member-edit-modal` gets class `show` and `display: flex`. User edits and clicks Save (`#editMemberBtn`). Button set to "Processing", disabled; `editMemberInfo($editMemberData)` builds payload (old/new firstName, lastName, email, phone, grade, memberId, itemId) and POSTs to `updateMemberStack`.
+- **API:** `POST camp/updateMemberStack`. Backend: `updateMemberStack.py`. Updates Memberstack (member API), Webflow item if `itemId` present, then `members`, `payment_details`, `supplementary_payment_details`, `student_profiles` by old email/name; if email changed, may call `setFamilyId(newEmail)` and send welcome email for invited sign-up.
+- **JS — after response:** On `xhr.onload`, `closeModal(.add-family-member-edit-modal)`, `displayFamilyMember()` re-fetches and re-renders list; `#editMemberBtn` text set back to "Save", re-enabled.
+
+**4. Delete invited member**
+
+- **JS — init and request:** User clicks Delete on an invited-only card. Button shows "Processing..."; `deleteInvitedMember(data)` sends `DELETE camp/deleteInvitedMember/{email}` (frontend uses `memberData.email` in path).
+- **API:** `DELETE camp/deleteInvitedMember/{memberId}`. Backend: `deleteInvitedMember.py`. Path param is used as `emailId`; deletes one document from `invited_member` where `email_id` matches.
+- **JS — after response:** On `xhr.onload`, `displayFamilyMember()` re-fetches and re-renders the list.
+
+### Sidebar and main content
+
+- **Main content:** `.family-member-grid-wrapper` — container for family member cards. Each card is a `div.family-member-vertical-flex-container` with name (`p.dm-sans.bold-text`), email (`a.any-link` + `p.dm-sans`), role (`p.dm-sans.italics` — `accountType` or "Invited member"), created date or "Account not created yet" (`p.dm-sans` / `.account-not-created`), and Edit/Delete button (`a.main-button.edit-btn` — "Edit" or "Delete" for invited). Edit/Delete only if `accountType == "parent"` or viewing own card (`this.memberId == data.memberId`).
+- **Add button:** `#add-family-member-btn` — visible only when `accountType == 'parent'` (in `add_family.js`). Click opens the Add Family Member popup; the **invite flow is handled by embed JavaScript**: form name `addEmailForm` (fields `firstName`, `lastName`, `emailId`; hidden `#memberIdAddEmail` for `memberId`), submit button `#add_email_submit`, message area `#message-box`. Script uses Memberstack id from `localStorage` and POSTs to `camp/addParentEmail`.
+- **Edit modal:** `.add-family-member-edit-modal` — shown with class `show` and `display: flex`. Fields: `#Student-First-Name`, `#Student-Last-Name`, `#Student-Email`, `#Student-Grade`, `#parent-phone`, `#Student-School`, `#Student-Gender`. Save button: `#editMemberBtn`.
+- **Loader:** `#half-circle-spinner` — shown during `getAllFamilyData` request.
