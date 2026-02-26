@@ -83,6 +83,7 @@ Full schema for **payment_details** (and related collections) is covered in [Sem
 | **year**                  | Year of the recommended session.                     |
 | **pre-registrationDates** | Pre-reg window from **attendance_session**.          |
 | **earlyBirdDeadlineDate** | Early-bird deadline from **attendance_session**.     |
+| **earlyBirdDiscount**     | discount amount shown in modal (e.g. `$150"`).       |
 | **registrationStartDate** | Start of registration window from **class_session**. |
 | **registrationEndDate**   | End of registration window from **class_session**.   |
 
@@ -123,4 +124,4 @@ Full schema for **payment_details** (and related collections) is covered in [Sem
 
    #### Click behavior
    - **Register Now** — Link is set from `recommendedLevel` and the current registration window. When returner conversion is active and today is within the registration window: link is `https://www.bergendebate.com/programs/{levelUrl}` (e.g. `programs/level-3b` for Level 3B); user opens that program/level page in a new tab. Otherwise: link is `https://www.bergendebate.com/classes-overview`; user opens the classes overview in a new tab.
-   - **Learn More** — Opens the Next Recommended Program modal. The modal shows: title "Next Step for [student name]"; recommended line "Recommended: [session year | level]"; early-bird countdown if **recommendedLevel** has `earlyBirdDeadlineDate`; an Enroll Now button (same link logic as Register Now); and "Why This Program" copy. Closing the modal (backdrop or close control) hides it; the modal does not navigate the page.
+   - **Learn More** — Opens the Next Recommended Program modal. The modal shows: title "Next Step for [student name]"; recommended line "Recommended: [session year | level]"; early-bird countdown if **recommendedLevel** has `earlyBirdDeadlineDate`; **early-bird discount text** (element `.early-bird-text`): Early Bird Discount Available | Save `$X` where `X` is `recommendedLevel.earlyBirdDiscount;` an Enroll Now button (same link logic as Register Now); and "Why This Program" copy. Closing the modal (backdrop or close control) hides it; the modal does not navigate the page.
