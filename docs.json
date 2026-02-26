@@ -198,7 +198,8 @@
             "group": "Customer Portal",
             "pages": [
               "nsd/customer-portal/dashboard",
-              "nsd/customer-portal/registration"
+              "nsd/customer-portal/registration",
+              "nsd/customer-portal/untitled-page"
             ]
           },
           {
