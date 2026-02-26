@@ -28,3 +28,39 @@ Users must enter the exact **camp sign-up code** (case-sensitive), submit it, re
 <Frame>
   ![Image](/images/image-190.png)
 </Frame>
+
+## Technical
+
+**Script:** `nsd/coach-portal.js`. The dashboard loads coach-specific resources: a **Camp Schedule** link (based on camp id) and **uploaded materials** from the API. The left navigation (Dashboard, Attendance, Notification Center), **Portal Guide** / **Take Attendance** links, and **Camp Code** section are page structure; the script drives the resource grid content.
+
+### Database
+
+<Accordion title="Schema">
+  | Collection / source | Role                                                                                                                                                                                        |
+  | :------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+  | `members`           | Coach account: `memberId`, `accountType` (e.g. `"coach"`), `coachDetailID` (program/camp id). Lookup by `memberId` + `accountType` for coach portal data.                                   |
+  | `upload_content`    | Uploaded resources per program: `programDetailId`, `accountType` (e.g. `"coach"`), `Label`, `uploadedFiles`, `created_on`. Fetched by `getCoachPortalData` for the coach’s `coachDetailID`. |
+</Accordion>
+
+### Flow
+
+**1. Page load (resource grid: schedule + uploaded content)**
+
+- **JS — init and request:** The page (or embed) supplies `coachCampId` and `memberId` (e.g. from Memberstack / Webflow). `coachResources(coachCampId, memberId)` runs. It resolves the camp name and schedule URL from a hardcoded map keyed by `coachCampId` (e.g. `"1"` → Texas PF, `"2"` → Texas LD, `"15"` → Philadelphia PF Session 1, `"4"` → Philadelphia LD, `"5"` → Minnesota LD, `"3"` → Philadelphia PF Session 2, `"7"` → Online LD Camp, `"8"` → Online PF Camp). It sets `#coach-service` text to that name and inserts a “Camp Schedule” card (link with class `portal-resource-card portal-div-shadow w-inline-block`) into `#coach-resource-grid`. If `coachCampId` is set, it then calls `getCoachData(memberId)`.
+- **API:** `GET camp/getCoachPortalData/{memberId}`. Backend: `getCoachPortalData.py`. Finds one document in `members` with `memberId` and `accountType == "coach"`; reads `coachDetailID` (as `programDetailId`). Queries `upload_content` for `programDetailId` and `accountType == "coach"`; builds `uploadedContent` array of `{ label, uploadedFiles, createdOn }`. Returns `[{ uploadedContent: [...] }]` or `"No data Found"` if not a coach.
+- **JS — after response:** `coachResources` receives the array; uses `uploadedContent[0].uploadedContent`. For each item with `label` and `uploadedFiles[0]`, appends a resource card (same classes as schedule card) with link to `uploadedFiles[0]` and text `label` into `#coach-resource-grid`.
+
+### Sidebar and main content
+
+- **Camp name:** `#coach-service` — text set to the camp name from the `coachCampId` map (e.g. "Texas PF", "Minnesota LD").
+- **Resource grid:** `#coach-resource-grid` — container (e.g. `w-layout-grid portal-resources-grid`). First child: “Camp Schedule” link (URL from map; some camps have no schedule link). Then one card per uploaded resource (link + `portal-card-text` with label). Cards use `target="_blank"`.
+- **Camp code:** The “camp sign-up code” is a separate flow (form / validation); entering it and reloading is described in the non-technical section; implementation may live in the page or CMS.
+- **Left nav / Resources / Take Attendance:** Static or CMS-driven links; not modified by `coach-portal.js`.
+
+### Attendance
+
+**Script:** `nsd/instructor-attendance_new.js`. **API:** `GET camp/getAttendanceDetailsByMemberId/{memberId}` (`getAttendanceDetailsByMemberId.py`). For coach accounts the backend uses `members.coachDetailID` as program id and returns lab/attendance data via `getAttendanceDetailForCoach`. **DB:** `student_attendance`, `student_attendance_type`, payment/session data. Page: lab dropdown, student list, filters, check-in; instructor records attendance per lab/session.
+
+### Notification Center
+
+**Script:** `nsd/notification.js` (class `Notification`). Fetches notifications , renders list with filter (type, date, search) and pagination, shows unread count (e.g. `.notification-budge`, `.notification-count`). Mark-as-read and list UI are in the same script.
