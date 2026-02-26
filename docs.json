@@ -199,7 +199,8 @@
             "pages": [
               "nsd/customer-portal/dashboard",
               "nsd/customer-portal/registration",
-              "nsd/customer-portal/untitled-page"
+              "nsd/customer-portal/untitled-page",
+              "nsd/customer-portal/supplimentary-program"
             ]
           },
           {
