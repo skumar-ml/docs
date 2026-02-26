@@ -35,14 +35,13 @@ If the user has no enrolled programs, the page shows the free resources(Sorry, n
 
 ## Technical
 
-**Script:** `nsd/new_registration_form.js` — class `NSDPortal`. Constructor takes `webflowMemberId`, `accountEmail`, `apiBaseUrl`; calls `getPortalData()`, which fetches `getCompletedForm/{memberId}/all` and then builds the portal UI.
+**Script:** `new_registration_form.js` — class `NSDPortal`. Constructor takes `webflowMemberId`, `accountEmail`, `apiBaseUrl`; calls `getPortalData()`, which fetches `getCompletedForm/{memberId}/all` and then builds the UI.
 
 ### API — getCompletedForm
 
 - **Endpoint:** `GET getCompletedForm/{memberId}/all`
 - **Path:** `memberId` (Webflow/member id), `all` (all sessions).
 - **Response:** `studentData` — array of objects, one per enrolled program/session. Each object includes `programDetail` (programName, startDate, endDate, deadlineDate, programDetailId, debateEvent), `studentDetail` (studentName, studentEmail, uniqueIdentification, currentYear), `formList`, `formCompletedList`, `programCategory`, `uploadedContent`, and optionally `failedPayment`.
-- **Usage:** Drives free vs paid view (`hidePortalData`), program tabs, and per-tab form list, progress, and resources.
 
 ### Program tabs (technical)
 
