@@ -39,7 +39,7 @@ Then, our onClickListener calls `AddStudentData()`, which validates and submits 
 
 ### Data & Rendering
 
-After a member has logged in, the `classDetailsStripe` instance is created on page load (from **\<TODO: What is classDetailsStripe? I think it's the first time it's mentioned\>)**. This triggers the `getUpsellProgramV2` API, which fetches upsell programs for **both** current session and summer session. The frontend filters out `sessionId !== 2`, where `sessionId = 2` represents the summer session, and the filtered upsells are then rendered in both the **banner CTA** and **bundle selection modal \<TODO: by which JS file?\>**. 
+After a member has logged in, the `classDetailsStripe` instance is created on page load (from **\<TODO: What is classDetailsStripe? I think it's the first time it's mentioned\>)**. This triggers the `getUpsellProgramV2` API, which fetches upsell programs for **both** current session and summer session. The frontend filters out `sessionId !== 2`, where `sessionId = 2` represents the summer session, and the filtered upsells are then rendered in both the **banner CTA** and **bundle selection modal \<TODO: by which JS file?\>**.
 
 ### Logic Bundle Modal Open and Skip
 
@@ -56,6 +56,14 @@ The modal opens when the user clicks **Next** (on the Student Details Form), unl
 ### Selection Logic
 
 Selecting an upsell program adds the program to `$selectedProgram`, a frontend state array that stores all bundle programs currently selected by the user for the active checkout session. We keep track of upsell state (selected or not) via their `programDetailId`, which is used to control the UI state in various locations (banner vs. modal). On each selection change, the checkout pricing logic is triggered method **updateAmount()**, recalculating the total amount and updating the cart UI based on the programs stored in `$selectedProgram`.
+
+`Original tuition fee display (updateOriginPrice())`\
+The “original tuition fee” section is rendered into every element with `data-upsell="original-tution-fee"`. The method clears those containers, then:
+
+1. **Program order** — Build the display list from `$selectedProgram`. If a core program exists (`$coreData`) and is in the selected set, it is shown first; all other selected programs follow (excluding the core). Otherwise the selected list is used as-is.
+2. **Per-program rows** — For each program in that order, a row is added with label `"Tuition " + program.label` (or `"Tuition"`) and price from `program.disc_amount` (formatted with commas and two decimals). The same row is appended to each `[data-upsell="original-tution-fee"]` container. A running **tuition total** is kept by summing `program.disc_amount`.
+3. **Tuition Total** — A single row labeled “Tuition Total” is added with the summed tuition total, and appended to each container.
+4. **New Student Fee** — A row labeled “New Student Fee” with a fixed **\$100** is always appended (the previous-student conditional is currently commented out).
 
 ## 4. Class Selection
 
