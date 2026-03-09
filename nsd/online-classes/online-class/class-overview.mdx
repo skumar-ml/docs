@@ -1,0 +1,93 @@
+---
+title: "Class Overview Page"
+---
+
+https://www.nsdebatecamp.com/online-classes/class-overview
+
+The [**NSD Online Classes program page**](https://www.nsdebatecamp.com/online-classes/class-overview) is a marketing and catalog page for online debate classes. It shows classes by session (e.g. Summer, Fall), grade, and term, with schedule options and pricing. This page does not handle checkout—users go to [**Online Classes Checkout**](https://www.nsdebatecamp.com/online-class-checkout) to enroll. The checkout URL is built with query parameters so the checkout page can load the correct offerings (see [Checkout](/online-classes/checkout)).
+
+## **Non-Technical**
+
+### **What the user sees**
+
+**Top banner**
+
+- Line such as: “Expert-led online classes for LD & PF. Small groups, flexible schedules.”
+- **Enroll Now** or **View Classes** button; **Register Now** on a class card builds a **dynamic** checkout link (parameters vary by the class clicked) and opens the [online class checkout](https://www.nsdebatecamp.com/online-class-checkout).
+- Hero image
+- Headline similar to “Online Debate & Speech Classes. Find the Right Program for Your Child” with a short line explaining that families can browse upcoming classes by level, location, and time.
+- Directly under the hero is a **Term** summary table with three columns — **Term**, **Duration & Class Length**, and **Dates** — listing rows like **Semester**, **Minimester 1**, and **Minimester 2** with their weeks, class length, and date ranges.
+
+**Class catalog**
+
+- Section heading like “CLASS CATALOG” with a subtitle such as “Browse our complete class offerings by term.”
+- **Grade buttons/pills** (e.g. `5th–6th`, `7th–8th`, `9th+`) appear below the subtitle. **The middle grade (e.g. 7th–8th) is selected by default** on initial load, so the class list is shown immediately for that grade without the user having to click a filter.
+- Under the hood, the page still filters by **Session** (e.g. Summer, Fall) — required — and optionally by **Grade** and **Term**. When **Grade** is selected (or defaulted), the frontend passes the **grade label** as the `grade_id` query parameter; the API returns classes **filtered by that grade label** (lookup is by label, not by ObjectId).
+- **Dynamic list of classes** is filled by **getClassesList** using these params. Classes are grouped by **term** (e.g. Semester with a "Most Popular" badge, date range, and a count like "5 Classes"). For each class the user sees:
+  - **Class name** and expandable **Learn More** for full description; **Pre-requisite** (e.g. "None") when present
+  - **Course fee** (price from session detail)
+  - **Term** (term name, dates)
+  - **Sessions** — one or more offerings with day and time (e.g. Wed 3:30pm, Fri 5:30pm), **spots left** (e.g. "10 spots left"), and capacity indicator
+  - **Register Now** and **Learn More** — the user selects a **class** (not a specific schedule/offering). On click of Register Now, a **dynamic** checkout link is created from that class’s context and the user is sent to the online class checkout page (see below).
+- If the API returns no classes, the user may see an error or empty state (e.g. “No classes are currently available for this session/grade/term.”). A loading spinner can appear while data is loading.
+
+**Register link — checkout URL (dynamic)**
+
+When the user clicks the **Register** link on a **class** card, the frontend builds the checkout URL **dynamically** from that class’s context. The parameters **vary** depending on which class was selected (grade, session, term, and class all differ per card). The URL format is:
+
+`https://www.nsdebatecamp.com/online-class-checkout?grade_id={grade_id}&grade_name={grade_name}&session_name={session_name}&session_detail_id={session_detail_id}&class_detail_id={class_detail_id}`
+
+- **grade_id** — value for the grade of the selected class (varies by class/grade tab).
+- **grade_name** — display label for that grade (e.g. 7th-8th, 5th-6th).
+- **session_name** — session name for the selected class (e.g. Fall, Summer).
+- **session_detail_id** — session detail id for that term/session (varies by class context).
+- **class_detail_id** — the class the user clicked (varies per class card).
+
+All of these values are taken from the **class** (and its term/session/grade) the user clicked; they are not static. The checkout page then loads offerings for that context and lets the user pick a **schedule** (class_offering_id) and complete enrollment.
+
+**Other**
+
+- Footer, trust/statistics, and any chat widget are typical; they are not driven by the listing API.
+
+## **Technical**
+
+### **Overview**
+
+This program page uses **only two APIs** to load class data:
+
+1. **getCurrentClassYear** — Returns the current class year (e.g. for filtering or display). Called first so the frontend can use the correct year context.
+2. **getClassesList** — Main catalog: pass `session_id` (required), optional `grade_id` (value is the **grade label**, e.g. "7th-8th", "4th & 5th"; the API looks up the grade by label and filters results by that grade), and optional `term_id` / `term_name`. Returns a hierarchy: grades → sessions → terms → classes with schedules (each schedule has `class_offering_id`). Used to render the full class catalog. When `grade_id` is passed, the list is shown **on the basis of that grade label** (filtered to that grade).
+
+The checkout page uses different APIs (getClassOfferings / getClassOfferingsBySessionDetailId) to load offerings when the user arrives with URL parameters; see [Checkout](/online-classes/checkout).
+
+### **API — get class listing data**
+
+- **getCurrentClassYear**
+  - **Endpoint:** `GET {apiBaseURL}camp/classes/year/current`
+  - **Query params:** None.
+  - **Response:** JSON with `success`, `data` (object with `year_id`, `year`). Used to get the current academic year from `class_year` (current calendar year, or most recent year in DB if not found).
+  - **Backend:** `getCurrentClassYear.py` — reads `class_year` collection.
+
+- **getClassesList**
+  - **Endpoint:** `GET {apiBaseURL}camp/classes`
+  - **Query params:**
+    - `session_id` (or `session_name`) — **required** (e.g. "Summer", "Fall").
+    - `grade_id` — **optional**. The value is the **grade label** (string), not a MongoDB ObjectId. Examples: "7th-8th", "4th & 5th", "6-8", "9th-12th". The API looks up the grade in `class_grade` by this label (exact/case-insensitive and fuzzy normalization) and then **filters the catalog to show only classes for that grade**. So the list is shown **on the basis of grade label** when this param is passed.
+    - `term_id` (or `term_name`) — optional (term name for filtering).
+  - **Response:** JSON with `success`, `data` (array of grade objects: `grade_id`, `gradeLabel`, `sessions` → `terms` → `classes` with `class_detail_id`, `className`, `description`, `price`, `schedules`), and `year`. Each schedule has `class_offering_id`, `day`, `start_time`, `end_time`, `total_spots`, `enrolled_count`, `available_spots`.
+  - **Backend:** `getClassesList.py` — uses `class_year`, `class_sessions`, `class_session_details`, `class_offerings`, `class_details`, `class_grade` (grade lookup by label when `grade_id` is passed), `class_term`, and `online_class_payment_details` for enrollment counts.
+
+### **Flow (listing page)**
+
+- **Init:** On load, the page calls **getCurrentClassYear** (optional, for year context), then **getClassesList** with `session_id` (required) and **grade_id** set to the **middle grade label by default** (e.g. "7th-8th") so the class catalog shows classes immediately. When the user changes the grade tab/filter, **grade_id** is updated to that grade label. Optional `term_id` / `term_name` can also be passed.
+- **Render:** If `response.success` and data present, render grade/session/term/class cards. **On click of Register:** the user has selected a **class** (not a class_offering_id). The frontend creates the checkout link **dynamically** from that class’s context — `grade_id`, `grade_name`, `session_name`, `session_detail_id`, and `class_detail_id` all **vary** depending on which class card was clicked. The frontend navigates to `https://www.nsdebatecamp.com/online-class-checkout?grade_id=...&grade_name=...&session_name=...&session_detail_id=...&class_detail_id=...` with the values for that class. The checkout page uses these params to load offerings and lets the user pick one schedule (class_offering_id) before payment.
+- **Empty/error:** If no data or API error, show “No classes are currently available” (or similar) and optionally hide loading spinner.
+
+### **Data shape (for checkout)**
+
+On the **class overview** page the parent selects a class, and class offerings will be shown in the **Select class and pay** tab in checkout. The Register link passes the class context in the URL: `grade_id`, `grade_name`, `session_name`, `session_detail_id`, `class_detail_id` (all dynamic, varying by class). On the **checkout page**, the user then selects one **schedule/offering** (class_offering_id) from the offerings loaded for that context; that class_offering_id is what `createCheckoutUrlForOnlineClass` requires for payment.
+
+### **Differences from online-classes checkout page**
+
+- **Program page (/online-classes/class-overview):** Listing only; uses **getCurrentClassYear** and **getClassesList** only; no cart, no student details, no payment. Purpose: catalog and “Register Now” / “Enroll” CTA.
+- **Online Classes checkout (/online-class-checkout):** URL includes `grade_id`, `grade_name`, `session_name`, `session_detail_id`, `class_detail_id`; page fetches offerings via `GET camp/classes/offerings/list`; requires login, student details, and single class offering selection; uses `createCheckoutUrlForOnlineClass`; purpose: enrollment and payment flow.
