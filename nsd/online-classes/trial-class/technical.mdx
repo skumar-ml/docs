@@ -2,9 +2,9 @@
 title: "Trial Class System (Technical)"
 ---
 
-This section explains the technical implementation of the Trial Class system, including database structure, APIs, and the Trial Class page behavior.
+This section explains how the **Trial Class system** works, including how trial classes are created, how available classes are displayed on the Trial Class page, and how student registrations are stored in the database.
 
-The system includes:
+The system supports:
 
 - Trial class scheduling
 - Student registration
@@ -13,39 +13,61 @@ The system includes:
 
 ---
 
-# Core Logic Flow
+### Overview
 
-The Trial Class system operates in three main stages:
+The Trial Class system allows administrators to schedule trial classes and allows prospective students to register for them.
 
-1. **Trial Class Creation**
-   - Admin creates a trial class through Retool.
-   - A record is stored in the `trial_class_details` collection.
+The process includes three main stages:
 
-2. **Class Retrieval**
-   - The Trial Class page fetches available classes using the API.
-   - Only classes with `date >= today` are returned.
+1. **Trial Class Creation** – Admin creates trial classes through Retool.
+2. **Trial Class Display** – The Trial Class page retrieves upcoming classes from the backend.
+3. **Student Registration** – Parents submit a registration form which creates a database record.
 
-3. **Student Registration**
-   - Parents submit the Trial Class form.
-   - A registration record is created in `trial_class_registrations`.
-
-4. **Attendance Tracking**
-   - Admin marks attendance through Retool.
-   - The `attended` field is updated.
+Attendance for each registration can later be updated by administrators.
 
 ---
 
-# Trial Class Page
+## Trial Class Creation
 
-## Populating Available Classes
+Trial classes are created through Retool using the Trial Class Detail APIs.
 
-When the Trial Class page loads:
+When a class is created:
 
-1. The frontend calls the Trial Class Detail API.
-2. The API returns all **upcoming trial classes**.
-3. Classes are displayed to users.
+- A new document is inserted into the **`trial_class_details`** collection.
+- The class becomes available on the Trial Class page if the date is in the future.
 
-Displayed information includes:
+Each trial class includes:
+
+| Field | Description |
+|------|-------------|
+| date | Date of the trial class |
+| start_time | Class start time |
+| end_time | Class end time |
+| start_grade | Minimum grade allowed |
+| end_grade | Maximum grade allowed |
+| number_spots | Maximum number of students |
+
+The system records **created_on** and **updated_on** timestamps automatically.
+
+---
+
+## Trial Class Page
+
+The Trial Class page allows parents to view available trial classes and register a student.
+
+### Populating Available Classes
+
+When the page loads, the frontend retrieves trial class details from the backend.
+
+**API:** `GET /camp/trialClassDetail`
+
+The backend performs the following:
+
+- Queries the **`trial_class_details`** collection.
+- Filters out past classes (`date < today`).
+- Sorts classes by date (earliest first).
+
+The frontend then displays available options showing:
 
 - Date
 - Time
@@ -55,86 +77,123 @@ Displayed information includes:
 
 ## Trial Class Registration
 
-Parents fill out a form containing:
+Parents can register their student for a trial class by completing a registration form.
 
-- Student information
-- Parent contact details
-- Selected trial class
+### Data Submitted
 
-After submission:
+**Student Details**
 
-1. The frontend sends the data to the Trial Class Registration API.
-2. The backend validates the request.
-3. A registration record is inserted into the database.
+| Field | Description |
+|------|-------------|
+| first_name | Student first name |
+| last_name | Student last name |
+| grade | Student grade |
 
----
+**Parent Details**
 
-# Database Collections
+| Field | Description |
+|------|-------------|
+| first_name | Parent first name |
+| last_name | Parent last name |
+| email | Parent email |
+| phone | Parent phone number |
 
-## `trial_class_details`
+**Trial Class Selection**
 
-Stores information about each trial class.
-
-Fields include:
-
-- `date`
-- `start_time`
-- `end_time`
-- `start_grade`
-- `end_grade`
-- `number_spots`
-- `created_on`
-- `updated_on`
+| Field | Description |
+|------|-------------|
+| trial_class_id | Selected trial class identifier |
 
 ---
 
-## `trial_class_registrations`
+### API Call: Create Trial Class Registration
+
+**API:** `POST /camp/trialClassRegistration`
+
+When the form is submitted:
+
+1. The frontend sends the student and parent information with the selected trial class ID.
+2. The backend validates the request fields.
+3. The system verifies that the trial class exists.
+4. A new registration record is created in the **`trial_class_registrations`** collection.
+
+The `attended` field defaults to **false**.
+
+---
+
+## Viewing Trial Class Registrations
+
+Administrators can retrieve registrations using the Trial Class Registration APIs.
+
+**Endpoints**
+
+- `GET /camp/trialClassRegistration`
+- `GET /camp/trialClassRegistration/{id}`
+- `GET /camp/trialClassRegistration?trial_class_id={id}`
+
+These endpoints allow:
+
+- Viewing all registrations
+- Viewing a specific registration
+- Viewing registrations for a specific trial class
+
+---
+
+## Attendance Tracking
+
+After a trial class occurs, administrators can mark students as attended.
+
+### API Call: Mark Attendance
+
+**API:** `POST /camp/trialClassRegistration/{id}/attend`
+
+When this endpoint is called:
+
+- The system updates the registration record.
+- The **`attended`** field is set to `true`.
+
+This action is typically triggered from Retool.
+
+---
+
+## Database Collections
+
+### `trial_class_details`
+
+Stores information about scheduled trial classes.
+
+| Field | Description |
+|------|-------------|
+| _id | Trial class identifier |
+| date | Class date |
+| start_time | Start time |
+| end_time | End time |
+| start_grade | Minimum grade |
+| end_grade | Maximum grade |
+| number_spots | Maximum students |
+| created_on | Creation timestamp |
+| updated_on | Last updated timestamp |
+
+---
+
+### `trial_class_registrations`
 
 Stores student registrations.
 
-Fields include:
-
-- Student details
-- Parent contact details
-- Trial class ID
-- Attendance status
-- Creation timestamp
-
----
-
-# APIs
-
-The Trial Class system includes APIs for managing classes and registrations.
-
-## Trial Class Detail APIs
-
-Used to manage trial class sessions.
-
-Operations include:
-
-- Create trial class
-- Retrieve trial class details
-- Update trial class
-- Delete trial class
+| Field | Description |
+|------|-------------|
+| _id | Registration identifier |
+| student | Student information |
+| parent | Parent contact details |
+| trial_class_id | Linked trial class |
+| attended | Attendance status |
+| created_on | Registration timestamp |
 
 ---
 
-## Trial Class Registration APIs
+## System Behavior Notes
 
-Used to manage student registrations.
-
-Operations include:
-
-- Create registration
-- Retrieve registrations
-- Filter registrations by trial class
-- Mark attendance
-
----
-
-# System Behavior Notes
-
-- Trial classes in the past are automatically filtered out.
-- Registration records default to `attended = false`.
-- All registrations reference a specific trial class.
-- Admin actions are performed through Retool using the backend APIs.
+- Only **future trial classes** are returned by the API.
+- Registrations default to **`attended = false`**.
+- Each registration references a specific trial class via `trial_class_id`.
+- Retool uses the Trial Class APIs to manage classes and attendance.
