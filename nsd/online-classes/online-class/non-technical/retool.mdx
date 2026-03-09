@@ -1,0 +1,116 @@
+---
+title: "Retool (Online Classes)"
+---
+
+This guide focuses on **how to use** the Retool screens for Online Classes—what each page is for and how to complete common tasks. It is written for admins and operators; it does not cover technical implementation (APIs or database details).
+
+Admins manage all **Online Classes** data via Retool. Under the **Online Classes** dropdown you can open: **Class Offerings**, **Class Levels**, **Class Sessions Details**, **Manage Sessions**, **Manage Grades**, **Manage Class Terms**, and **Create Year**. On most screens you can **add, edit, and delete** records (Create Year is add-only; there is no edit or delete for years). Changes here drive what appears on the [Class Overview](/online-classes/class-overview) page and what parents can select and pay for at [Checkout](/online-classes/checkout).
+
+## Overview: How the data fits together
+
+- **Academic year** — The year (e.g. 2026) that scopes which sessions and pricing are current.
+- **Sessions** — Named periods (e.g. **Fall**, Summer) that appear on the class overview.
+- **Terms** — Term types (e.g. **Semester**, Minimester 1/2) with a label and description (e.g. length).
+- **Grades** — Grade labels (e.g. **5th-6th**, 7th-8th, 9th+) used as filters on the class overview; each class can be linked to one or more grades.
+- **Session details** — A combination of **year + session + term** with **start date**, **end date**, **price**, and whether it’s active. This is what checkout and the website use to show the right schedules and price.
+- **Classes** — The actual course (e.g. Intro to Debate): name, description, prerequisite, and which grades can see it. Shown in the class catalog.
+- **Offerings** — **Schedule slots** for a class in a given session detail: day, start/end time, and total spots. Parents pick one of these at checkout when they enroll.
+
+---
+
+## **Create Year**
+
+**Use this page to:** Create a new academic year (e.g. 2026). There is **no edit or delete** for years—use this page only when you need to add a new year at the start of an academic cycle. The website uses the current year to show the right sessions and pricing.
+
+**What you'll see / fill in:**
+
+- **Year** — The year number (e.g. 2026).
+- Timestamps for when the record was created or last updated (usually automatic).
+
+---
+
+## **Manage Class Terms**
+
+**Use this page to:** Add, edit, or delete term types (e.g. Semester, Minimester 1, Minimester 2). The terms you define here appear in the term table on the class overview and in filters. The page also shows **session name** and **term name** for each term; those values come from the **session details** (the records that link year, session, and term with dates and price—see **Class Sessions Details**).
+
+**What you'll see / fill in:**
+
+- **Term ID** — Internal identifier (e.g. semester).
+- **Term name** — Display name shown to parents (e.g. "Semester").
+- **Description** — Short description (e.g. full semester 12–15 weeks).
+- **Sort order** — Order in which the term appears in the UI.
+
+---
+
+## **Manage Sessions**
+
+**Use this page to:** Add, edit, or delete session names (e.g. Fall, Summer). The sessions you define here appear on the class overview and wherever checkout or the site refers to a session.
+
+**What you'll see / fill in:**
+
+- **Session name** — Display name (e.g. "Fall").
+- **Sort order** — Order in the UI.
+- Timestamps for created/updated (usually automatic).
+
+---
+
+## **Manage Grades**
+
+**Use this page to:** Add, edit, or delete grade labels (e.g. 5th-6th, 7th-8th, 9th+). These labels are the grade filters (pills) on the class overview; parents use them to see classes for their child’s grade.
+
+**What you'll see / fill in:**
+
+- **Label** — The grade range shown to parents (e.g. "5th-6th"). Must match how you want it to appear on the site.
+- **Sort order** — Order of the grade filter in the UI.
+- Timestamps for created/updated (usually automatic).
+
+---
+
+## **Class Sessions Details**
+
+**Use this page to:** Create and manage session details—each record links a **year**, **session** (e.g. Fall), and **term** (e.g. Semester) and sets the **date range**, **price**, and whether it’s active. The website and checkout use this to show the right schedules and price for that session/term.
+
+The page has **two filters** at the top: **Session** (e.g. Fall) and **Year**. **Year** defaults to the current year (e.g. 2026). Use them to narrow the list before adding or editing.
+
+**What you'll see / fill in:**
+
+- **Year** — Which academic year this applies to.
+- **Session** — Which session (e.g. Fall).
+- **Term** — Which term type (e.g. Semester).
+- **Start date** / **End date** — Date range for the term (e.g. Sept 7–Dec 6).
+- **Price** — Base price (e.g. 950).
+- **Is active** — Whether this session detail is currently active and visible on the site.
+
+---
+
+## **Class Levels**
+
+**Use this page to:** Add, edit, or delete classes (e.g. Intro to Debate). You set the class name, description, prerequisite, and which grade ranges can see this class. The classes you define here appear in the catalog; the grade(s) you pick control which grade filters on the class overview show this class.
+
+**What you'll see / fill in:**
+
+- **Class name** — Display name (e.g. "Intro to Debate").
+- **Grades** — Which grade ranges can see this class (e.g. 5th-6th). You can select more than one.
+- **Description** — Full course description (shown in “Learn More” on the catalog).
+- **Prerequisite** — Prerequisite text (e.g. "Required For New 5th & 6th Graders").
+- **Sort order** — Order in which the class appears in the catalog.
+
+---
+
+## **Class Offerings**
+
+**Use this page to:** Add, edit, or delete schedule slots (day/time and capacity) for a class in a given session. Each offering is one option parents can choose at checkout (e.g. “Intro to Debate, Fall Semester, Tuesday 10:00–11:30, 12 spots”). What you set here is what appears as available schedules and spots on the site.
+
+In **Add** and **Edit**, the page shows **session details** (e.g. session name and term name from the session details records) so you can select the correct one. That selection is what sets or updates the **session detail** on the class offering—so the offering is tied to the right year/session/term (and thus the right price and dates) on the website and at checkout.
+
+The page has **two filters**: **Session** (e.g. Fall) and **Year**. **Year** is set to the current year (e.g. 2026). Use them to narrow the list before adding or editing.
+
+**What you'll see / fill in:**
+
+- **Class** — Which class this schedule belongs to (e.g. Intro to Debate).
+- **Session detail** — Which year/session/term combination (e.g. Fall 2026 Semester). Picking one here updates the offering’s link to that session detail.
+- **Day** — Day of the week (e.g. Tuesday).
+- **Start time** / **End time** — Time range (e.g. 10:00–11:30).
+- **Total spots** — Maximum number of enrollments for this slot; the site uses this to show “X spots left.”
+
+---

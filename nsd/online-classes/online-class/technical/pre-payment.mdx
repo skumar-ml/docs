@@ -1,0 +1,109 @@
+---
+title: "Pre-Payment (Online Classes Checkout)"
+---
+
+## 1. Login / Signup / Checkout Redirection
+
+### Authentication
+
+Online classes checkout uses the same **Memberstack**-based authentication pattern as camp checkout. Memberstack detects whether a user is logged in by checking for an active member session on page load. Before authentication, login/signup sections (signup form, login modal) are shown, while post-login sections (online-classes cart and multi-step checkout process) are hidden using `data-ms-content="!members"` and `data-ms-content="members"`.
+
+For custom logic, the session is read from `localStorage` (`memberstack`) and the `webflowMemberId` is used to confirm authentication:
+
+```js
+var memberstackData = JSON.parse(memberstack);
+var webflowMemberId = memberstackData.information.id;
+if (webflowMemberId != null) {
+  // User logged in or just signed up
+} else {
+  // User not logged in
+}
+```
+
+Parents can either **log in** with an existing account or **create a new Parent Account directly on the checkout page**. After signup, Memberstack automatically logs them in and the online-classes checkout UI is shown (Select class & student details → Select class and pay).
+
+**Implementation (auth & layout):** Same Memberstack configuration as camp checkout. The online classes checkout page uses Memberstack’s `data-ms-content` attributes plus inline JS to:
+
+- Show **login / signup** when no member session is present.
+- Show the **Select class & student** and **Select class and pay** sections only when `memberstack` session is present.
+
+### Checkout Entry and Redirect Back to Online Classes
+
+- Entry is from the **Online Classes overview page** (`/online-classes/class-overview`) when a parent clicks **Register / Register Now / Enroll** on a class card.
+- The overview page builds a **dynamic** checkout URL with the selected class context (grade, session, term, class) and navigates to:
+  - `https://www.nsdebatecamp.com/online-class-checkout?grade_id=...&grade_name=...&session_name=...&session_detail_id=...&class_detail_id=...`
+
+When a user visits the online classes checkout page, we may save the checkout URL (including query params) in `localStorage.redirect_url`. After logging-in or signing-up, Memberstack (via its post-auth redirect) can send users to `/portal/home` or another portal page with JS that:
+
+1. Checks if `redirect_url` exists in `localStorage`.
+2. If present, reads and deletes it.
+3. Redirects the user back to the **online-class-checkout** URL for the class they were trying to purchase.
+
+### Abandoned Checkout State (before payment)
+
+Before payment, the frontend can persist basic checkout state for online classes so that:
+
+- If the user leaves the page **before paying**, the next visit to the online-class checkout (or a “Resume Checkout” link) can restore:
+  - Selected grade/session/term/class
+  - Selected class offerings (after the user picks a schedule)
+  - Student details (first/last name, email, grade, gender)
+
+## 2. Class & Session Data on Page Load (Landing on Online-Class Checkout)
+
+When the user lands on the **online-class checkout** page, the context is loaded from the **URL query parameters** and from the backend class APIs. On page load, the frontend:
+
+1. Parses the checkout URL parameters:
+   - `grade_id` (grade label/id for the selected tab)
+   - `grade_name` (display label, e.g. `7th-8th`)
+   - `session_name` (e.g. `Fall`)
+   - `session_detail_id` (`class_session_details._id`)
+   - `class_detail_id` (`class_details._id`)
+2. Calls the **class listing / offerings APIs** with these parameters:
+   - `GET camp/classes` (via `getClassesList`) on the overview page.
+   - `GET camp/classes/offerings/list?class_detail_id=&session_detail_id=` or `GET camp/classes/offerings/{sessionDetailId}` on checkout to get **offerings** (schedules) for the selected class and session.
+
+This data is used to:
+
+- Show the **class name, description, term, and base price**.
+- Show all available **schedules/offerings** for that class (day/time, total spots, enrolled count, available spots).
+- Let the parent choose a **single class offering** (`class_offering_id`) to enroll in.
+
+## 3. Student Details (Second Tab)
+
+For online classes, the **second tab** in checkout is **Student Details only**. Class selection happens later on the **Select Class & Pay** tab (third tab).
+
+- **Student Details:** Fields: **First Name, Last Name, Email (optional but recommended), Grade, Gender.** These are required for enrollment (first/last name at minimum) and are stored with the payment record.
+
+### Validation
+
+- The frontend validates required student fields (First Name, Last Name) and may enforce additional rules (e.g. email formatting).
+- Backend validation is performed again in `createCheckoutUrlForOnlineClass.py` and `stripePaymentListener.py`:
+  - Missing or invalid student fields result in a **400** error.
+  - Duplicate enrollment (same student email/parent email + same classOfferingId) is blocked by checking `online_class_payment_details`.
+  - Capacity is enforced by counting existing enrollments (`online_class_payment_details.count_documents`) against `total_spots` for the selected offering.
+
+### Moving to the Class & Payment Step
+
+When the user clicks **Next** on the Student Details tab:
+
+1. The frontend **does not call the backend yet**; it simply saves the student object (in state/Memberstack) and navigates to the **Select Class & Pay** tab.
+2. On the **Select Class & Pay** tab, the frontend:
+   - Uses the checkout URL (`grade_id`, `grade_name`, `session_name`, `session_detail_id`, `class_detail_id`) to load offerings (`class_offering_id` list) via the offerings API.
+   - Lets the parent choose **one** class offering (schedule) and a **payment method** (Card or ACH).
+3. **Only when the user clicks Pay Now** does the frontend send a **single POST** request to:
+   - `POST camp/createCheckoutUrlForOnlineClass`
+   including:
+   - **Auth:** `email`, `memberId` from Memberstack (parent account).
+   - **Student object:** `first_name`, `last_name`, optional `email`, `grade`, `gender`.
+   - **Selected class offering:** `class_offering_id` (from offerings API).
+   - **URLs:** `successUrl`, `cancelUrl` (e.g. online-classes payment confirmation page, current page with `returnType=back`).
+4. Backend (`createCheckoutUrlForOnlineClass.py`) validates everything (auth, student, class offering, spots, duplicate enrollment) and creates **Stripe checkout sessions** for:
+   - Card
+   - Bank Transfer (ACH)
+   - (Optionally Pay Later at the Stripe level; see Payment doc)
+5. The response returns at least:
+   - `cardUrl`
+   - `achUrl`
+   - `success: true`
+
+The **Select Class & Pay** tab then shows payment options for **Card** and **Bank Transfer**, wired to the returned URLs. Student and class selection data is stored in `stripe_checkout_customer` and, after successful payment, in `online_class_payment_details`.
