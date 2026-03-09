@@ -1,0 +1,64 @@
+---
+title: "Post-Payment (After Successful Checkout)"
+---
+
+This section explains everything that happens after a payment is made: Stripe webhook, database updates, and user redirection.
+
+## Core Logic Flow
+
+After a payment is completed, Stripe sends a webhook to the NSD camp backend. The webhook handler is **`stripePaymentListener.py`** — `lambda_handler`. It reads the event, looks up `stripe_checkout_customer` by **`sessionId`**, and routes by **`productType`**. For camp (core program) purchases, **`productType == "core"`** and the handler calls **`updatePaymentDetails(..)`**. Other types: **`supplementary`** → **`updateSuppPaymentDetails`**, **`invoice`** → **`updateInvoiceResponses`**, **`brief`** / **`briefPortal`** → **`updateBriefPaymentDetails`**.
+
+## `stripePaymentListener` (Stripe Webhook)
+
+**Implementation:** **`stripePaymentListener.py`** — **`lambda_handler`**. Exposed as **`POST stripePaymentListener.`**
+
+Stripe events handled:
+
+- **`payment_intent`** with **`status == "requires_payment_method"`** → treated as **Failed**: deletes **`invoice_responses`**, **`payment_details`**, **`brief_payment_details`** by **`payment_intent`**; updates **`stripe_checkout_customer`** with **`payment_intent`** and **`status: "Failed"`**.
+- **`charge`** with **`paid == True`** / **`status == "pending"`** / **`status == "failed"`** → status mapped to **Complete** / **Processing** / **Failed**; then the handler calls the update function for **`stripeCheckout["productType"]`**
+- **`checkout.session`** with **`payment_status == "paid"`** and **`amount_total == 0`** → zero-amount paid flow; generates a synthetic **`payment_intent`** and runs the same update path.
+
+**Idempotency:** The handler uses **`payment_intent`** as the unique key for **`payment_details`**. **`updatePaymentDetails`** calls **`find_one`** by **payment_intent** (from the charge object); if a record exists, it updates or deletes; if not, it inserts (when status is not Failed).
+
+### Behaviour by Payment Status
+
+- **Complete:** Post-payment processing in **`updatePaymentDetails()`** runs: DB writes to **`payment_details`**, **`supplementary_payment_details`** (if supplementary programs), **`brief_payment_details`** (if briefs), **`stripe_checkout_customer`** update, **sendSuccessEmailToAdmin()**, **sendWelcomeEmail()**, and **`receipt_url`** update when present.
+- **Processing:** Payment is stored as pending (e.g. bank transfer); **`stripe_checkout_customer.status`** is set to **Processing**; status is updated when the charge completes. Does all tasks mentioned in the "Complete" section.
+
+
+- **Failed:** **`updatePaymentDetails()`** deletes **`payment_details`** and **`supplementary_payment_details`** by **`payment_intent`**, and sets **`stripe_checkout_customer.status`** to **Failed**. No enrollment or further processing.
+
+## Database Writes & Updates
+
+### A. `payment_details`
+
+**Collection:** **`payment_details`** (database **`nsdebate`**).
+
+- **Insert (first successful payment):** When no record exists for **`payment_intent`**, **`updatePaymentDetails`** inserts one with  `payment_intent`, `studentEmail`, `studentName`, `parentEmail`, `memberId`.
+
+
+- **Update:** On later webhooks (e.g. bank transfer complete), **`receipt_url`** is set via **`db.payment_details.update_one`** (filter by **payment_intent**, **\$set** **receipt_url** from the charge object).
+- **Failure:** If **status == "Failed"**, **`updatePaymentDetails`** deletes **`payment_details`**, **`supplementary_payment_details`** by **`payment_intent`**, and updates **`stripe_checkout_customer`** with **`status: "Failed"`**.
+
+### B. `stripe_checkout_customer`
+
+On every webhook, **`stripe_checkout_customer`** is updated by **`sessionId`** using **`update_one`** with the session id and **\$set** for `payment_intent` and `status`. Lookup is **`db.stripe_checkout_customer.find_one`** by `sessionId` (see **stripePaymentListener.py**).
+
+### C. Supplementary & Briefs
+
+- **Supplementary:** If **`stripeCheckout["supplementaryProgramIds"]`** has entries and status is not Failed, **`addSupplementaryPaymentDetails(..)`** inserts into **`supplementary_payment_details`** (one per program).
+- **Briefs:** If **`briefEventIds`** is present and (status is Complete or Processing with Bank Transfer), **`addBriefPayment(..)`** is called; brief data is in **`brief_payment_details`**.
+
+## Emails Triggered
+
+- **Admin:** **`sendSuccessEmailToAdmin(stripeCheckout, currentYear["yearId"])`** when status is **Complete** (Card or Pay Later) or **Processing** (Bank Transfer), or zero-amount paid Complete.
+- **User:** **`sendWelcomeEmail(stripeCheckout, currentYear["yearId"])`** under the same conditions.
+- **Receipt:** Stripe sends the receipt email; **`receipt_url`** is stored in **`payment_details`** when present on the charge object.
+
+## User Redirection After Payment
+
+On success, Stripe redirects the user to the **success URL** that was passed when creating the checkout session. For NSD camp, this is built from **`memberData.site_url`**, e.g.:
+
+**site_url** + **payment-confirmation?programId=** + **programId**
+
+The user lands on the NSD payment confirmation page for the program they purchased. After successful payment, the frontend clear **`checkOutData`** from `localStorage` so the next checkout starts fresh.

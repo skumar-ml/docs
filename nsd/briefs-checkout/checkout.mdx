@@ -2,9 +2,110 @@
 title: "Checkout"
 ---
 
-Non-Technical
+The [NSD Briefs Checkout](https://www.nsdebatecamp.com/briefs-checkout) flow lets users buy debate briefs either as an **Annual Subscription Plan** (PF Annual, LD Annual, or LD + PF Bundle) or as **Single Briefs** (individual briefs by topic). This is separate from camp registration; there is no Student Details step and no program id—users create or log into an account, select briefs, choose a payment method, and are redirected to Stripe.
 
-Technical
+**The checkout flow follows a multi-step process:**
 
-- Focus on differences between camp part (in terms of Create Account, Student Details, Briefs Selection Screen)
-- Docs on how the subscription is implemented via Stripe
+Login / Sign-up →  Briefs Selection → Payment → Access Content
+
+Each step must be completed before proceeding to the next.
+
+**Step 1: Login / Sign-up via the cart page**
+
+When a user enters the checkout flow, they must log in or create a **Parent Account** before continuing.
+
+<Frame>
+  ![Image](/images/image-171.png)
+</Frame>
+
+### Step 2: Briefs Selection
+
+Once the parent account is created, the user moves to the **Briefs Selection** step.
+
+<Frame>
+  ![Image](/images/image-172.png)
+</Frame>
+
+Here, they can choose how they want to access the content:
+
+#### Annual Subscription Plan
+
+Users can **select** from PF Annual, LD Annual, or LD + PF Bundle. These provide full-season access at discounted yearly pricing.
+
+#### Single Briefs Plan
+
+<Frame>
+  ![Image](/images/image-173.png)
+</Frame>
+
+Users can also choose individual monthly briefs instead of a full subscription. Users can click **Preview Brief** at any time — before or after selecting a brief — to view a sample of the content. As the user selects briefs or a plan, the **Order Summary** updates on the right side showing selected items and total price. After making a selection, the user clicks **Next** to continue.
+
+### Step 3: Payment
+
+In this step, the user selects their preferred payment method.
+
+They can choose between:
+
+- **ACH / Bank Transfer** (includes a 3% discount)
+- **Credit / Debit Card**
+
+Once a payment method is selected, the user clicks **Next** to proceed to the Stripe payment page and complete the purchase.
+
+<Frame>
+  ![Image](/images/image-174.png)
+</Frame>
+
+### Differences from camp checkout
+
+- **No Student Details** — No camp program or student name/grade/school on this flow.
+- **No program id** — Brief data is loaded without a camp program (getBriefDetails is called without programId on this page).
+- **Two product types** — Annual subscriptions (brief _events_) vs single briefs (individual brief _ids_); payment uses different APIs (createCheckoutUrlForBriefEvent vs createCheckoutUrlForBrief).
+- **Single page for selection** — One “PDF Briefs” step with two accordions (Annual vs Single) instead of a briefs popup during camp checkout.
+
+## Technical
+
+**Frontend:** `briefs-events-checkout.js` — Class `BriefsEventsCheckout`. Fetches briefs and events from `getBriefDetails`, renders them in accordions, tracks `selectedBriefs` and `selectedEvents`, updates Order Details and total, and on **Pay Now** calls `createCheckoutUrlForBrief` (single briefs) or `createCheckoutUrlForBriefEvent` (annual events) and redirects to `cardUrl` or `achUrl`.
+
+### API — get brief data
+
+- **Endpoint:** `GET getBriefDetails` (no `programId` in briefs-checkout; optional query `programId` used in camp flow).
+- **Response:** `briefs` (array: single briefs catalogue), `briefEvents` (array: annual plans — `eventId`, `title`, `description`, `price`, `displayOrder`, `saved_amount`, `highlighted`, `features`), `debateEventId`.
+- **Backend:** `getBriefDetails.py` — reads `briefs` and `brief_events` (active, sorted by display_order). See [Camp Checkout Upsells](/nsd/camp-checkout/upsells) for full field list.
+
+### Flow (briefs checkout)
+
+- **API — get brief data:** Page load calls `getBriefDetails`; response stored in `this.data.briefs` and `this.data.briefEvents`.
+- **JS — render:** `getBriefsAndEvents()` clears accordion bodies, then:
+
+  <Note>
+    TODO: Everything below this needs to be formatted properly with code format instead of bold. I'm at a loss as to why this keeps happening. Please let me know what the issue is. **Sorry, Shubham, I will take care of it**
+  </Note>
+  - **Annual:** `renderEvents(this.data.briefEvents)` → container `[data-brief="annual-events-accordion"] .annual-subs-item-body`; for each event `createEventCard(event)`; sorted by `displayOrder`.
+  - **Single:** `renderBriefs(this.data.briefs) `→ container `[data-brief="single-briefs-accordion"] .briefs-accordion-item-body`; for each brief `createBriefCard(brief)`; `data-brief-id = brief.briefId`; sorted by `displayOrder`.
+- **JS — init and request (Checkout):** User selects items ( Add to Cart / Remove). `selectedBriefs` and `selectedEvents` updated; `updateTotal()` writes JSON to hidden `suppProIds`, updates` Order Details (data-briefs-checkout="briefs-order-details")`, and `updateOrderTotalDisplay(total)`. **Next** → `showPaymentMethod() `(validates at least one item); **Prev** → `showBriefsSelection()`. Payment tabs (ACH vs Card) trigger `debouncedUpdateTotal` and `refreshOrderDetails()` (credit card fee logic if applicable).
+- **API: POST (create checkout URL):** On **Pay Now**, `payNow()` builds `checkoutData` `(email, briefIds or briefEventIds, memberId, productType, successUrl, cancelUrl, source: "brief-checkout")`. If `selectedEvents.length > 0` → **POST** `createCheckoutUrlForBriefEvent`; else → **POST** `createCheckoutUrlForBrief`. Backend creates Stripe Checkout Session(s), returns `success, cardUrl, achUrl`.
+- **JS —** `after response`**:** If `responseText.success`, redirect to `responseText.cardUrl `(credit card) or `responseText.achUrl` (ACH).
+
+### Data attributes and sections
+
+- `data-briefs-checkout="select-briefs"` — Wrapper for the PDF Briefs step (accordions + Next).
+- `data-briefs-checkout="select-payment-method"` — Wrapper for the Pay step (payment tabs + Pay Now).
+- `data-briefs-checkout="pay-now"` — Pay Now button(s); id `pay-now-link-3` also used.
+- `data-briefs-checkout="empty-order-details"` — Shown when no items selected.
+- `data-briefs-checkout="briefs-order-details"` — Order Details list (`.brief-flex-wrapper` items, `.total-price-bold`).
+- `data-brief="annual-events-accordion"` / `data-brief="single-briefs-accordion"` — Accordion sections for Annual vs Single.
+
+### Backend — create checkout URLs
+
+- `createCheckoutUrlForBrief (createChecoutUrlForBrief.py)`: Body `email`, `briefIds` (array of brief \_ids for single briefs), `memberId, productType, successUrl, cancelUrl`. Creates Stripe Checkout Session for single brief purchase; returns `cardUrl, achUrl, success`.
+- `createCheckoutUrlForBriefEvent (createCheckoutUrlForBriefEvent.py)`: Same plus `briefEventIds` (array of event ids for annual plans). Creates Stripe Checkout Session for annual subscription; returns `cardUrl, achUrl, success.`
+
+### Subscription / Stripe
+
+- Payment methods: `card` and `us_bank_account (ACH)`. Session is created with `payment_method_types` and success/cancel URLs..
+- After payment, Stripe webhooks and backend logic record the purchase (e.g. `brief_payment_details`); user gains access to content (portal/dashboard). Subscription behavior (recurring vs one-time) depends on subscription type.
+
+### Comparison with camp checkout
+
+- **Camp checkout** uses `createCheckoutUrlsByProgram` / `updateStripeCheckoutDb` with `programId, briefEventIds, supplementaryProgramIds`, and Student Details; briefs are an upsell in a multi-step camp flow.
+- **Briefs checkout** uses `createCheckoutUrlForBrief` or `createCheckoutUrlForBriefEvent` with `briefIds` or `briefEventIds`, no `programId`, no Student Details; it is a standalone briefs-only flow with Create Account → PDF Briefs → Pay → Access Content.

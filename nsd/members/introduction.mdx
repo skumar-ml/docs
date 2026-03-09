@@ -4,6 +4,48 @@ title: "Introduction"
 
 TODO: Mirror BDC
 
-"Creating an Account", "Edit Account Info"
+## Signing up or Logging in
 
-- Not sure yet where to put family management stuff
+Users can create new accounts on our [sign-up page](https://www.nsdebatecamp.com/sign-up); while existing users can log in through the [log-in page](https://www.nsdebatecamp.com/log-in). Each account is uniquely associated with an email address.
+
+Users who have forgotten their password can reset it using the **Forgot Password** link on the log-in page.
+
+## Account Types
+
+The most important distinction between accounts is the **account type**, which can be ****parent, student, orcoach**** . We support multiple account types to ensure role-based access.
+
+These distinctions determine what each account type can access and do:
+
+- Both **parent** and **student** accounts can register for NSD classes.
+- **Parent** and **student** accounts see the same portal.
+- Only coach accounts can access the NSD Coach Portal, which we need to work on.
+
+There currently does not exist any mechanism for the admin or user to change the `accountType`. If a need arises, please inform the tech team, and we'll do it manually.
+
+## Technical Details
+
+### Memberstack
+
+Memberstack handles all of the member logic for the NSD site. This includes sign-in auth, password encryption, log-in redirects, gated content, and member-specific pages. NSD uses Memberstack V1; the account can be accessed via https://app.memberstack.io/login. Configuration and member data are separate from BDC.
+
+### Family Architecture
+
+Parent and student accounts are connected through a unique `familyId` that links family members together. This supports multiple students under (at least one) parent account and handles various sign-up scenarios.
+
+The logic is centralized in the account-creation flow and behaves as follows:
+
+**1. Parent-first ownership model**
+
+- The **parent record is the source of truth** for `familyId`.
+
+**2.**`familyId`**generation**
+
+- A **new** `familyId` is generated when a parent completes a payment (e.g. camp checkout) and the parent record has no `familyId` yet.
+- Implementation: `stripePaymentListener.py` and `welcomeEmail.py` use a **16-character random string** built from ****`parent firstName+ digits`**** .
+- At **signup** , the new member does not get a newly generated `familyId`; they are assigned the **existing** parent’s `familyId` if the parent is found via **payment_details** or **invited_member**
+
+**3. Student linkage**
+
+- Students are linked to a parent via `familyId`
+- If a student record exists without a `familyId`, it is updated with the parent’s `familyId` after successful registration of the camp.
+- Student linkage during account creation is based on **payment_details**.

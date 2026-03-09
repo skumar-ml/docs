@@ -1,0 +1,222 @@
+---
+title: "Dashboard"
+---
+
+TODO: How do we determine to display Free Resources vs. Camp. Registration Forms + invoice system. Camp Info. Portal Upsell. Camps vs. Briefs display. Display aggregated by students. Google Reviews pop-up.
+
+On a seperate page, you can detail out
+
+1. Family Detail Management
+
+## Non-technical
+
+## Free User View (No Camp Registration)
+
+If there is no briefs purchase or camp registration, we display the **Free Resources View**:
+
+- Displays Free Resources (articles, debate guides, educational content etc). This is a read-only, informational view.
+
+<Frame>
+  ![Image](/images/image-185.png)
+</Frame>
+
+## Purchase View
+
+If the parent has completed camp registration, we displays **details about their program**.
+
+<Danger>
+  KS : Shubham, I will update the sidebar pages description(Registration,  Add Family Member etc, which is currently in progress.
+</Danger>
+
+<Frame>
+  ![Image](/images/image-181.png)
+</Frame>
+
+#### Camp View
+
+Each student card displays enrolled programs (e.g., Flagship LD, Texas LD) and tutoring hours (if purchased).
+
+#### Registration Forms
+
+Parents can complete required camp forms. A progress tracker shows how many forms are completed.
+
+<Frame>
+  ![Image](/images/image-182.png)
+</Frame>
+
+#### Sidebar Navigation
+
+<Columns cols={2}>
+  <Card icon="sparkles" title="Pre-Camp & Year-Round Options">
+    Provides quick access to:
+
+    - Registration Forms, Check-in Calls, Tutoring etc.
+  </Card>
+  <Card icon="sparkles" title="Pre-Camp & Year-Round Options View">
+    <Frame>
+      ![Image](/images/image-180.png)
+    </Frame>
+  </Card>
+</Columns>
+
+#### Sidebar Upsells
+
+<Columns cols={2}>
+  <Card icon="sparkles" title="Discounted Programs">
+    Parents can view special discounted add-on programs available with their camp purchase.
+  </Card>
+  <Card icon="sparkles" title="Discounted Programs Sidebar View">
+    <Frame>
+      ![Image](/images/image-178.png)
+    </Frame>
+  </Card>
+</Columns>
+
+- Clicking **Buy Now** opens a purchase popup.
+
+  <Frame>
+    ![Image](/images/image-175.png)
+  </Frame>
+- Clicking **Learn More** shows detailed program information.
+
+  <Frame>
+    ![Image](/images/image-176.png)
+  </Frame>
+
+### Briefs View
+
+The Briefs tab allows users to select and view detailed project briefs directly from the dropdown list. They can optionally download the selected brief.
+
+<Frame>
+  ![Image](/images/image-184.png)
+</Frame>
+
+### Other Portal Features
+
+#### Google Review Popup
+
+The Google Review popup is designed to invite students to leave a Google Review. The Google review popup is shown only to students (not parents), and it appears when:
+
+- The student’s program has already started, and
+- The student has completed at least 50% of the program, or the program has been fully completed.
+- The popup will not be shown again within 30 days after it has been displayed once.
+
+<Frame>
+  ![Image](/images/image-186.png)
+</Frame>
+
+#### Edit User Profile
+
+Parents can also click **Update Profile** to edit their contact details via a popup. More details [on this page](/nsd/members/edit-account-info)
+
+## Technical
+
+**Frontend:** `new_portal.js` — Class `NSDPortal`. On init, `loadPortalData()` fetches `getPortalDetails/{memberId}` and `getInvoiceList/{memberId}/current`. Response drives **free vs registered** view (show/hide Camp and Briefs tabs, Free Resources vs paid resources). `hidePortalData(responseText, briefsData)` controls visibility. Camp content is rendered from `studentData` (sessions, forms, invoice); Briefs tab is populated by `BriefManager` when `brief` array is non-empty. Discounted Programs sidebar uses `nsd/portal-supp-program.js` (`DisplaySuppProgram`), which calls `getSupplementaryProgram/{memberId}`.
+
+### Free vs registered view
+
+- **Determination:** `hidePortalData(apiResponse.studentData, briefsData)` is called with `studentData` and `brief` from `getPortalDetails`.
+- **Camp tab:** Elements `[data-portal="camp-tab"]` are shown (`display: flex`) when `hasStudentData` is true — i.e. `studentData` is a non-empty array and not `"No data Found"`. Otherwise Camp tab is hidden (free user).
+- **Briefs tab:** Elements `[data-portal="briefs-tab"]` are shown when `briefsData.length > 0`. Otherwise hidden.
+- **Free Resources:** `#free-resources` is shown when `responseText === "No data Found"` or `responseText.length === 0` (no student/payment data).
+- **Paid resources:** `#paid-resources` is shown when there is brief data, or when there is student data (so registered user sees the full dashboard).
+
+### API — getPortalDetails
+
+- **Endpoint:** `GET getPortalDetails/{memberId}`
+- **Path:** `memberId` — Webflow/member id (logged-in parent).
+- **Response:** JSON with `studentData` (array of `{ studentName: { currentSession, futureSession, pastSession } }`; each session includes `programDetail, studentDetail, formList, formCompletedList, uploadedContent`, etc.) and `brief` (array of briefs: `title, pdf_url, doc_url, subscription`). Used to render Camp tab content and Briefs list and to drive `hidePortalData`.
+- **Backend:** `getPortalDetails.py` — Reads `members` (by `memberId`, then `familyId` for all family members); `brief_payment_details` (for `brief` list; uses `briefs` collection for title/urls); `payment_details` via `getStudentpaymentDetails(ids)`; `program_details, program_category, registration_data, registration_year` for session/form data. Returns `studentData` and `brief`.
+
+### API — getInvoiceList
+
+- **Endpoint:** `GET getInvoiceList/{memberId}/{session}`
+- **Path:** `memberId`, `session` (e.g. `current`).
+- **Purpose:** Returns invoice list for the member and session. Each item is keyed by `paymentId` and includes `invoiceList` (`invoice_id`, `invoiceName`, `is_completed`, `status`, `paymentProcessMsg`, `jotFormUrlLink `— payment links with `paymentLinkId, amount, paymentType, title)`. Used to render invoice rows and payment links in the Camp tab.
+
+### Database / collections (portal)
+
+<Accordion title="Schema">
+  | Collection / source       | Role                                                                                                    |
+  | :------------------------ | :------------------------------------------------------------------------------------------------------ |
+  | **members**               | Parent/family; **memberId**, **familyId**; used to resolve all family member ids for portal.            |
+  | **payment_details**       | Camp payments (via **getStudentpaymentDetails**); drives **studentData**, current/past/future sessions. |
+  | **brief_payment_details** | Brief purchases; used to build **brief** array (with **briefs** for title, **pdf_url**, **doc_url**).   |
+  | **briefs**                | Catalog; joined for portal brief list.                                                                  |
+  | **program_details**       | Program name, dates, links; joined for session display.                                                 |
+  | **program_category**      | Category, **formIds**; joined for form lists.                                                           |
+  | **registration_data**     | Completed form state per payment.                                                                       |
+  | **registration_year**     | Year label for display.                                                                                 |
+</Accordion>
+
+### Flow (dashboard load)
+
+1. **JS — init**\
+   `NSDPortal` constructor receives `memberId, accountEmail, baseUrl;` calls `loadPortalData()`.
+2. **API — getPortalDetails**\
+   `` fetchData(\getPortalDetails/$`)` `` → response `studentData, brief`.
+3. **API — getInvoiceList**\
+   `` fetchData(\getInvoiceList/$/current`)` `` → **invoiceData** stored for sidebar.
+4. **JS — transform and store**\
+   `transformApiResponse(apiResponse)` flattens `studentData` into `allSessions` (current/future/past per student). `this.allSessions`, `this.invoiceData`, **brief** retained.
+5. **JS — free vs registered (hide/show)**\
+   `hidePortalData(apiResponse.studentData, briefsData)` — toggles `[data-portal="camp-tab"]`, `[data-portal="briefs-tab"]`, `#free-resources, #paid-resources` as above.
+6. **JS — render**\
+   If `briefsData.length > 0, BriefManager(briefsData, …)` initializes (Briefs tab dropdown/list). `renderPortal()` builds Camp UI from `allSessions` (student tabs, sessions, `Go to Form / Go to Invoice`). `updateHeading()` runs.
+
+### Camp tab
+
+- **Data source:** `studentData` from `getPortalDetails`
+- **Rendering:** `renderPortal()` → `groupSessionsByStudent(), createStudentTabsContainer(), initializeWebflowTabs()`. Containers: `#nsdPortal`.
+- **Forms:** `formList, formCompletedList` from API; `Go to Form / Go to Invoice` link to form or invoice.
+
+### Forms and invoices
+
+- **How forms are rendered:** `formList` (from `program_category.formIds`) is sorted by `sequence`; each category’s **forms** are rendered by `renderSingleForm()`. Completed state comes from `formCompletedList` (match by `formId`); link text is **Go to Form** (not started), **Edit Form** (completed + live program + editable), or **View Form** (completed, read-only). Progress uses `countTotalForms()` (invoice-type forms `dropoff_invoice / pickup_invoice` excluded). Invoice section is built only when not all invoices are completed; `filterInvoiceForms()` can hide invoice forms until dropoff/pickup is done.
+- **How forms open:** `renderSingleForm()` sets `href` to `form.jotform.com/` (new) or `jotform.com/edit/ / jotform.com/submission/` (completed), with query params `memberId`, `studentEmail`, `accountEmail`, `paymentId`, `programDetailId`. Links with class `iframe-lightbox-link` (live form, viewport width \> 1200, not added_by_admin) are wrapped in `IframeLightbox` in `initiateLightbox()` after render — click opens the form URL in an overlay; otherwise the link navigates normally.
+- **How invoices are rendered:** **invoiceData** is matched to session by `paymentId` (`session.studentDetail.uniqueIdentification` or `session.paymentId`). `createInvoicesSection()` creates container `#invoice_${paymentId}`; `updateInvoiceList() / createSingleInvoiceElement()` render each invoice (name, status icon, **jotFormUrlLink** as payment links or “Go to Invoice” when empty). `getCheckedInvoiceIcon()` picks icon by status (Complete / Processing / Failed). `attachInvoicePaymentHandlers()` runs after DOM is in place.
+- **How invoices are paid:** Click on a payment link (element with `data-invoice-id, data-payment-link-id, data-amount, data-payment-id`) triggers `initializeStripePaymentS`. That method POSTs to `createCheckoutUrlForInvoice` with body `email`, `name`, `label`, `paymentType`, `amount` (cents), `invoiceId`, `paymentId`, `paymentLinkId`, `memberId`, `successUrl`, `cancelUrl`. On success the response’s **stripe_url** is used for `window.location.href`; user returns to dashboard from Stripe via success/cancel URLs.
+
+### Briefs tab
+
+- **Data source:** **brief** array from `getPortalDetails` (built from `brief_payment_details + briefs`).
+- **Rendering:** `BriefManager`  renders dropdown/list; user selects brief and can download `pdf_url or doc_url.`
+
+### Discounted programs (sidebar)
+
+- **Script:** `nsd/portal-supp-program.js` — `DisplaySuppProgram`. Calls `getSupplementaryProgram/{memberId}` (same endpoint as camp checkout; `memberId` used here for portal context).
+- **Containers:** `.discounted-programs-slick-slider`, `.desktop-slider-div`, `.supp-programs-description-wrapper` (modal). **Buy Now** / **Learn More** open purchase popup or program detail.
+
+### Update Profile
+
+- See [Edit Account Info](/nsd/members/edit-account-info) — `nsd/update_profile.js`.
+
+### Google review modal
+
+**Script:** `google_review_modal.js` — Class `GoogleReviewModal`. Invites **students** (not parents) to leave a Google review after completing a program. Modal is shown only when eligibility and timing conditions are met; state is stored in `localStorage` to avoid repeated prompts.
+
+**When it displays (logic)**
+
+1. **Init**\
+   Constructor receives `memberData (accountEmail, memberId, accountType, baseApiUrl)`. Reads `localStorage` key `googleReviewData` (base64-decoded JSON). If **studentEmail** in stored data differs from current `accountEmail`, storage is cleared. Then `isEligibleForReview()` runs.
+2. **Eligibility — account type**\
+   Modal is shown only when `memberData.accountType === "student"`. If the user is not a student, `checkConditionsAndShowModal` returns without showing.
+3. **Eligibility — program data**\
+   If `googleReviewData` is empty, the script calls `GET camp/getCompletedForm/{memberId}/current`. Response **studentData** is searched for the current user by `studentDetail.studentEmail === this.studentEmail`. If not found, modal is never shown. If found, `programDetail.startDate` and `programDetail.endDate` are stored in `googleReviewData` (and in `localStorage` via `updateGoogleReviewData`), then `checkConditionsAndShowModal()` runs.
+4. **Timing conditions (checkConditionsAndShowModal)**
+   - **Camp not started:** If `currentDate < startDate`, return (no modal).
+   - **Camp in progress:** Compute `completionPercentage = (elapsed / total camp duration) × 100`. Modal is allowed only if **camp is finished** (`currentDate >= endDate`) or **at least halfway through** (`completionPercentage >= 50 and currentDate < endDate`). Otherwise return.
+   - **Throttle:** If `googleReviewData.lastShownDate` exists and is **within the last 30 days**, return (do not show again).\
+     If all checks pass, `showModal()` runs and `lastShownDate` is set to today and saved to `localStorage`.
+5. **Display**\
+   `showModal()` adds class **show** to `#google-review-modal` and sets `style.display = "flex"`. Close buttons (`.google-review-close-link, #may-be-later`) call `closeModal()` (remove `show`, `display = "none"`).
+
+**API — getCompletedForm**
+
+- **Endpoint:** `GET getCompletedForm/{memberId}/current`
+- **Purpose:** Returns `studentData` for the current member/session; used to get `programDetail.startDate` and `programDetail.endDate` for the logged-in student so the modal can decide if the camp has started and if it is halfway or finished.
+
+**localStorage**
+
+- **Key:** `googleReviewData` — value is **base64-encoded** JSON (`btoa(JSON.stringify(...)`**)**, read with `atob + JSON.parse`).
+- **Stored fields:** `startDate, endDate, memberId, studentEmail, lastShownDate. lastShownDate (YYYY-MM-DD)` is used to throttle: do not show again within 30 days.(Eg -

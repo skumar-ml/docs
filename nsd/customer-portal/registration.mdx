@@ -1,0 +1,64 @@
+---
+title: "Registration"
+---
+
+The Registration page lets parents and students view their enrolled programs and complete pre-camp forms (e.g. Family Information, Health Form, Travel Details, Waivers) in one place. Implementation: `nsd/new_registration_form.js` (class `NSDPortal`).
+
+## Non-technical
+
+### Overview
+
+The page shows all programs the family is enrolled in (e.g. Texas LD, Flagship LD, Philadelphia PF Session 1). Each program appears as a tab/card with the program name, student name, program dates, and academic year.
+
+If the user has no enrolled programs, the page shows the free resources(Sorry, no records were found) view only. Once there is at least one enrollment, the paid resources view (the program grid and forms) are shown.
+
+### Program grid / tabs
+
+- **Layout:** A grid of cards (e.g. three per row), each representing one enrolled program/session.
+- **Each card shows:** Program name (e.g. Texas LD, Flagship LD), participant name (e.g. student first and last name), program dates (e.g. June 28 – July 1), and academic year (e.g. 2025–2026).
+- **Selection:** The selected program is visually highlighted (e.g. grey background). Clicking a card switches the context so the Pre-camp Registration Forms & Resources panel.
+
+<Frame>
+  ![Registration Forms 02 26 2026 03 50 AM](/images/Registration-Forms-02-26-2026_03_50_AM.png)
+</Frame>
+
+### Registration Forms & Resources panel
+
+- **Appearance:** A distinct panel. Title: "Registration Forms & Resources".
+- **Deadline:** A line such as “Needs to be completed by June 28th” (or the program’s form deadline date).
+- **Progress:** Text like “0% / 0 of 7 forms complete” — total number of required forms and how many are done. A progress bar reflects the same percentage.
+- **Form list:** Required forms are listed (e.g. Family Information, Debate Experience, NSD Rules & Waivers, Health Information Form, Roommate Request, Arrival Travel Information, Departure Travel Information). Each row has:
+  - A status icon (empty circle = not done, checkmark = completed).
+  - Form name.
+  - A link: `Go to Form` (not started), `Edit Form` / `View Form` (completed), or `Coming Soon` (form not yet available).
+- **Go to Form / Edit / View:** Clicking opens the form. On **desktop (wide screen)**, the form often opens in an overlay (lightbox); on smaller screens it may open in the same or a new tab. Completed forms can be edited (if still before the deadline) or viewed read-only.
+
+## Technical
+
+**Script:** `new_registration_form.js` — class `NSDPortal`. Constructor takes `webflowMemberId`, `accountEmail`, `apiBaseUrl`; calls `getPortalData()`, which fetches `getCompletedForm/{memberId}/all` and then builds the UI.
+
+### API — getCompletedForm
+
+- **Endpoint:** `GET getCompletedForm/{memberId}/all`
+- **Path:** `memberId` (Webflow/member id), `all` (all sessions).
+- **Response:** `studentData` — array of objects, one per enrolled program/session. Each object includes `programDetail` (programName, startDate, endDate, deadlineDate, programDetailId, debateEvent), `studentDetail` (studentName, studentEmail, uniqueIdentification, currentYear), `formList`, `formCompletedList`, `programCategory`, `uploadedContent`, and optionally `failedPayment`.
+
+### Program tabs (technical)
+
+- `createPortalTabs(tabsData)`: Iterates `studentData`; For each tab: `updateGlobalVariable(tab)` sets `$formsList`, `$completedForm`, `$programDetail`, `$studentDetail`, `$programCategory`, `$uploadedContent`, `$startDate`, `$endDate`, and `$totalForm` (reset).
+- **Tab header:** `.current-programs_sub-div`, `data-w-tab` Tab 1..N. Inner HTML: `programDetail.programName`, `studentDetail.studentName.first`/`last`, formatted `startDate`–`endDate`, `studentDetail.currentYear`.
+- **Tab pane:** `tabPane(index, tabIndex, isTabActive, tab)` builds the content for that program. `$formsList` is sorted by `sequence`; `formCategoryList()` and `createPreCampContent()` produce the Pre-camp HTML. Pane is wrapped in `.pre-camp_div` and inserted into `.portal-tab-content`.
+
+### Tab content (technical)
+
+- `createPreCampContent(formList)`: Builds a div with class `pre-camp_div`: “Pre-camp” label, “Registration Forms & Resources” title, `.cross-icon` (id `cross-icon`), deadline line (e.g. “Needs to be completed by June 28th” using `$startDate` and `getOrdinalSuffix()`), `progressBar()` HTML, `formList` (categories + form rows), and `resourceList()` (camp topic + resources).
+- `formCategoryList(formCategory)`: `filterInvoiceForms(formCategory.forms)` filters out `dropoff_invoice`/`pickup_invoice` forms until the corresponding dropoff/pickup form is completed. Renders a `pre-camp_subtitle` (category name) and `pre-camp_grid` containing `formsList(formCategory)`.
+- `formsList(formCategory)`: Sorts `forms` by `sequence`, maps each to `singleForm(form)`.
+- `singleForm(form)` first checks if the form is completed using `checkForm(formId)` to decide the icon and state. If the form is live, it generates different Jotform links based on completion and editability (Go to Form, Edit Form, View Form, or Completed); otherwise, it shows “Coming Soon.” Live forms increment `$totalForm`, and eligible ones get the `iframe-lightbox-link` class.
+- `progressBar()`: Uses `$completedForm.length` and `$totalForm` to show “X% / Y of Z forms complete” and a `sub-div` progress bar.
+- `filterInvoiceForms(forms)`: `form_sub_type` dropoff_invoice or pickup_invoice is shown only if the matching dropoff/pickup completed form (with `isInvoice == 'Yes'`) exists in `$completedForm`.
+
+### Forms opening (technical)
+
+- Form links use `form.jotform.com`, `jotform.com/edit`, or `jotform.com/submission` with the query params.
+- `initiateLightbox()`: After tabs are rendered, selects all `.iframe-lightbox-link` and attaches `IframeLightbox(el, { scrolling: true })` so clicks open the form URL in an overlay on desktop.

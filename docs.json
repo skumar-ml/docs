@@ -111,8 +111,7 @@
               "bdc/portal/referrals-copied-1",
               "bdc/portal/portal-upsell",
               "bdc/portal/returner-conversion",
-              "bdc/portal/briefs",
-              "bdc/portal/announcements"
+              "bdc/portal/briefs"
             ]
           },
           {
@@ -122,7 +121,8 @@
               "bdc/coach-portal/overview",
               "bdc/coach-portal/attendance",
               "bdc/coach-portal/millions",
-              "bdc/coach-portal/trial-classes"
+              "bdc/coach-portal/trial-classes",
+              "bdc/portal/announcements"
             ]
           },
           {
@@ -165,7 +165,9 @@
           {
             "group": "Members",
             "pages": [
-              "nsd/members/introduction"
+              "nsd/members/introduction",
+              "nsd/members/creating-an-account",
+              "nsd/members/edit-account-info"
             ]
           },
           {
@@ -173,6 +175,15 @@
             "pages": [
               "nsd/camp-checkout/camp-overview",
               "nsd/camp-checkout/non-technical-checkout-flow",
+              {
+                "group": "Technical",
+                "icon": "folder",
+                "pages": [
+                  "nsd/camp-checkout/technical/pre-payment",
+                  "nsd/camp-checkout/technical/payment",
+                  "nsd/camp-checkout/technical/post-payment"
+                ]
+              },
               "nsd/camp-checkout/upsells"
             ]
           },
@@ -185,11 +196,18 @@
           },
           {
             "group": "Customer Portal",
-            "pages": []
+            "pages": [
+              "nsd/customer-portal/dashboard",
+              "nsd/customer-portal/add-family-member",
+              "nsd/customer-portal/registration",
+              "nsd/customer-portal/supplimentary-program"
+            ]
           },
           {
             "group": "Coach Portal",
-            "pages": []
+            "pages": [
+              "nsd/coach-portal/dashboard"
+            ]
           }
         ]
       },

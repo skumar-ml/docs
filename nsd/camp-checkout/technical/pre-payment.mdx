@@ -1,0 +1,91 @@
+---
+title: "Pre-Payment"
+---
+
+## 1. Login / Signup / Cart Redirection
+
+### Authentication
+
+Memberstack detects whether a user is logged in by checking for an active member session on page load. Before authentication, login/signup sections (signup form, login modal) are shown, while post-login sections (cart and multi-step checkout process) are hidden using `data-ms-content="!members"` and `data-ms-content="members"`.
+
+For custom logic, the same session is read from `localStorage` (`memberstack`) and the `webflowMemberId` is used to confirm authentication.
+
+```
+var memberstackData = JSON.parse(memberstack);
+var webflowMemberId = memberstackData.information.id;
+if(webflowMemberId != null) {// User Logged In or Sign-up}
+else{// User not Logged In or Sign-up}
+```
+
+**Implementation:** **`nsd/checkout_with_abandoned.js`** (class **`CheckOutWebflow`** extends **`BriefsUpsellModal`**). Backend: **`nsd_aws/api/createCheckoutUrlsByProgram.py`**, **`nsd_aws/api/updateStripeCheckoutDb.py`**.
+
+### Cart Redirection Logic
+
+When a user visits a cart page, we save the cart URL in `localStorage.redirect_url`. After logging-in or signing-up, Memberstack (through a pre-set default) redirects users to `/portal/home`, which has on-page JS that checks if `redirect_url` exists. If it does, the URL is deleted, and saved in a temp variable, which is used to redirect the user back to the cart page they were originally on.
+
+### Cart / Checkout Entry
+
+Checkout is entered from the [camp overview page](/nsd/camp-checkout/camp-overview) or a program detail page (e.g. via the **Register** button).  If the user leaves before paying, the **abandoned-cart** recovery can restore state from `localStorage` (`checkOutData`) or a backend lookup by `memberId`; see [Payment](/nsd/camp-checkout/technical/payment) for returning from Stripe and resuming.
+
+## 2. Program Data on Page Load (Landing on Cart Page)
+
+When the user lands on the cart page, program context is loaded from **Webflow CMS program items** and passed into the checkout flow. On page load, the following data is collected from the Webflow CMS program item for the selected camp:
+
+- **programId**, **programName**, **programCategoryId**, **slug**
+- **programStartDate**, **programEndDate**
+- **achAmount**, **cardAmount**, **payLaterAmount**
+- **productType**, **site_url**
+
+This data is used when creating checkout URLs and updating student details in the backend.
+
+<Note>
+  TODO: I think there's some content missing here describing how residential vs. commuter is handled via URL params
+</Note>
+
+### Residential vs. commuter vs. online
+
+The cart page runs **inline JS** on `DOMContentLoaded` that reads `productType` from the URL (`URLSearchParams`) and drives both `programCategoryId` and which UI/pricing is shown.
+
+1. **URL → programCategoryId**
+   - `?productType=residential` → **programCategoryId** `1111`.
+   - `?productType=commuter` (or `?productType=pf`) → **programCategoryId** `2222`.
+   - Default (no param or other) → `1111`.\
+     Cart links from abandoned-cart (`abandoned-cart-modal.js`) use the same mapping: `1111` → `?productType=residential`, `2222` → `?productType=commuter`, `3333` → no `productType` (online).
+2. **Optional form hiding**\
+   If `hide_residential` or `hide_commuter` is `'true'`, **hideContent()** hides the main checkout form (`cart-main-div`, `card-grid-main`) and shows the info block (`cart-info-div`), and **CheckOutWebflow** is not instantiated.
+3. **Commuter vs residential UI and pricing**
+   - **Commuter** (`product === "commuter"` or `product === "pf"`): show commuter order summary, commuter form, commuter core price; set **achAmount**, **cardAmount**, **payLaterAmount** to commuter values.
+   - **Else**: show residential order summary, residential form, residential core price; set amounts to residential values.\
+     The **core_product_price** input and payment-tab handlers keep these amounts in sync when the user switches payment method.
+4. **Data passed to CheckOutWebflow Class**\
+   The backend receives **productType** (`core` vs `supplementary`) and **programCategoryId** (1111 vs 2222 vs 3333), so residential vs commuter vs online is fully determined by the cart URL and this inline script.
+
+## 3. Student Details (First Tab)
+
+The **first tab** is the **Student Details** screen. Fields: **First Name, Last Name, Email, Grade, School, Gender.**
+
+**Validation:** The frontend validates that the student email is unique (e.g. different from parent) via **`checkUniqueStudentEmail()`** (`checkout_with_abandoned.js`). If validation fails, **`checkout-form-error`** is shown and the user cannot proceed to payment.
+
+When the user clicks **Next** on the Student Details tab (**`next_page_2`**), the user moves to the **second tab** (Payment screen).:
+
+1. **`storeBasicData()`** saves form data to `localStorage` for pre-fill and abandoned-cart recovery (see **`checkout_with_abandoned.js`**).
+2. **`initializeStripePayment()`** is called — POST to **`createCheckoutUrlsByProgram`** (see [Payment](/nsd/camp-checkout/technical/payment)); returns **achUrl**, **cardUrl**, **payLaterUrl**.
+3. After the promise resolves, **`updateStudentDetails()`** is called with **`[$this.$checkoutData.achUrl, $this.$checkoutData.cardUrl, $this.$checkoutData.payLaterUrl]`** — POST to **`updateStripeCheckoutDb`** (**`nsd_aws/api/updateStripeCheckoutDb.py`**).
+
+## 4. Brief Upsell Pop-up (When Clicking Next on Student Details)
+
+When the user clicks **Next** on the **Student Details** tab, the flow moves to the **Payment** screen. A **brief upsell pop-up** may appear at that point.
+
+**When the pop-up shows:** Only if the user has **not** already added a brief event for this checkout. If one was already added, the pop-up does not show.
+
+Selected brief events are sent as `briefEventIds` when the user proceeds to payment. See [Upsells](/nsd/camp-checkout/upsells) for more details.
+
+## 5. Optional Supplementary Programs & Briefs
+
+### Supplementary Programs
+
+Users can add optional supplementary (add-on) programs during checkout. Selected programs are included in the checkout and sent to the backend when payment URLs are created. The chosen add-ons are reflected in the order and pricing.
+
+### Briefs Upsell
+
+The briefs upsell pop-up can appear when the user clicks **Next** on Student Details (see section 4). Any brief events the user selects are included in the checkout request. See [Upsells](/nsd/camp-checkout/upsells) for details.

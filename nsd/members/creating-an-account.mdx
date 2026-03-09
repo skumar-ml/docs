@@ -1,0 +1,90 @@
+---
+title: "Creating an Account"
+---
+
+## How-To
+
+1. Navigate to the sign-up page.
+2. Fill in the required fields (including a valid email address)
+5. Create a password & submit the form to create your account.
+
+<Info>
+  A valid email address has the format **local-part@domain**, where the local part contains allowed characters (letters, numbers, dots, etc.) and the domain is a real domain with a valid extension (like `.com)`.
+</Info>
+
+The platform supports multiple account types to ensure proper role-based access and family linking.
+
+<Warning>
+  There is no way for an admin to create an account for a user. This is contemplated future functionality. If such a need arises, let the tech team know, and we can manually do this
+</Warning>
+
+## Technical Steps Involved in Account Creation
+
+### 1. Memberstack
+
+The account creation flow **starts inside Memberstack**. After the user submits the **Sign Up** form (via the Webflow UI on nsdebatecamp.com), Memberstack creates the user record in **Memberstack's internal database**. On sign-up, Memberstack triggers the NSD entry-point API (Step 2).
+
+### 2. `POST /camp/createWebflowItem`
+
+Entry-point API for NSD account signup. It synchronizes data between Webflow, Memberstack, and MongoDB.
+
+**Responsibilities:**
+
+- **Accepts** signup payload from Memberstack: `id` (memberId), `email`, `profile` (e.g. `first-name`, `last-name`, `account-type`, `acquisition`, `sign-up-ref`, `utm-source`, `parent-phone-number`, `student-grade` where applicable). Input matches Memberstack’s webhook/create-member payload.
+- **Webflow CMS:** Builds a Webflow CMS–compatible payload from the profile, inserts into the Webflow **Member** collection , and publishes the item. Receives `itemId` from Webflow.
+- **Memberstack linkage:** Updates the Memberstack member record with custom field `webflow-member-id = itemId` so Webflow and Memberstack stay linked.
+- **MongoDB:** If a member with the same `email` already exists (e.g. pre-created by admin or invite), updates that record with `memberId`, `itemId`, `name`, and other profile fields. Otherwise inserts a new document into the `members` collection with the same fields and an initial empty `familyId`.
+- **Family linkage:** Invokes the `setFamilyId` logic (with `email` and the member’s MongoDB `_id`) to assign or backfill `familyId` and link students to parents, as described in the [Introduction](/nsd/members/introduction#family-architecture).
+
+CRM sync (e.g. Pipedrive) may be triggered separately via `POST /camp/createPipedrivePerson` or other webhooks; that flow is independent of the core account-creation steps above.
+
+### 3. Family and pre-existing records
+
+- **setFamilyId:** Resolves the parent (e.g. from `payment_details` or `invited_member` by email), then sets or reuses `familyId` on the new/updated member and related records. Students are linked to the parent’s `familyId`.
+- **Pre-existing members:** If the member was added by admin or existed from an invite, `createWebflowItem` updates that MongoDB document with `memberId` and `itemId` and optionally updates related `payment_details` with the new `memberId`.
+
+## MongoDB Account Schema
+
+### Account document (common structure)
+
+NSD `members` documents created or updated by this flow use a structure similar to:
+
+```
+{
+  "_id": ObjectId,
+  "name": "Full Name",
+  "email": "user@example.com",
+  "itemId": "webflow_item_id",
+  "familyId": "family_identifier_or_empty",
+  "accountType": "student | parent | coach",
+  "memberId": "memberstack_member_id",
+  "firstName": "First",
+  "lastName": "Last",
+  "createdOn": ISODate,
+  "updatedOn": ISODate,
+  "parentPhoneNumber": "",
+  "studentGrade": "",
+  "acquisition": "",
+  "signupRef": "",
+  "utm_source": ""
+}
+```
+
+### Differences by account type
+
+| Account Type | Extra / optional fields | Can exist before signup (no memberId) | Updated on signup |
+| :----------- | :---------------------- | :------------------------------------ | :---------------- |
+| Student      | studentGrade            | Yes                                   | Yes               |
+| Parent       | parentPhoneNumber       | Yes                                   | Yes               |
+| Coach        | —                       | Typically no                          | Yes               |
+
+Pre-existing records (e.g. from Retool or invites) may have empty `familyId` or no `memberId`; they are completed when the user signs up through the Webflow form.
+
+---
+
+## Key notes
+
+- The NSD flow keeps **Webflow**, **Memberstack**, and **MongoDB** in sync.
+- **Webflow** is the source of truth for CMS items; **Memberstack** is updated with `webflow-member-id` after the Webflow item is created.
+- **MongoDB** stores full member records and supports partial records that are completed at signup (e.g. admin-created or invited users).
+- **familyId** is set or backfilled by `setFamilyId` and groups parent–student relationships as described in the [Introduction](/nsd/members/introduction#family-architecture).

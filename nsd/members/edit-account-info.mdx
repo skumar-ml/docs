@@ -1,0 +1,75 @@
+---
+title: "Edit Account Info"
+---
+
+Admins can edit parent, student, and coach information using Retool.
+
+### Case 1: Editing from the Student Registration Details Page
+
+Admins can click **Edit** on the [student registration details](https://bergendebate.retool.com/apps/634efaf0-b646-11f0-90e3-df4825553f35/Student%20Consolidation/Student%20Registration%20Details%20-%20SpeedUp%20-%20SC) page. If the user has an active Memberstack account, the admin is automatically redirected to the **Edit Member (Retool) page**.
+
+**Editable Fields**
+
+- **Parent / Coach:** First & Last Name, Email, Phone Number
+- **Student:** First & Last Name, Email
+
+### Case 2: Directly Editing via Retool
+
+If the member is not accesible via the Student Registration Details, admin can directly access the Retool pages for editing.
+
+[On this Retool page](https://nsdebatecamp.retool.com/apps/28b78bb6-10f5-11ef-888a-9f99f95f5fe0/SpeedUp%20Task/Update%20Member%20-%20SpeedUp), search for the user you want to edit. If found proceed to edit as appropriate. 
+
+### Key Differences: Existing vs Non-Existing Accounts
+
+| Feature               | Existing Account | No Account          |
+| :-------------------- | :--------------- | :------------------ |
+| Memberstack Record    | Yes              | No                  |
+| Retool Page           | Edit Member Page | Alternate Edit Page |
+| Lambda Function       | Yes              | No                  |
+| Database Update       | Yes              | Yes                 |
+| Account Login Enabled | Yes              | No                  |
+
+### Technical Details
+
+To execute edits for **Full Accounts**, Retool calls the `POST /camp/updateMemberStack` API. That Lambda updates the member in all three places: **Memberstack**, **Webflow** (Member collection), and **MongoDB** (`members`). The request body includes `memberId`, `itemId`, and old/new values for first name, last name, email, phone, and (for students) grade.
+
+For **Partial Accounts**, Retool updates the members, payment_details collection in MongoDB only (no Memberstack or Webflow update).
+
+## Users
+
+Members can update their own profile from the NSD portal.
+
+### How to update your profile
+
+1. Log in to the portal and go to the **Dashboard**. On the Dashboard, next to the welcome message (e.g. "WELCOME, [NAME]!"), click the **Update Profile** button.
+3. The **Edit Profile Data** modal opens with your current information pre-filled.
+4. Edit any of these fields as needed. Click **Save** to submit your changes. Use the **X** in the top-right of the modal to close without saving.
+
+The modal shows your existing values so you can change only what you need and save.
+
+<Frame>
+  <img
+    title="Image"
+    className="hidden dark:block"
+    src="/images/image-162.png"
+    alt="Image"
+  />
+  <img
+    title="Image"
+    className="dark:hidden"
+    src="/images/image-160.png"
+    alt="Image"
+  />
+</Frame>
+
+### Implementation
+
+The portal update-profile flow is implemented by `update_profile.js` (class `updateMember`). This script:
+
+- Fetches the logged-in member’s data from the `getItemId/{memberId}` API and pre-fills the Edit Profile Data form.
+- Listens for clicks on elements with class `.update_profile` (the Update Profile button) and opens the **Edit Profile Data** modal (`#update-profile-modal`).
+- On **Save** (`#editMemberBtn`), sends a `POST` request to `updateMemberStack` with `memberId`, `itemId`, and old/new values for first name, last name, email, phone, and (for students) grade—the same API used by the admin Retool flow for full accounts.
+- For **parent** accounts the form shows Parent Phone Number and hides Student Grade; for **student** accounts it can show Grade where applicable.
+- On success, the modal closes and the welcome heading (e.g. "Welcome, [Name]!") is updated via elements with `[data-portal='heading']`.
+
+There are no dependent JS files; the script is self-contained and expects `memberId` and `baseUrl` to be passed when the `updateMember` class is instantiated.
