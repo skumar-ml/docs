@@ -142,50 +142,38 @@ These endpoints allow:
 
 ## Frontend JS Behavior
 
-The Trial Class page uses client-side JavaScript to dynamically load available trial classes, render them in the UI, and handle the registration form submission.
+The Trial Class page uses client-side JavaScript to load available trial classes and handle form submission.
 
-The script runs after the DOM is fully loaded.
+### Page Load
 
-```javascript
-document.addEventListener("DOMContentLoaded", function () {
-  // Fetch trial classes
-  fetch(`${_BASE_URL_}/camp/trialClassDetail`)
-    .then((res) => res.json())
-    .then((classes) => {
-      // Render trial class options dynamically
-    });
+Event: `DOMContentLoaded`
 
-  // Populate grade dropdown
-  fetch(`${_BASE_URL_}/camp/paymentGrades`)
-    .then((res) => res.json())
-    .then((grades) => {
-      // Add grade options to dropdown
-    });
+APIs triggered:
 
-  // Handle form submission
-  const form = document.querySelector("#trial-class-form");
+| Action | API |
+|------|------|
+| Load trial classes | `GET /camp/trialClassDetail` |
+| Populate grade dropdown | `GET /camp/paymentGrades` |
 
-  form.addEventListener("submit", async function (e) {
-    e.preventDefault();
+The returned trial classes are dynamically rendered as selectable options on the page.
 
-    const payload = {
-      student: { ... },
-      parent: { ... },
-      trial_class_id: "...",
-      previous_experience: "...",
-      landingURL: sessionStorage.getItem("landingURL") || ""
-    };
+---
 
-    await fetch(`${_BASE_URL_}/camp/trialClassRegistration`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    });
-  });
-});
-```
+### Trial Class Selection
+
+Event: `click` on a trial class option.
+
+Behavior:
+
+- The corresponding radio input is selected.
+- The selected `trial_class_id` is stored for submission.
+
+---
+
+### Form Submission
+
+Event: `submit` on `#trial-class-form`.
+
 
 ## CSS Classes Used for Rendering
 
