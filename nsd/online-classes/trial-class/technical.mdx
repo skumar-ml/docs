@@ -2,16 +2,18 @@
 Title: "Trial Class Management (Technical)"
 ---
 
-https://nsdebatecamp.retool.com/apps/115e253e-026f-11f1-96f3-8fa1c0fd6333/trial-classes/manage-trial-classes
+This is frontend form ßßurl:
+https://www.nsdebatecamp.com/online-classes/free-trial-class
 
-This section explains how administrators manage **Trial Classes** using Retool and how users interact with the Trial Class registration page.
+
+This section explains how administrators manage **Trial Classes** and how users interact with the Trial Class registration page.
 Trial classes allow prospective students to attend a session before enrolling. Administrators manage the classes, while users can **view available classes and register for a slot**.
 
 ---
 
-# Admin Management (Retool)
+# Admin Management
 
-Administrators manage trial classes through Retool. This includes creating classes, updating class details, deleting classes, rescheduling classes, and tracking user registrations.
+Administrators manage trial classes using internal admin tools. This includes creating classes, updating class details, deleting classes, rescheduling classes, and tracking user registrations.
 
 ---
 
@@ -28,14 +30,7 @@ Admins can create a new trial class by entering the following information.
 | End Grade | Maximum grade allowed |
 | Number of Spots | Maximum number of students allowed |
 
-<Frame>
-    <img
-        title="Image"
-        src="/images/trial-class-create.png"
-        alt="Image"
-    />
 
-</Frame>
 
 ### API Call: Create Trial Class Registration
 
@@ -61,21 +56,12 @@ Once created:
 
 ## Viewing Trial Classes
 
-Admins can view all scheduled trial classes in Retool.
+Admins can view all scheduled trial classes in the admin dashboard.
 
 Displayed information:
 - Date, Time, Grade range, Available spots
 
 This allows administrators to monitor upcoming classes and manage availability.
-
-<Frame>
-    <img
-        title="Image"
-        src="/images/trial-class-view.png"
-        alt="Image"
-    />
-
-</Frame>
 
 Administrators can retrieve registrations using the Trial Class Registration APIs.
 
@@ -87,9 +73,7 @@ Administrators can retrieve registrations using the Trial Class Registration API
 
 These endpoints allow:
 
-- Viewing all registrations
-- Viewing a specific registration
-- Viewing registrations for a specific trial class
+- Viewing all registrations -> Viewing a specific registration -> Viewing registrations for a specific trial class
 
 ---
 
@@ -116,15 +100,6 @@ Deleting a class:
 
 ---
 
-<Frame>
-    <img
-        title="Image"
-        src="/images/trial-class-delete.png"
-        alt="Image"
-    />
-
-</Frame>
-
 ## Viewing User Registrations
 
 Admins can view all user registrations for a trial class.
@@ -137,15 +112,6 @@ Each registration includes the details submitted during registration.
 - First name, Last name, Email, Phone number
 
 This allows administrators to review who has registered and contact parents if needed.
-
-<Frame>
-    <img
-        title="Image"
-        src="/images/trial-class-reg.png"
-        alt="Image"
-    />
-
-</Frame>
 
 ---
 
@@ -162,8 +128,6 @@ When this endpoint is called:
 
 - The system updates the registration record.
 - The **`attended`** field is set to `true`.
-
-This action is typically triggered from Retool.
 
 ---
 
@@ -309,8 +273,7 @@ Parents can register their student by completing a registration form.
 - First name, Last name, Email, Phone number
 
 After submission:
-- The student is registered for the selected trial class slot.
-- The registration is stored in the system for administrators to review.
+- The student is registered for the selected trial class slot -> The registration is stored in the system for administrators to review.
 
 ---
 ## Zapier Integration
@@ -362,7 +325,7 @@ The following data is sent to Zapier as a JSON payload.
 ---
 
 # Summary
-- **Admins (Retool)** can create, update, delete, and reschedule trial classes.
+- **Admins** can create, update, delete, and reschedule trial classes.
 - **Admins** can view registrations and mark attendance.
 - **Users** can only view available classes and register for a trial class slot.
 - Registration records store complete student and parent details.

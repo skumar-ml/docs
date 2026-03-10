@@ -1,48 +1,22 @@
 ---
-Title: "Trial Class System (Overview)"
+Title: "Trial Class Management (Non-Technical)"
 ---
 
-This section provides a high-level overview of the **Trial Class system**.  
-It explains how trial classes are scheduled, how parents register students, and how administrators manage registrations and attendance.
+This is retool url:
+https://nsdebatecamp.retool.com/apps/115e253e-026f-11f1-96f3-8fa1c0fd6333/trial-classes/manage-trial-classes
 
-The Trial Class system allows prospective students to attend a class before enrolling in a full program.
-
----
-
-# Overview
-
-The Trial Class system supports two main user groups:
-
-**Administrators**
-- Schedule and manage trial classes
-- View student registrations
-- Track attendance
-
-**Parents / Students**
-- View available trial classes
-- Register for a trial class slot
-
----
-
-# How the System Works
-
-The trial class process has three main steps:
-
-1. **Trial Class Scheduling** – Administrators create trial classes through the admin dashboard.
-2. **Trial Class Registration** – Parents select a class and submit a registration form.
-3. **Attendance Tracking** – Administrators record whether students attended the class.
+This section explains how administrators manage **Trial Classes** using Retool and how parents register students through the Trial Class page.
+Trial classes allow prospective students to attend a session before enrolling in a full program. Administrators manage the classes, while parents can **view available classes and register their student for a slot**.
 
 ---
 
 # Admin Management (Retool)
 
-Administrators manage trial classes through the admin dashboard.
+Administrators manage trial classes through the Retool admin dashboard. From this dashboard, administrators can:
 
-From the dashboard, administrators can:
-
-- Create new trial classes
-- Edit or reschedule classes
-- Remove classes
+- Create trial classes
+- Update or reschedule classes
+- Delete classes
 - View student registrations
 - Track attendance
 
@@ -50,42 +24,93 @@ From the dashboard, administrators can:
 
 ## Creating a Trial Class
 
-When creating a trial class, administrators specify:
+Administrators can create a new trial class by entering the following information.
 
 | Field | Description |
 |------|-------------|
-| Date | Date when the class will take place |
-| Start Time | When the class begins |
-| End Time | When the class ends |
+| Date | Date the trial class will occur |
+| Start Time | Time the class begins |
+| End Time | Time the class ends |
 | Start Grade | Minimum grade allowed |
 | End Grade | Maximum grade allowed |
 | Number of Spots | Maximum number of students allowed |
 
-Once created, the class becomes available on the **Trial Class registration page**.
+<Frame>
+    <img
+        title="Create Trial Class"
+        src="/images/trial-class-create.png"
+        alt="Create Trial Class"
+    />
+</Frame>
 
-Only **upcoming classes** are shown to users.
+Once created:
+
+- The class is saved in the system.
+- If the class date is in the future, it becomes available on the **Trial Class registration page**.
 
 ---
 
-## Managing Trial Classes
+## Viewing Trial Classes
 
-Administrators can update existing classes if changes are required.
+Administrators can view all scheduled trial classes in the Retool dashboard.
 
-Common updates include:
+Displayed information includes:
+
+- Date
+- Time
+- Grade range
+- Available spots
+
+This helps administrators monitor upcoming classes and manage availability.
+
+<Frame>
+    <img
+        title="View Trial Classes"
+        src="/images/trial-class-view.png"
+        alt="View Trial Classes"
+    />
+</Frame>
+
+---
+
+## Updating or Rescheduling Trial Classes
+
+Administrators can modify an existing class when changes are needed.
+
+For example:
 
 - Changing the **date**
-- Adjusting **start or end times**
-- Increasing or decreasing the **number of available spots**
+- Adjusting the **start or end time**
+- Updating the **number of available spots**
 
-Administrators can also remove a trial class if it should no longer be offered.
+Rescheduling allows administrators to move a class to a different available **time slot**.
 
 ---
 
-## Viewing Registrations
+## Deleting Trial Classes
+
+Administrators can remove a trial class if it should no longer be offered.
+
+Deleting a class:
+
+- Removes it from the system
+- Prevents new student registrations
+
+<Frame>
+    <img
+        title="Delete Trial Class"
+        src="/images/trial-class-delete.png"
+        alt="Delete Trial Class"
+    />
+</Frame>
+
+---
+
+## Viewing Student Registrations
 
 Administrators can view all students who registered for a trial class.
 
-Each registration includes:
+Each registration contains:
 
 ### Student Information
 - First name, Last name, Grade
@@ -93,13 +118,21 @@ Each registration includes:
 ### Parent Information
 - First name, Last name, Email address, Phone number
 
-This information allows administrators to contact families if needed.
+This allows administrators to review registrations and contact parents if necessary.
+
+<Frame>
+    <img
+        title="Trial Class Registrations"
+        src="/images/trial-class-reg.png"
+        alt="Trial Class Registrations"
+    />
+</Frame>
 
 ---
 
 ## Tracking Attendance
 
-After a trial class occurs, administrators can mark whether each student attended.
+After the trial class takes place, administrators can mark whether each student attended the session.
 
 Tracking attendance helps:
 
@@ -108,59 +141,74 @@ Tracking attendance helps:
 
 ---
 
-# Trial Class Registration (For Parents)
+# Trial Class Registration (Parent Experience)
 
-Parents can register their student for a trial class through the **Trial Class page**.
+Parents interact with the **Trial Class page** on the website.
 
-The page displays all available upcoming classes.
+They can:
 
-Each class shows:
+- View upcoming trial classes
+- Select a class that fits their schedule
+- Register their student
 
-- Date, Time, Grade range, Available spots
-
-Parents simply select a class and complete the registration form.
+Parents cannot create, edit, or delete trial classes.
 
 ---
 
-## Registration Form
+## Viewing Available Classes
 
-Parents must provide the following information.
+When parents visit the Trial Class page, they see a list of available upcoming classes including:
 
-### Student Details
+- Date, Time, Grade range, Available spots
+
+Only **future trial classes** are displayed.
+
+---
+
+## Registering for a Trial Class
+
+Parents register their student by completing a registration form.
+
+### Student Information
 - First name, Last name, Grade
 
-### Parent Contact Information
+### Parent Information
 - First name, Last name, Email address, Phone number
 
-Parents may also optionally include the student’s **previous debate experience**.
+Parents may also optionally include the student's **previous debate experience**.
 
-After submitting the form, the student is registered for the selected trial class.
+After submitting the form:
+
+- The student is registered for the selected trial class.
+- The registration is saved in the system for administrators to review.
 
 ---
 
 # Automated Notifications
 
-When a student registers for a trial class, the system can automatically trigger internal workflows such as:
+After a registration is completed, the system may automatically trigger workflows such as:
 
 - Sending confirmation emails
-- Notifying staff
-- Adding contacts to internal systems
+- Notifying internal teams
+- Adding the parent to internal systems
 
-These automations help streamline communication and follow-up.
+These automations help staff manage registrations and follow up with families.
 
 ---
 
 # Summary
 
-The Trial Class system provides a simple workflow for both administrators and families.
+The Trial Class system allows administrators to schedule and manage trial classes while allowing parents to easily register their students.
 
 **Administrators can:**
+
 - Create and manage trial classes
 - View student registrations
 - Track attendance
 
 **Parents can:**
-- View available classes
-- Register their student for a trial class
 
-This system helps prospective students experience a class before enrolling in a full program.
+- View upcoming trial classes
+- Register their student for a trial session
+
+This process helps prospective students experience a class before enrolling in the full program.
