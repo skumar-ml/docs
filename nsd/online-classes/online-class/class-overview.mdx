@@ -83,6 +83,47 @@ The checkout page uses different APIs (getClassOfferings / getClassOfferingsBySe
 - **Render:** If `response.success` and data present, render grade/session/term/class cards. **On click of Register:** the user has selected a **class** (not a class_offering_id). The frontend creates the checkout link **dynamically** from that class’s context — `grade_id`, `grade_name`, `session_name`, `session_detail_id`, and `class_detail_id` all **vary** depending on which class card was clicked. The frontend navigates to `https://www.nsdebatecamp.com/online-class-checkout?grade_id=...&grade_name=...&session_name=...&session_detail_id=...&class_detail_id=...` with the values for that class. The checkout page uses these params to load offerings and lets the user pick one schedule (class_offering_id) before payment.
 - **Empty/error:** If no data or API error, show “No classes are currently available” (or similar) and optionally hide loading spinner.
 
+### **Frontend (JS & CSS)**
+
+The following is based on the class overview script: grade tabs, skeleton loading, **getClassesList** fetch per grade, and dynamic Register URL building.
+
+**API URL (fetch):** The script calls **getClassesList** with `session_id` and `grade_id` (grade label from tab text):  
+`GET {_BASE_URL_}/camp/classes?session_id=fall&grade_id={encodeURIComponent(grade)}`  
+All grades are **preloaded** in parallel via `preloadAllGrades(grades)`; results are cached in `classesCache[grade]`.
+
+**Default tab:** The middle grade (e.g. 7th-8th) is selected by default: `#tab-default` gets `w--current`, `#pane-default` gets `w--tab-active`. A separate script removes `w--current` / `w--tab-active` from other tabs/panes and adds them to these default elements.
+
+**CSS classes (main):**
+
+- **Tabs / panes:** `.w-tab-link`, `.w-tab-pane` (Webflow tabs). Active: `w--current` (tab), `w--tab-active` (pane).
+- **Skeleton / empty state:** `.skeleton-wrapper` (per pane); inside it: `.skeleton` (loading), `.online-class_semester-wrapper` (content), `.oc-class-not-found` (no records). Toggle visibility with `.hide` (skeleton/content) and `.show` (not-found).
+- **Term block:** `.oc-semester-name`, `.semester-inner`, `.online-class_date-range`, `.semester-term-desc`, `.tc-class-count`, `.online-class_red-badge` (e.g. "Most Popular" — add `.show` only when `term.term_name === "Semester"`).
+- **Class card:** `.oc-course-card-container`, `.online-class_course-card` (template, cloned per class). Inside card: `.online-class_course-tittle`, `.online-class_course-description`, `.online-class_fee`, `.oc-pre-requisite-value` (prerequisite text; add `.none-value` when value is empty and display "None"), `.oc-register-button` (Register Now link — href is set dynamically).
+- **Schedule slots:** `.online-class_sessions-grid`, `.online-class_slot-card` (template). Inside slot: `.online-class_session-time`, `.online-class_red-text` (spots count), `.online-class_spot-wapper` (shown only when `available_spots <= 3`).
+
+**Functions and what they do:**
+
+| Function | Purpose |
+|----------|--------|
+| **toggleSkeleton(pane, show)** | If `show`: hide content (`.online-class_semester-wrapper`), show `.skeleton`, hide `.oc-class-not-found`. Else: hide skeleton, show content. |
+| **showNoRecordsState(pane)** | Hide skeleton and content, show `.oc-class-not-found` ("No Records"). |
+| **preloadAllGrades(grades)** | For each grade label, fetches `GET camp/classes?session_id=fall&grade_id={grade}`; stores result in `classesCache[grade]`. Uses `Promise.all`. |
+| **renderPane(pane, result)** | If no result/success: calls `showNoRecordsState(pane)`. Else: reads `result.data[0].sessions[0].terms`, clones term template per term, fills term name, date range, description, class count, red badge (Semester only). For each term, clones class card template per `term.classes`; sets course title, description, fee, prerequisite (or "None" + `.none-value`); builds schedule slots from `course.schedules` (day + `utcToEST(start_time)`, `available_spots`); **sets Register button href** via `url.searchParams.set` for `grade_id`, `grade_name`, `session_name`, `session_detail_id`, `class_detail_id`. Appends fragments to pane. |
+| **formatDate(dateStr)** | Formats date as short US (e.g. "Sep 7"). |
+
+**Register button — dynamic URL:** For each class card, the script finds `.oc-register-button` and sets its `href` query params from the API result: `grade_id` (from `result.data[0].grade_id`), `grade_name` (from `result.data[0].gradeLabel`), `session_name` (from first session), `session_detail_id` (from `term.session_detail_id`), `class_detail_id` (from `course.class_detail_id`). So each Register link points to checkout with the correct context for that class/term/session/grade.
+
+**Event handlers:**
+
+| Element / event | Behavior |
+|----------------|----------|
+| `document` click on `.oc-register-button` | `e.stopPropagation()` so the link works and header/toggle does not fire. |
+| `DOMContentLoaded` | Get all `.w-tab-link` and `.w-tab-pane`; build `gradePaneMap` from tab text (e.g. "7th-8th") to pane. Call `preloadAllGrades(grades)` then for each grade call `renderPane(pane, classesCache[grade])` and `toggleSkeleton(pane, false)`. |
+
+**Spot warning:** If `available_spots <= 3`, the slot's `.online-class_spot-wapper` is shown (`display: flex`); otherwise it is hidden. Used to highlight "only X spots left" when capacity is low.
+
+**Prerequisite:** If `course.prerequisite` is empty or blank, the script sets `.oc-pre-requisite-value` text to `"None"` and adds class `none-value`. Otherwise it sets the prerequisite text and removes `none-value`.
+
 ### **Data shape (for checkout)**
 
 On the **class overview** page the parent selects a class, and class offerings will be shown in the **Select class and pay** tab in checkout. The Register link passes the class context in the URL: `grade_id`, `grade_name`, `session_name`, `session_detail_id`, `class_detail_id` (all dynamic, varying by class). On the **checkout page**, the user then selects one **schedule/offering** (class_offering_id) from the offerings loaded for that context; that class_offering_id is what `createCheckoutUrlForOnlineClass` requires for payment.
