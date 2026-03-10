@@ -1,69 +1,129 @@
 ---
-Title: "Trial Class Management (Technical)"
+Title: "Trial Class System (Technical)"
 ---
 
-This is frontend form ßßurl:
+This section explains how the **Trial Class system** works, including how available classes are displayed on the Trial Class page and how students register for a trial class.
+
+Frontend url:
 https://www.nsdebatecamp.com/online-classes/free-trial-class
 
+The system supports:
 
-This section explains how administrators manage **Trial Classes** and how users interact with the Trial Class registration page.
-Trial classes allow prospective students to attend a session before enrolling. Administrators manage the classes, while users can **view available classes and register for a slot**.
-
----
-
-# Admin Management
-
-Administrators manage trial classes using internal admin tools. This includes creating classes, updating class details, deleting classes, rescheduling classes, and tracking user registrations.
+- Viewing available trial classes
+- Student registration
+- Attendance status tracking
 
 ---
 
-## Creating a Trial Class
+### Overview
 
-Admins can create a new trial class by entering the following information.
+The Trial Class system allows prospective students to browse upcoming trial classes and register for them through the Trial Class page.
+
+The process includes three main stages:
+
+1. **Trial Class Retrieval** – The Trial Class page retrieves upcoming classes from the backend.
+2. **Trial Class Display** – The frontend renders available trial classes to the user.
+3. **Student Registration** – Parents submit a registration form which creates a trial class registration.
+
+Attendance for each registration can later be updated through the system.
+
+---
+
+## Trial Class Page
+
+The Trial Class page allows parents to view available trial classes and register a student.
+
+### Populating Available Classes
+
+When the page loads, the frontend retrieves trial class details from the backend.
+
+**API:** `GET /camp/trialClassDetail`
+
+The system performs the following:
+
+- Retrieves trial classes from the `trial_class_details` collection.
+- Filters out past classes (`date < today`).
+- Sorts classes by date (earliest first).
+
+The frontend then displays available options showing:
+
+- Date
+- Time
+- Grade range
+
+Each trial class option typically includes:
 
 | Field | Description |
 |------|-------------|
-| Date | Date the trial class will occur |
-| Start Time | Time the class begins |
-| End Time | Time the class ends |
-| Start Grade | Minimum grade allowed |
-| End Grade | Maximum grade allowed |
-| Number of Spots | Maximum number of students allowed |
+| date | Date of the trial class |
+| start_time | Class start time |
+| end_time | Class end time |
+| start_grade | Minimum grade allowed |
+| end_grade | Maximum grade allowed |
+| number_spots | Maximum available spots |
 
+---
 
+## Trial Class Registration
+
+Parents can register their student for a trial class by completing a registration form on the Trial Class page.
+
+### Data Submitted
+
+**Student Details**
+
+| Field | Description |
+|------|-------------|
+| first_name | Student first name |
+| last_name | Student last name |
+| grade | Student grade |
+
+**Parent Details**
+
+| Field | Description |
+|------|-------------|
+| first_name | Parent first name |
+| last_name | Parent last name |
+| email | Parent email |
+| phone | Parent phone number |
+
+**Trial Class Selection**
+
+| Field | Description |
+|------|-------------|
+| trial_class_id | Selected trial class identifier |
+
+Optional fields may also be submitted:
+
+| Field | Description |
+|------|-------------|
+| previous_experience | Student's previous experience level |
+| landingURL | URL of the page where the registration occurred |
+
+The `landingURL` is typically captured on the frontend using:
+
+This allows tracking which page the user used to register.
+
+---
 
 ### API Call: Create Trial Class Registration
 
 **API:** `POST /camp/trialClassRegistration`
 
-When the form is submitted:
+When the registration form is submitted:
 
-1. The frontend sends the student and parent information with the selected trial class ID.
-2. The backend validates the request fields.
+1. The frontend sends the student and parent information along with the selected trial class ID.
+2. The system validates the request fields.
 3. The system verifies that the trial class exists.
-4. A new registration record is created in the **`trial_class_registrations`** collection.
+4. A new registration record is created in the `trial_class_registrations` collection.
 
 The `attended` field defaults to **false**.
 
 ---
 
-Once created:
+## Viewing Trial Class Registrations
 
-- The class is saved in the system.
-- If the class date is in the future, it becomes available on the **Trial Class registration page**.
-
----
-
-## Viewing Trial Classes
-
-Admins can view all scheduled trial classes in the admin dashboard.
-
-Displayed information:
-- Date, Time, Grade range, Available spots
-
-This allows administrators to monitor upcoming classes and manage availability.
-
-Administrators can retrieve registrations using the Trial Class Registration APIs.
+Registrations can be retrieved using the Trial Class Registration APIs.
 
 **Endpoints**
 
@@ -73,52 +133,100 @@ Administrators can retrieve registrations using the Trial Class Registration API
 
 These endpoints allow:
 
-- Viewing all registrations -> Viewing a specific registration -> Viewing registrations for a specific trial class
+- Viewing all registrations
+- Viewing a specific registration
+- Viewing registrations associated with a specific trial class
+
 
 ---
 
-## Updating or Rescheduling Trial Classes
+## Frontend JS Behavior
 
-Admins can update or reschedule existing trial classes when needed.
+The Trial Class page uses client-side JavaScript to dynamically load available trial classes, render them in the UI, and handle the registration form submission.
 
-For example:
-- Changing the **date**
-- Adjusting the **start or end time**
-- Updating the **number of available spots**
+The script runs after the DOM is fully loaded.
 
-Rescheduling allows administrators to move a class to another available **time slot**.
+```javascript
+document.addEventListener("DOMContentLoaded", function () {
+  // Fetch trial classes
+  fetch(`${_BASE_URL_}/camp/trialClassDetail`)
+    .then((res) => res.json())
+    .then((classes) => {
+      // Render trial class options dynamically
+    });
+
+  // Populate grade dropdown
+  fetch(`${_BASE_URL_}/camp/paymentGrades`)
+    .then((res) => res.json())
+    .then((grades) => {
+      // Add grade options to dropdown
+    });
+
+  // Handle form submission
+  const form = document.querySelector("#trial-class-form");
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const payload = {
+      student: { ... },
+      parent: { ... },
+      trial_class_id: "...",
+      previous_experience: "...",
+      landingURL: sessionStorage.getItem("landingURL") || ""
+    };
+
+    await fetch(`${_BASE_URL_}/camp/trialClassRegistration`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+  });
+});
+```
+
+## CSS Classes Used for Rendering
+
+The frontend script dynamically renders trial class options using predefined CSS classes.  
+These classes are required for the JavaScript rendering logic to function correctly.
+
+| Class | Description |
+|------|-------------|
+| `.trial-class_option-wapper` | Main wrapper containing the trial class section |
+| `.trial-class-grid-container` | Container where trial class options are dynamically inserted |
+| `.tc_option-label` | Template element used to clone trial class options |
+| `.trial-class_date` | Displays formatted trial class date |
+| `.trial-class_time-info` | Displays trial class start and end time |
+| `.trial-class_grade-info` | Displays the grade range for the class |
+| `.trial-form-select-field` | Grade dropdown field in the registration form |
+| `.tc_form-done` | Success message container displayed after successful registration |
+| `.tc_form-fail` | Error message container displayed when registration fails |
+
+The JavaScript clones the `.tc_option-label` element and populates it with trial class data returned from the API before appending it to `.trial-class-grid-container`.
 
 ---
 
-## Deleting Trial Classes
+## Landing URL Tracking
 
-Admins can remove a trial class if it should no longer be offered.
+The system tracks the page where the user started the registration process using a `landingURL` value stored in browser session storage.
 
-Deleting a class:
-- Removes it from the system
-- Prevents new registrations
+This allows the system to record which page the user visited before submitting the trial class form.
 
----
+### Capturing the Landing URL
 
-## Viewing User Registrations
+The landing URL is typically stored when the user first visits the site.
 
-Admins can view all user registrations for a trial class.
-Each registration includes the details submitted during registration.
-
-### Student Information
-- First name, Last name, Grade
-
-### Parent Information
-- First name, Last name, Email, Phone number
-
-This allows administrators to review who has registered and contact parents if needed.
+```javascript
+sessionStorage.setItem("landingURL", window.location.href)
+```
 
 ---
 
-## Tracking Attendance
+## Attendance Tracking
 
-
-After a trial class occurs, administrators can mark students as attended.
+After a trial class occurs, the attendance status for a student can be updated.
 
 ### API Call: Mark Attendance
 
@@ -130,7 +238,6 @@ When this endpoint is called:
 - The **`attended`** field is set to `true`.
 
 ---
-
 
 ## Database Collections
 
@@ -166,166 +273,10 @@ Stores student registrations.
 | created_on | Registration timestamp |
 
 ---
-# Frontend Integration
 
-The Trial Class page uses JavaScript to dynamically load available classes, populate form fields, and submit registrations to the backend APIs.
+## System Behavior Notes
 
-The frontend interacts with the following APIs:
-
-| API | Purpose |
-|----|----|
-| `/camp/trialClassDetail` | Fetch available trial classes |
-| `/camp/paymentGrades` | Fetch available grade options |
-| `/camp/trialClassRegistration` | Submit a trial class registration |
-
----
-
-## Fetching Trial Class Options
-
-When the page loads, the frontend fetches available trial classes and renders them as selectable cards.
-
-
-### Rendering Logic
-
-Each trial class is rendered dynamically using a template element.
-
-Key display elements:
-
-| CSS Class | Description |
-|---|---|
-| `.trial-class_option-wapper` | Wrapper for trial class options |
-| `.trial-class-grid-container` | Container for all trial class cards |
-| `.tc_option-label` | Template used for each trial class option |
-| `.trial-class_date` | Displays formatted class date |
-| `.trial-class_time-info` | Displays start and end time |
-| `.trial-class_grade-info` | Displays grade range |
-
-When a user clicks on a class card, the corresponding radio input is automatically selected.
-
----
-
-## Grade Dropdown
-
-The grade dropdown is populated dynamically using the grades API.
-
-
-### Dropdown Element
-
-| CSS Class | Description |
-|---|---|
-| `.trial-form-select-field` | Grade selection dropdown |
-
-The dropdown is populated with grade values returned from the API.
-
----
-
-## Trial Class Registration
-
-When the user submits the form, the frontend sends a POST request to the registration API.
-
-
-### Payload Structure
-
-```json
-{
-  "student": {
-    "first_name": "StudentFirstName",
-    "last_name": "StudentLastName",
-    "grade": "StudentGrade"
-  },
-  "parent": {
-    "first_name": "ParentFirstName",
-    "last_name": "ParentLastName",
-    "email": "parent@example.com",
-    "phone": "1234567890"
-  },
-  "trial_class_id": "trial_class_id",
-  "previous_experience": "Optional text",
-  "landingURL": "Landing page URL"
-}
-```
-
-# User Registration (Trial Class Page)
-
-Users interact with the **Trial Class page**, where they can view available classes and register for a trial class.
-Users **cannot create, edit, delete, or reschedule trial classes**.
-
----
-
-## Viewing Available Classes
-
-When users visit the Trial Class page, they can see upcoming classes including:
-
-- Date, Time, Grade range, Available spots
-
-Only **future trial classes** are displayed.
-
----
-
-## Registering for a Trial Class
-
-Parents can register their student by completing a registration form.
-
-### Student Information
-- First name, Last name, Grade
-
-### Parent Information
-- First name, Last name, Email, Phone number
-
-After submission:
-- The student is registered for the selected trial class slot -> The registration is stored in the system for administrators to review.
-
----
-## Zapier Integration
-
-When a trial class registration is successfully created, the system sends the registration data to a **Zapier webhook**. This enables automated workflows such as:
-
-- Sending confirmation emails to parents
-- Adding parents to a CRM or mailing list
-- Notifying internal teams (Slack, email, etc.)
-- Triggering follow-up automation for enrollment
-
-The webhook is triggered **after the registration is saved in the database**.
-
-If the Zapier webhook fails, the **registration is still created successfully**, and the error is logged in the system.
-
----
-
-### Zapier Data Payload
-
-The following data is sent to Zapier as a JSON payload.
-
-```json
-{
-  "id": "registration_id",
-  "student": {
-    "first_name": "StudentFirstName",
-    "last_name": "StudentLastName",
-    "grade": "StudentGrade"
-  },
-  "parent": {
-    "first_name": "ParentFirstName",
-    "last_name": "ParentLastName",
-    "email": "parent@example.com",
-    "phone": "1234567890"
-  },
-  "trial_class": {
-    "date": "YYYY-MM-DD",
-    "start_time": "HH:MM",
-    "end_time": "HH:MM",
-    "start_grade": "MinGrade",
-    "end_grade": "MaxGrade"
-  },
-  "previous_experience": "Optional text",
-  "landingURL": "Optional URL",
-  "attended": false,
-  "created_on": "ISO timestamp"
-}
-```
----
-
-# Summary
-- **Admins** can create, update, delete, and reschedule trial classes.
-- **Admins** can view registrations and mark attendance.
-- **Users** can only view available classes and register for a trial class slot.
-- Registration records store complete student and parent details.
+- Only **future trial classes** are returned by the API.
+- Registrations default to **`attended = false`**.
+- Each registration references a specific trial class via `trial_class_id`.
+- A trial class cannot exceed the configured maximum number of student spots.
