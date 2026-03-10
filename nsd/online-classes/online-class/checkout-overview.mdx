@@ -60,7 +60,7 @@ On the third tab, the user sees **classes** (offerings/schedules) for the contex
 
 ## Technical
 
-The sections below summarize the main APIs and flow. For full implementation detail (auth, redirects, payloads, webhooks, `online_class_payment_details`), see [Pre-Payment](/online-classes/technical/pre-payment), [Payment](/online-classes/technical/payment), and [Post-Payment](/online-classes/technical/post-payment).
+The sections below summarize the main APIs and flow. For full implementation detail (auth, redirects, payloads, webhooks, `online_class_payment_details`), see [Pre-Payment](/online-class/technical/pre-payment), [Payment](/online-class/technical/payment), and [Post-Payment](/online-class/technical/post-payment).
 
 **Frontend:** The checkout page reads the URL query parameters (`grade_id`, `grade_name`, `session_name`, `session_detail_id`, `class_detail_id`) and uses them to fetch offerings (see **API — get class offerings**). It then collects email, memberId (from Memberstack/login), student object (first_name, last_name, and optionally email, grade, gender), and the user-selected `class_offering_id`. On **Pay Now** it calls **POST** `createCheckoutUrlForOnlineClass` and redirects to `cardUrl`, `achUrl`, or `payLaterUrl` as appropriate.
 
@@ -87,14 +87,31 @@ Offerings are loaded based on the checkout URL parameters. Use one of these endp
 - **Duplicate / capacity:** Backend checks `online_class_payment_details` for existing enrollment (same classOfferingId and student/parent email) and for spot availability (enrolled count vs total_spots on class_offering). If already enrolled or no spots, returns 400 with an error message.
 - **Stripe:** Two sessions are created (card, us_bank_account); each stores a document in `stripe_checkout_customer` with `productType: "online_class"`, `classOfferingId`, `parentEmail`, `studentName`, etc. On successful payment, Stripe webhook and `stripePaymentListener` call `updateOnlineClassPaymentDetails` and insert into `online_class_payment_details`.
 
-### Data attributes and sections (suggested)
+### Frontend (JS & CSS)
 
-- Wrapper for **Student Details** step / second tab (e.g. `data-online-class-checkout="student-details"`).
-- Wrapper for **Class Selection & Payment** step / third tab (e.g. `data-online-class-checkout="select-class-and-payment"`).
-- **Pay Now** button (e.g. `data-online-class-checkout="pay-now"`); visible after the user selects a payment method; triggers `createCheckoutUrlForOnlineClass` and redirect to Stripe.
-- **Order summary** area showing selected class name, term, and total (e.g. `data-online-class-checkout="order-details"`).
+The following is based on the checkout HTML and `checkout_with_abandoned_onlineclass.js`.
 
-(Exact attribute names may differ by frontend implementation; the backend does not depend on them.)
+**Redirect URLs:** When calling `createCheckoutUrlForOnlineClass`, the JS sets `successUrl: "https://www.nsdebatecamp.com/online-classes/payment-confirmation"` and `cancelUrl` from `window.location.href` with `returnType=Back` so the user returns to the same checkout page if they cancel on Stripe.
+
+**CSS classes (main):** Stepper: `.stepper-container`, `.stepper`, `#create-account-new`, `#student-details`, `#pay-deposite`, `#attend-camp`, `.step.active`. Tabs: `#checkout_program`, `#checkout_student_details`, `#checkout_payment`, `active_checkout_tab`. Class offerings: `.checkout_offering-grid-container`, `.checkout_offering-card-wrapper`, `[data-class-offering-id]`, `.selected`. Payment: `.checkout-tab-link`, `.bank-transfer-tab`, `.credit-card-tab`, `.oc-price`, `#pay-now-link`, `#pay-now-link-2`, `#pay-now-link-3`. Form: `#checkout-form`, `#Student-First-Name`, `#Student-Last-Name`, `#Student-Email`, `#Student-Grade`, `#Student-Gender`, `#checkout-form-error`. Memberstack: `data-ms-content="members"` / `"!members"`.
+
+**Event handlers and which function is called:**
+
+| Element / action | Function / behavior |
+|-----------------|----------------------|
+| `#next_page_1` click | `activateDiv("checkout_student_details")` |
+| `#next_page_2` click | If form valid: `storeBasicData()`, `updateOldStudentList()`, `displayStudentInfo("block")`, `activateDiv("checkout_payment")` |
+| `#prev_page_1` click | `activateDiv("checkout_program")` |
+| `#prev_page_2` click | `reinitializePaymentTab()`, `activateDiv("checkout_student_details")` |
+| `[data-student-info="edit"]` click | `reinitializePaymentTab()`, `activateDiv("checkout_student_details")` |
+| `.checkout_offering-card-wrapper` / `[data-class-offering-id]` click | **handleClassOfferingClick**: sets `$selectedClassOfferingId`, adds `.selected` to card (no API call yet) |
+| `#pay-now-link`, `#pay-now-link-2`, `#pay-now-link-3` click | **handlePayNowClick** → **`createCheckoutUrlForOnlineClass($selectedClassOfferingId)`** then redirect to `cardUrl` or `achUrl` |
+| `#ach_payment` / `#card_payment` click | **`createCheckoutUrlForOnlineClass($selectedClassOfferingId)`** then redirect to `achUrl` / `cardUrl` |
+| `.checkout-tab-link` click | **`updateOnlineClassPriceForTab(this)`** — updates price display and Pay Now label |
+
+**Main JS functions:** `activateDiv(divId)` — shows tab and syncs stepper; calls `updateOnlineClassPriceForTab` and `updateCheckoutPaymentGreeting` when switching to payment. `setupClassOfferingCardClicks()` — handles card click, sets `$selectedClassOfferingId`, `.selected`. `createCheckoutUrlForOnlineClass(classOfferingId)` — POST to API, returns `{ achUrl, cardUrl, payLaterUrl }`. `updateOnlineClassPriceForTab(tabEl)` — updates `.oc-price`, `#core_product_price` for card vs ACH. `updateCheckoutPaymentGreeting()` — sets h3 “Hi, [name]!” from memberData. `reinitializePaymentTab()` — resets payment UI and stepper. `isOnlineClassPage()` — true if `.checkout_offering-grid-container` or `[data-class-offering-id]` exists.
+
+**Data attributes:** `data-class-offering-id` (card wrapper — class offering ID for API); `data-price` (optional, for display); `data-default-text` (Pay Now restore text); `data-ms-content` (members / !members); `data-student-info="edit"` (edit student); `data-old-student-listener="true"` (saved-student dropdown). Suggested for consistency: `data-online-class-checkout="student-details"`, `"select-class-and-payment"`, `"pay-now"`, `"order-details"` (backend does not depend on these).
 
 ### Backend — create checkout URL
 
