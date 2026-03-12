@@ -125,9 +125,9 @@ This mirrors the behavior of camp checkout but scoped to online classes.
 
 ### E. Emails Triggered (Online Classes)
 
-After processing, `updateOnlineClassPaymentDetails` may call:
+After processing, `updateOnlineClassPaymentDetails` calls:
 
-- **`sendOnlineClassSuccessEmailToAdmin(stripeCheckout, chargeObj)`** when:
+  - **`sendOnlineClassSuccessEmailToAdmin(stripeCheckout, chargeObj)`** when:
   - Status is **Complete** with a valid card payment,
   - Status is **Processing** with **Bank Transfer**
 
@@ -168,10 +168,10 @@ Stripe is responsible for sending the **receipt email**; the system stores `rece
 
 - **Success:**
   - Stripe redirects the user to the **successUrl** that was passed when creating the checkout session in `createCheckoutUrlForOnlineClass`. This is usually a portal page or an online-classes confirmation page.
-  - After successful payment, the frontend can clear any local checkout state (e.g. `localStorage`) so a new online-class checkout starts fresh.
+  - After successful payment, the frontend clears any local checkout state (e.g. `localStorage`) so a new online-class checkout starts fresh.
 - **Cancel / Back:**
   - Stripe redirects to the **cancelUrl** with optional query parameters (e.g. `?returnType=back`).
-  - The online-classes checkout page can use `stripe_checkout_customer` and/or local state to restore:
+  - The online-classes checkout page uses `stripe_checkout_customer` and/or local state to restore:
     - Selected class & offering.
     - Student details.
     - Current step (Select class and pay).

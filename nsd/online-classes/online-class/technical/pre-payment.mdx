@@ -20,7 +20,7 @@ if (webflowMemberId != null) {
 }
 ```
 
-Parents can either **log in** with an existing account or **create a new Parent Account directly on the checkout page**. After signup, Memberstack automatically logs them in and the online-classes checkout UI is shown (Select class & student details → Select class and pay).
+Parents either **log in** with an existing account or **create a new Parent Account directly on the checkout page**. After signup, Memberstack automatically logs them in and the online-classes checkout UI is shown (Select class & student details → Select class and pay).
 
 **Implementation (auth & layout):** Same Memberstack configuration as camp checkout. The online classes checkout page uses Memberstack’s `data-ms-content` attributes plus inline JS to:
 
@@ -37,9 +37,9 @@ When a user visits the online classes checkout page, we save the checkout URL (i
 
 ### Abandoned Checkout State (before payment)
 
-Before payment, the frontend can persist basic checkout state for online classes so that:
+Before payment, the frontend persists basic checkout state for online classes so that:
 
-- If the user leaves the page **before paying**, the next visit to the online-class checkout (or a “Resume Checkout” link) can restore:
+- If the user leaves the page **before paying**, the next visit to the online-class checkout (or a “Resume Checkout” link) restores:
   - Selected grade/session/term/class
   - Selected class offerings (after the user picks a schedule)
   - Student details (first/last name, email, grade, gender)
@@ -72,7 +72,7 @@ For online classes, the **second tab** in checkout is **Student Details only**. 
 
 ### Validation
 
-- The frontend validates required student fields (First Name, Last Name) and may enforce additional rules (e.g. email formatting).
+- The frontend validates required student fields (First Name, Last Name) and also enforces additional rules (e.g. email formatting).
 - Backend validation is performed again in `createCheckoutUrlForOnlineClass.py` and `stripePaymentListener.py`:
   - Missing or invalid student fields result in a **400** error.
   - Duplicate enrollment (same student email/parent email + same classOfferingId) is blocked by checking `online_class_payment_details`.

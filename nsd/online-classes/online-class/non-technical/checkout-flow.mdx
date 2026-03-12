@@ -10,6 +10,19 @@ The **online classes checkout** lets parents log in or create a new account, sel
 
 Each step must be completed before proceeding to the next.
 
+### When the checkout URL is wrong or incomplete
+
+If the online-classes checkout page is opened without the required URL parameters (for example, missing `grade_id`, `session_detail_id`, or `class_detail_id`), the page shows an **error state** instead of the normal flow:
+
+- A prominent **error banner** is displayed with the message: **"ERROR! Please go back to the Class Overview page to select a class."**
+- A **"Go to Class Overview"** button is shown; clicking it takes the user to the Class Overview page to select a class. Only after selecting a class from the overview (which opens checkout with the correct URL parameters) can the user complete enrollment.
+- The **checkout form is disabled** — the user cannot create an account, enter student details, or proceed to payment until they go to Class Overview and select a class.
+
+<Frame>
+  ![Checkout Error Message](</images/createrror-message-checkout.png>)
+</Frame>
+
+
 ### Step 1: Login / Sign-up on the Online-Class Checkout Page
 
 When a user enters the **online classes checkout** flow (via the class overview page), they should log in or create a **Parent Account** before continuing.
@@ -19,7 +32,7 @@ When a user enters the **online classes checkout** flow (via the class overview 
 </Note>
 
 <Frame>
-  ![Image](/images/image-150.png)
+  ![Image](/images/create_account_class.png)
 </Frame>
 
 - **Existing Parent (Login):**
@@ -34,7 +47,7 @@ Behind the scenes, Memberstack controls which sections are visible (login/signup
 ### Step 2: Student Details
 
 <Frame>
-  ![Image](/images/image-152.png)
+  ![Image](/images/student_details_onlineclass.png)
 </Frame>
 
 On this step (second tab), the parent enters **only Student Details**; class selection happens on the next tab.
@@ -50,7 +63,7 @@ Clicking **Next** moves the parent to the **Select Class & Pay** step (third tab
 ### Step 3: Select Class and Pay (Payment)
 
 <Frame>
-  ![Image](/images/image-158.png)
+  ![Image](/images/select_pay_online_class.png)
 </Frame>
 
 On this step (third tab), the parent:
@@ -67,11 +80,15 @@ On this step (third tab), the parent:
   - Clicking **Pay Now** calls the backend (`createCheckoutUrlForOnlineClass`), then sends the parent to the secure **Stripe payment page** for the chosen method.
   - Stripe shows the selected class and price (no camp programs or briefs).
 
+<Alert title="Already enrolled">
+  If a parent tries to enroll a student in a class that student is already enrolled in, an **alert** is shown with the message: **"This student is already enrolled in this class."** The enrollment is blocked and the user must choose a different class or schedule.
+</Alert>
+
 ### Step 4: After Payment
 
 After payment:
 
-- Stripe redirects the parent to the configured **success page** (`successUrl`):
+- Stripe redirects the parent to the configured **success page** (`successUrl`), which is the [**Online Classes payment confirmation page**](https://www.nsdebatecamp.com/online-classes/payment-confirmation):
   - At this point, the student is officially enrolled in the selected **online class & schedule**.
 - On the backend:
   - The Stripe webhook (`stripePaymentListener`) processes the payment for `productType: "online_class"`.
