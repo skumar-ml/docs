@@ -170,6 +170,15 @@ Behavior:
 
 ---
 
+### Time Display Behavior
+
+
+The start_time and end_time values for trial classes are stored in the system as UTC ISO datetime strings.
+
+When trial classes are displayed on the frontend, these UTC values are converted to Eastern Time (America/New_York) before being shown to users.
+
+This ensures that all trial class times appear in the correct local timezone for the program, regardless of how the datetime is stored in the backend.
+
 ### Form Submission
 
 Event: `submit` on `#trial-class-form`.
