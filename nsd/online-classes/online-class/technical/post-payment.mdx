@@ -6,11 +6,7 @@ This section explains everything that happens **after a payment is made for an o
 
 ## Core Logic Flow (Online Classes)
 
-After a payment is completed (Card or Bank Transfer), Stripe sends a webhook to the NSD backend. The webhook handler is:
-
-- **`stripePaymentListener.py`** — `lambda_handler`
-
-It:
+After a payment is completed (Card or Bank Transfer), Stripe sends a webhook to the NSD backend. The webhook handler is `stripePaymentListener.py` — `lambda_handler`. It:
 
 1. Reads the Stripe event (`payment_intent`, `charge`, or `checkout.session`).
 2. Looks up **`stripe_checkout_customer`** by **`sessionId`**.
@@ -24,7 +20,7 @@ It:
 
 Relevant event handling for online classes:
 
-- **`charge` events** (Card or Bank Transfer):
+- **`charge events`** (Card or Bank Transfer):
   - Derives a payment **status**:
     - `paid == True` → **Complete**
     - `status == "pending"` → **Processing** (e.g. ACH still settling)
@@ -32,12 +28,10 @@ Relevant event handling for online classes:
   - Looks up `stripe_checkout_customer` by `sessionId`.
   - For `productType == "online_class"` calls:
     - `updateOnlineClassPaymentDetails(stripeCheckout, status, chargeObj, sessionId, freeCoupon)`
-
-- **`payment_intent` with `status == "requires_payment_method"`**:
+- **``payment_intent with status == "requires_payment_method"``**:
   - Treated as **Failed**:
     - For online classes, any `online_class_payment_details` with that `payment_intent` will be removed if created, and `stripe_checkout_customer.status` is updated accordingly (see below).
-
-- **`checkout.session` with `payment_status == "paid"` and `amount_total == 0`**:
+- `checkout.session with payment_status == "paid" and amount_total == 0`:
   - Zero-amount flow (less common for online classes); handled similarly by generating a synthetic `payment_intent` and going through the same update path.
 
 ## `updateOnlineClassPaymentDetails` (Online Classes)
@@ -46,11 +40,11 @@ Relevant event handling for online classes:
 
 Located in `stripePaymentListener.py`. It is responsible for:
 
-1. **Ensuring idempotency via `payment_intent`**
-2. **Writing to `online_class_payment_details`**
-3. **Creating/updating `student_profiles`**
-4. **Updating `stripe_checkout_customer`**
-5. **Sending admin email via `sendOnlineClassSuccessEmailToAdmin`**
+1. **`Ensuring idempotency via payment_intent`**
+2. **`Writing to online_class_payment_details`**
+3. **`Creating/updating student_profiles`**
+4. **`Updating stripe_checkout_customer`**
+5. **`Sending admin email via sendOnlineClassSuccessEmailToAdmin`**
 
 ### A. Idempotency & Basic Control Flow
 
@@ -61,18 +55,17 @@ Located in `stripePaymentListener.py`. It is responsible for:
 
 Two cases:
 
-1. **Record already exists in `online_class_payment_details`**
+1. **`Record already exists in online_class_payment_details`**
    - If `status == "Failed"`:
      - Deletes the record: `db.online_class_payment_details.delete_one({"payment_intent": payment_intent})`
    - Updates `stripe_checkout_customer` for this session:
      - `db.stripe_checkout_customer.update_one({ "sessionId": sessionId }, { "$set": { "payment_intent": payment_intent, "status": status } })`
-
 2. **No record yet (first time handling this payment intent)**
    - Computes the amount (in cents) from the charge:
      - `amount = chargeObj.get("amount", 0) or chargeObj.get("amount_paid", 0)`
    - Writes `amount` back to `stripeCheckout["amountPaid"]`.
    - If `status != "Failed"`:
-     - **Creates a new `online_class_payment_details` record** (see below).
+     - **`Creates a new online_class_payment_details record`** (see below).
    - Updates `stripe_checkout_customer` for this session.
    - If `status == "Complete"` and `receipt_url` exists on the charge:
      - Updates `receipt_url` in `online_class_payment_details`.
@@ -161,13 +154,11 @@ Stripe is responsible for sending the **receipt email**; the system stores `rece
   - `student_profiles` created/updated.
   - Admin success email via `sendOnlineClassSuccessEmailToAdmin`.
   - `receipt_url` stored in `online_class_payment_details` if available.
-
 - **Processing (typically Bank Transfer still settling)**:
   - `online_class_payment_details` is created similarly (amount recorded, profile created/updated).
   - `stripe_checkout_customer.status` set to **Processing**.
   - Admin email sent (to notify of a processing/ACH payment).
   - When final completion event arrives, status is updated and `receipt_url` stored.
-
 - **Failed**:
   - Any existing `online_class_payment_details` with this `payment_intent` is deleted.
   - `stripe_checkout_customer.status` set to **Failed**.
@@ -175,11 +166,10 @@ Stripe is responsible for sending the **receipt email**; the system stores `rece
 
 ## User Redirection After Payment (Online Classes)
 
-- **Success:**  
+- **Success:**
   - Stripe redirects the user to the **successUrl** that was passed when creating the checkout session in `createCheckoutUrlForOnlineClass`. This is usually a portal page or an online-classes confirmation page.
   - After successful payment, the frontend can clear any local checkout state (e.g. `localStorage`) so a new online-class checkout starts fresh.
-
-- **Cancel / Back:**  
+- **Cancel / Back:**
   - Stripe redirects to the **cancelUrl** with optional query parameters (e.g. `?returnType=back`).
   - The online-classes checkout page can use `stripe_checkout_customer` and/or local state to restore:
     - Selected class & offering.
@@ -187,4 +177,3 @@ Stripe is responsible for sending the **receipt email**; the system stores `rece
     - Current step (Select class and pay).
 
 For a complete view of how checkout sessions are created and how payment methods are exposed, see [Payment](/online-class/technical/payment).
-

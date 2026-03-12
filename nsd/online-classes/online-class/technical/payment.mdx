@@ -41,16 +41,16 @@ When the parent proceeds to payment, the system creates Stripe checkout sessions
 The following data is sent in the **POST body** to `createCheckoutUrlForOnlineClass`:
 
 <Accordion title="Payload (online classes)">
-  | Field            | Purpose                                                                                   |
-  | :--------------- | :---------------------------------------------------------------------------------------- |
-  | email            | Parent/member email (from Memberstack `memberData.email`)                                |
-  | memberId         | Logged-in member (parent) ID from Memberstack                                            |
-  | student          | Object with `first_name`, `last_name` (required) and optional `email`, `grade`, `gender` |
-  | class_offering_id| Selected **schedule/offering** for this class (from offerings API)                       |
-  | successUrl       | Redirect after successful payment. Example: `https://www.nsdebatecamp.com/online-classes/payment-confirmation` (portal or confirmation page; optional query params may be appended). |
-  | cancelUrl        | Redirect if user cancels or goes back from Stripe                                        |
-  | device           | Device info (optional)                                                                    |
-  | deviceUserAgent  | Browser user agent string (optional)                                                     |
+  | Field             | Purpose                                                                                                                                                                              |
+  | :---------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | email             | Parent/member email (from Memberstack `memberData.email`)                                                                                                                            |
+  | memberId          | Logged-in member (parent) ID from Memberstack                                                                                                                                        |
+  | student           | Object with `first_name`, `last_name` (required) and optional `email`, `grade`, `gender`                                                                                             |
+  | class_offering_id | Selected **schedule/offering** for this class (from offerings API)                                                                                                                   |
+  | successUrl        | Redirect after successful payment. Example: `https://www.nsdebatecamp.com/online-classes/payment-confirmation` (portal or confirmation page; optional query params may be appended). |
+  | cancelUrl         | Redirect if user cancels or goes back from Stripe                                                                                                                                    |
+  | device            | Device info (optional)                                                                                                                                                               |
+  | deviceUserAgent   | Browser user agent string (optional)                                                                                                                                                 |
 </Accordion>
 
 ### API: Create Checkout URLs (Online Classes)
@@ -58,38 +58,32 @@ The following data is sent in the **POST body** to `createCheckoutUrlForOnlineCl
 - **API:** `POST camp/createCheckoutUrlForOnlineClass`
 - **Backend implementation:** `createCheckoutUrlForOnlineClass.py`
 
-**What happens in `createCheckoutUrlForOnlineClass`:**
+**`What happens in createCheckoutUrlForOnlineClass:`**
 
 1. **Auth & Member check**
    - Validates `email` and `memberId` are present.
    - Looks up member in `members` collection by `memberId` + `email`; returns `400` if not found.
-
 2. **Student validation**
    - Reads `student.first_name`, `student.last_name`, optional `email`, `grade`, `gender`.
    - Returns `400` if required fields are missing.
-
 3. **Class offering lookup**
    - Loads `class_offerings` by `_id = class_offering_id`.
    - Extracts `class_detail_id`, `session_detail_id`, `total_spots`.
    - Loads `class_session_details` (price, term id, year id).
    - Loads `class_details` (class name) and `class_term` (term name).
    - Builds a `product_label` such as `"Intro to Debate - Fall"` for use on Stripe.
-
 4. **Price calculation**
    - `ach_amount` = class session price (base price).
-   - `card_amount` = adjusted to include Stripe fee: \((price + 0.30) / 0.971\), rounded to 2 decimals.
-
-5. **Duplicate enrollment & capacity checks (using `online_class_payment_details`)**
-   - `existing_payment = db.online_class_payment_details.find_one({ "classOfferingId": class_offering_id, studentEmail/parentEmail })`  
+   - `card_amount` = adjusted to include Stripe fee: ((price + 0.30) / 0.971), rounded to 2 decimals.
+5. **Duplicate enrollment & capacity checks (using** `online_class_payment_details`**)**
+   - `existing_payment = db.online_class_payment_details.find_one({ "classOfferingId": class_offering_id, studentEmail/parentEmail })`\
      → returns **400** with `"This student is already enrolled in this class"` if a match is found.
-   - `active_enrollments = db.online_class_payment_details.count_documents({ "classOfferingId": class_offering_id })`  
+   - `active_enrollments = db.online_class_payment_details.count_documents({ "classOfferingId": class_offering_id })`\
      → if `active_enrollments >= total_spots` returns **400** with `"This class has no available spots"`.
-
 6. **Stripe customer**
    - Calls `get_customer_id(email)`:
      - Looks up existing Stripe customer in `stripe_customer` by parent email.
      - If not found (or invalid in Stripe), creates a new Stripe customer with parent name + email and saves it in `stripe_customer`.
-
 7. **Create Stripe Checkout Sessions**
    - Calls `create_checkout_session_url(...)` with:
      - `email`, `customer_id`, `member_id`
@@ -103,7 +97,7 @@ The following data is sent in the **POST body** to `createCheckoutUrlForOnlineCl
 
 Inside `create_checkout_session_url`:
 
-- Payment types array: `["card", "us_bank_account", "affirm"]`  
+- Payment types array: `["card", "us_bank_account", "affirm"]`\
   (Affirm is created but **not exposed in the UI** for online classes.)
 
 For each payment type:
@@ -112,17 +106,14 @@ For each payment type:
    - Card → `amount = card_amount`, `paymentType = "Card"`.
    - Bank Transfer (ACH) → `amount = ach_amount`, `paymentType = "Bank Transfer"`.
    - Pay Later (Affirm) → `amount = pay_later_amount` (same as card_amount), `paymentType = "Pay Later"`.
-
 2. **Stripe Checkout Session**
    - Creates a Stripe Checkout Session with:
      - `payment_method_types` = `["card"]` or `["us_bank_account"]` (or `["affirm"]` internally).
      - `line_items` with `product_label` and amount in cents.
      - `success_url` with `transactionID={CHECKOUT_SESSION_ID}` appended.
      - `cancel_url` same as provided in the POST body.
-
-3. **Persist to `stripe_checkout_customer`**
+3. **`Persist to stripe_checkout_customer`**
    - Inserts a document for each Session:
-
      - `memberId`, `productType: "online_class"`
      - `paymentType`: `"Card"` / `"Bank Transfer"` / `"Pay Later"`
      - `amount`, `sessionId`, `checkoutUrl`
@@ -131,7 +122,6 @@ For each payment type:
      - `classOfferingId`
      - `device`, `deviceUserAgent`
      - `created_on`
-
 4. **Return**
    - Returns a payload with:
      - `cardUrl` (card Checkout URL)
@@ -180,5 +170,3 @@ See [Post-Payment](/technical/post-payment) for full details.
 - If the user leaves without completing payment:
   - `stripe_checkout_customer` has a record with `productType: "online_class"` and no `payment_intent`.
 - Frontend/localStorage data (if used) can be leveraged to implement “Resume checkout” for online classes, similar to camp checkout.
-
-

@@ -4,9 +4,9 @@ title: "Checkout"
 
 The [NSD Online Classes Checkout](https://www.nsdebatecamp.com/online-class-checkout) flow lets users enroll in a single online class offering. The checkout page is opened with **URL query parameters** that identify the class and session context; the frontend uses these parameters to call the **get class offerings** API and display available schedules. The user creates or logs into a **Parent Account**, enters **Student Details**, selects one **Class Offering** (schedule) from the offerings returned for that context, chooses a payment method, and is redirected to Stripe. There is one class offering per checkout.
 
-**For more detail,** see the technical docs: [Non-Technical Checkout Flow](/online-class/non-technical/checkout-flow), [Pre-Payment](/online-class/technical/pre-payment), [Payment](/online-class/technical/payment), [Post-Payment](/online-class/technical/post-payment).
+**For more detail,** see the following docs: [Non-Technical Checkout Flow](/online-class/non-technical/checkout-flow), [Pre-Payment](/online-class/technical/pre-payment), [Payment](/online-class/technical/payment), [Post-Payment](/online-class/technical/post-payment).
 
-**Checkout URL format (with parameters):**
+### **Checkout URL format (with parameters):**
 
 `https://www.nsdebatecamp.com/online-class-checkout?grade_id=...&grade_name=...&session_name=...&session_detail_id=...&class_detail_id=...`
 
@@ -24,15 +24,15 @@ The [NSD Online Classes Checkout](https://www.nsdebatecamp.com/online-class-chec
 
 Based on these parameters, the checkout page fetches **offerings** (schedules with `class_offering_id`) so the user can pick a specific day/time before payment. See **API — get class offerings** below.
 
-**The checkout flow follows a multi-step process:**
+## **The checkout flow follows a multi-step process:**
 
 Login / Sign-up → Student Details → Class Selection & Payment → Stripe Checkout → Access Content
 
 Each step must be completed before proceeding to the next.
 
-**Step 1: Login / Sign-up**
+### **Step 1: Login / Sign-up**
 
-When a user enters the checkout flow, they must log in or create a **Parent Account** before continuing.
+When a user enters the checkout flow, they should log in or create a **Parent Account** before continuing.
 
 ### Step 2: Student Details
 
@@ -83,7 +83,7 @@ Offerings are loaded based on the checkout URL parameters. Use one of these endp
 ### Flow (online class checkout)
 
 - **Auth:** User must be logged in (Memberstack); frontend sends `email` and `memberId` in the POST body. Backend verifies member exists in `members` collection.
-- **Validation:** Backend ensures `student.first_name`, `student.last_name`, `class_offering_id`, `successUrl`, `cancelUrl` are present. It loads `class_offerings` by `class_offering_id`, then `class_session_details` (for price, term_id) and `class_details` (for class name). Price is taken from session detail; card amount includes Stripe fee (2.9% + $0.30).
+- **Validation:** Backend ensures `student.first_name`, `student.last_name`, `class_offering_id`, `successUrl`, `cancelUrl` are present. It loads `class_offerings` by `class_offering_id`, then `class_session_details` (for price, term_id) and `class_details` (for class name). Price is taken from session detail; card amount includes Stripe fee (2.9% + \$0.30).
 - **Duplicate / capacity:** Backend checks `online_class_payment_details` for existing enrollment (same classOfferingId and student/parent email) and for spot availability (enrolled count vs total_spots on class_offering). If already enrolled or no spots, returns 400 with an error message.
 - **Stripe:** Two sessions are created (card, us_bank_account); each stores a document in `stripe_checkout_customer` with `productType: "online_class"`, `classOfferingId`, `parentEmail`, `studentName`, etc. On successful payment, Stripe webhook and `stripePaymentListener` call `updateOnlineClassPaymentDetails` and insert into `online_class_payment_details`.
 
@@ -97,17 +97,17 @@ The following is based on the checkout HTML and `checkout_with_abandoned_onlinec
 
 **Event handlers and which function is called:**
 
-| Element / action | Function / behavior |
-|-----------------|----------------------|
-| `#next_page_1` click | `activateDiv("checkout_student_details")` |
-| `#next_page_2` click | If form valid: `storeBasicData()`, `updateOldStudentList()`, `displayStudentInfo("block")`, `activateDiv("checkout_payment")` |
-| `#prev_page_1` click | `activateDiv("checkout_program")` |
-| `#prev_page_2` click | `reinitializePaymentTab()`, `activateDiv("checkout_student_details")` |
-| `[data-student-info="edit"]` click | `reinitializePaymentTab()`, `activateDiv("checkout_student_details")` |
-| `.checkout_offering-card-wrapper` / `[data-class-offering-id]` click | **handleClassOfferingClick**: sets `$selectedClassOfferingId`, adds `.selected` to card (no API call yet) |
-| `#pay-now-link`, `#pay-now-link-2`, `#pay-now-link-3` click | **handlePayNowClick** → **`createCheckoutUrlForOnlineClass($selectedClassOfferingId)`** then redirect to `cardUrl` or `achUrl` |
-| `#ach_payment` / `#card_payment` click | **`createCheckoutUrlForOnlineClass($selectedClassOfferingId)`** then redirect to `achUrl` / `cardUrl` |
-| `.checkout-tab-link` click | **`updateOnlineClassPriceForTab(this)`** — updates price display and Pay Now label |
+| Element / action                                                     | Function / behavior                                                                                                            |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `#next_page_1` click                                                 | `activateDiv("checkout_student_details")`                                                                                      |
+| `#next_page_2` click                                                 | If form valid: `storeBasicData()`, `updateOldStudentList()`, `displayStudentInfo("block")`, `activateDiv("checkout_payment")`  |
+| `#prev_page_1` click                                                 | `activateDiv("checkout_program")`                                                                                              |
+| `#prev_page_2` click                                                 | `reinitializePaymentTab()`, `activateDiv("checkout_student_details")`                                                          |
+| `[data-student-info="edit"]` click                                   | `reinitializePaymentTab()`, `activateDiv("checkout_student_details")`                                                          |
+| `.checkout_offering-card-wrapper` / `[data-class-offering-id]` click | **handleClassOfferingClick**: sets `$selectedClassOfferingId`, adds `.selected` to card (no API call yet)                      |
+| `#pay-now-link`, `#pay-now-link-2`, `#pay-now-link-3` click          | **handlePayNowClick** → **`createCheckoutUrlForOnlineClass($selectedClassOfferingId)`** then redirect to `cardUrl` or `achUrl` |
+| `#ach_payment` / `#card_payment` click                               | **`createCheckoutUrlForOnlineClass($selectedClassOfferingId)`** then redirect to `achUrl` / `cardUrl`                          |
+| `.checkout-tab-link` click                                           | **`updateOnlineClassPriceForTab(this)`** — updates price display and Pay Now label                                             |
 
 **Main JS functions:** `activateDiv(divId)` — shows tab and syncs stepper; calls `updateOnlineClassPriceForTab` and `updateCheckoutPaymentGreeting` when switching to payment. `setupClassOfferingCardClicks()` — handles card click, sets `$selectedClassOfferingId`, `.selected`. `createCheckoutUrlForOnlineClass(classOfferingId)` — POST to API, returns `{ achUrl, cardUrl, payLaterUrl }`. `updateOnlineClassPriceForTab(tabEl)` — updates `.oc-price`, `#core_product_price` for card vs ACH. `updateCheckoutPaymentGreeting()` — sets h3 “Hi, [name]!” from memberData. `reinitializePaymentTab()` — resets payment UI and stepper. `isOnlineClassPage()` — true if `.checkout_offering-grid-container` or `[data-class-offering-id]` exists.
 

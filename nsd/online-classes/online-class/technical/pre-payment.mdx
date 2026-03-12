@@ -33,11 +33,7 @@ Parents can either **log in** with an existing account or **create a new Parent 
 - The overview page builds a **dynamic** checkout URL with the selected class context (grade, session, term, class) and navigates to:
   - `https://www.nsdebatecamp.com/online-class-checkout?grade_id=...&grade_name=...&session_name=...&session_detail_id=...&class_detail_id=...`
 
-When a user visits the online classes checkout page, we may save the checkout URL (including query params) in `localStorage.redirect_url`. After logging-in or signing-up, Memberstack (via its post-auth redirect) can send users to `/portal/home` or another portal page with JS that:
-
-1. Checks if `redirect_url` exists in `localStorage`.
-2. If present, reads and deletes it.
-3. Redirects the user back to the **online-class-checkout** URL for the class they were trying to purchase.
+When a user visits the online classes checkout page, we save the checkout URL (including query params) in `localStorage.redirect_url`. After logging-in or signing-up, Memberstack (via its post-auth redirect) sends users to `/portal/home` that redirects back to checkout.
 
 ### Abandoned Checkout State (before payment)
 
@@ -86,13 +82,12 @@ For online classes, the **second tab** in checkout is **Student Details only**. 
 
 When the user clicks **Next** on the Student Details tab:
 
-1. The frontend **does not call the backend yet**; it simply saves the student object (in state/Memberstack) and navigates to the **Select Class & Pay** tab.
+1. The frontend **does not call the backend yet**; it simply saves the student object and navigates to the **Select Class & Pay** tab.
 2. On the **Select Class & Pay** tab, the frontend:
    - Uses the checkout URL (`grade_id`, `grade_name`, `session_name`, `session_detail_id`, `class_detail_id`) to load offerings (`class_offering_id` list) via the offerings API.
    - Lets the parent choose **one** class offering (schedule) and a **payment method** (Card or ACH).
 3. **Only when the user clicks Pay Now** does the frontend send a **single POST** request to:
-   - `POST camp/createCheckoutUrlForOnlineClass`
-   including:
+   - `POST camp/createCheckoutUrlForOnlineClass` including:
    - **Auth:** `email`, `memberId` from Memberstack (parent account).
    - **Student object:** `first_name`, `last_name`, optional `email`, `grade`, `gender`.
    - **Selected class offering:** `class_offering_id` (from offerings API).

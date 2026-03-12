@@ -12,21 +12,24 @@ Each step must be completed before proceeding to the next.
 
 ### Step 1: Login / Sign-up on the Online-Class Checkout Page
 
-When a user enters the **online classes checkout** flow (via the class overview page), they must log in or create a **Parent Account** before continuing.
+When a user enters the **online classes checkout** flow (via the class overview page), they should log in or create a **Parent Account** before continuing.
+
+<Note>
+  We do not **force** the user to be logged in to a Parent Account. This is a future improvement we expect to make.
+</Note>
 
 <Frame>
   ![Image](/images/image-150.png)
 </Frame>
 
-- **Existing Parent (Login):**  
-  - Sees "Already have an account?" with a **Login** button or login form.  
+- **Existing Parent (Login):**
+  - Sees "Already have an account?" with a **Login** button or login form.
   - After successful login (Memberstack), they are moved into the **Student Details** step (second tab) for online classes.
-
-- **New Parent (Create Account):**  
-  - Completes the **Create Account** form directly on or from the online-class checkout page.  
+- **New Parent (Create Account):**
+  - Completes the **Create Account** form directly on the online-class checkout page.
   - Upon successful creation, they are **automatically logged in** and moved to the **Student Details** step.
 
-Behind the scenes, Memberstack controls which sections are visible (login/signup vs. checkout tabs) using `data-ms-content="!members"` and `data-ms-content="members"`, just like camp checkout.
+Behind the scenes, Memberstack controls which sections are visible (login/signup vs. checkout tabs) using attributes `data-ms-content="!members"` and `data-ms-content="members"`, just like camp checkout.
 
 ### Step 2: Student Details
 
@@ -38,10 +41,7 @@ On this step (second tab), the parent enters **only Student Details**; class sel
 
 - Arrives with a **specific class context** from the class overview page (via the URL), but offerings are not yet selected here.
 - Enters **Student Details**:
-  - Student Name (First, Last)
-  - Student Email (optional but recommended)
-  - Grade
-  - Gender
+  - Student Name (First, Last), Student Email (optional but recommended), Grade, Gender
 
 Parents can reuse or prefill student info based on existing student profiles, similar to camp checkout (where available).
 
@@ -72,7 +72,6 @@ On this step (third tab), the parent:
 After payment:
 
 - Stripe redirects the parent to the configured **success page** (`successUrl`):
-  - Typically a member portal page or an online-class confirmation page.
   - At this point, the student is officially enrolled in the selected **online class & schedule**.
 - On the backend:
   - The Stripe webhook (`stripePaymentListener`) processes the payment for `productType: "online_class"`.
