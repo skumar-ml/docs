@@ -45,8 +45,8 @@ The following data is sent in the **POST body** to `createCheckoutUrlForOnlineCl
   - **memberId**: Logged-in member (parent) ID from Memberstack.
   - **student**: Object with `first_name`, `last_name` (required) and optional `email`, `grade`, `gender`.
   - **class_offering_id**: Selected **schedule/offering** for this class (from offerings API).
-  - **successUrl**: Redirect after successful payment. Example: `https://www.nsdebatecamp.com/online-classes/payment-confirmation` (payment confirmation page that then redirects to the NSD Camp Portal).
-  - **cancelUrl**: Redirect if user cancels or goes back from Stripe.
+  - **successUrl**: Redirect after successful payment. Example: [`Online Classes payment confirmation page`](https://www.nsdebatecamp.com/online-classes/payment-confirmation), which then redirects to the [`NSD Camp Portal`](https://www.nsdebatecamp.com/portal/dashboard).
+  - **cancelUrl**: Redirect if the user cancels or goes back from Stripe.
   - **device**: Device info (optional).
   - **deviceUserAgent**: Browser user agent string (optional).
 </Accordion>
@@ -168,7 +168,7 @@ The following notes describe how the online-classes checkout page is wired to th
 
 - When calling `createCheckoutUrlForOnlineClass`, the frontend sets:
   - `successUrl: "https://www.nsdebatecamp.com/online-classes/payment-confirmation"`
-  - `cancelUrl` from `window.location.href` with `returnType=Back` so the user returns to the same checkout page if they cancel on Stripe.
+  - `cancelUrl` from `window.location.href` with `returnType=Back` so the user returns to the same checkout page and the **Student Details** tab becomes active again if they cancel on Stripe.
 
 **Key CSS classes**
 
