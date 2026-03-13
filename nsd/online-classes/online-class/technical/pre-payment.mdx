@@ -86,8 +86,6 @@ When the user clicks **Next** on the Student Details tab:
 2. On the **Select Class & Pay** tab, the frontend:
    - Uses the checkout URL (`grade_id`, `grade_name`, `session_name`, `session_detail_id`, `class_detail_id`) to load offerings (`class_offering_id` list) via the offerings API.
    - Lets the parent choose **one** class offering (schedule) and a **payment method** (Card or ACH).
-3. **Only when the user clicks Pay Now** does the frontend send a **single POST** request to `POST camp/createCheckoutUrlForOnlineClass` with parent auth, the selected student, the selected class offering, and the `successUrl` / `cancelUrl`.
-4. Backend (`createCheckoutUrlForOnlineClass.py`) validates everything (auth, student, class offering, available spots, duplicate enrollment) and prepares the Stripe Checkout Sessions; see [Payment (Online Classes)](/online-class/technical/payment) for the full breakdown.
-5. The response includes checkout URLs and a success flag, which the frontend uses to show **Card** and **Bank Transfer (ACH)** options on the **Select Class & Pay** step.
+3. When the user clicks **Pay Now** on this step, control moves into the payment flow handled in detail in [Payment (Online Classes)](/online-class/technical/payment).
 
 The **Select Class & Pay** tab then shows payment options for **Card** and **Bank Transfer**, wired to the returned URLs. Student and class selection data is stored in `stripe_checkout_customer` and, after successful payment, in `online_class_payment_details`.
