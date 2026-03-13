@@ -15,8 +15,8 @@ Each step must be completed before proceeding to the next.
 If the online-classes checkout page is opened without the required URL parameters (for example, missing `grade_id`, `session_detail_id`, or `class_detail_id`), the page shows an **error state** instead of the normal flow:
 
 - A prominent **error banner** is displayed with the message: **"ERROR! Please go back to the Class Overview page to select a class."**
-- A **"Go to Class Overview"** button is shown; clicking it takes the user to the Class Overview page to select a class. Only after selecting a class from the overview (which opens checkout with the correct URL parameters) can the user complete enrollment.
-- The **checkout form is disabled** — the user cannot create an account, enter student details, or proceed to payment until they go to Class Overview and select a class.
+- A **"Go to Class Overview"** button is shown; clicking it takes the user to the [Class Overview](/online-class/class-overview) page to select a class. Only after selecting a class from the overview (which opens checkout with the correct URL parameters) does the user complete enrollment.
+- The **checkout form is disabled** — the user cannot create an account, enter student details, or proceed to payment until they go to [Class Overview](/online-class/class-overview) and select a class.
 
 <Frame>
   ![Checkout Error Message](</images/error-message-checkout.png>)
@@ -56,7 +56,7 @@ On this step (second tab), the parent enters **only Student Details**; class sel
 - Enters **Student Details**:
   - Student Name (First, Last), Student Email (optional but recommended), Grade, Gender
 
-Parents can reuse or prefill student info based on existing student profiles, similar to camp checkout (where available).
+Parents reuse or prefill student info based on existing student profiles, similar to camp checkout (where available).
 
 Clicking **Next** moves the parent to the **Select Class & Pay** step (third tab).
 
@@ -99,7 +99,7 @@ After payment:
   - A **student profile** is created or updated in `student_profiles`.
   - An **admin notification email** is sent via `sendOnlineClassSuccessEmailToAdmin`.
 
-If the parent returns to the checkout page later (e.g. via the same checkout URL or from the portal), completed enrollments can be reflected by:
+If the parent returns to the checkout page later (e.g. via the same checkout URL or from the portal), completed enrollments are reflected by:
 
 - Enrollment counts and available spots on the class overview and offerings pages (driven by `online_class_payment_details`).
 - Pre-filled student details from `student_profiles`.

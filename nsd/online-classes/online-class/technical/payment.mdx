@@ -45,7 +45,7 @@ The following data is sent in the **POST body** to `createCheckoutUrlForOnlineCl
   - **memberId**: Logged-in member (parent) ID from Memberstack.
   - **student**: Object with `first_name`, `last_name` (required) and optional `email`, `grade`, `gender`.
   - **class_offering_id**: Selected **schedule/offering** for this class (from offerings API).
-  - **successUrl**: Redirect after successful payment. Example: `https://www.nsdebatecamp.com/online-classes/payment-confirmation` (portal or confirmation page; optional query params can be appended as needed).
+  - **successUrl**: Redirect after successful payment. Example: `https://www.nsdebatecamp.com/online-classes/payment-confirmation` (payment confirmation page that then redirects to the NSD Camp Portal).
   - **cancelUrl**: Redirect if user cancels or goes back from Stripe.
   - **device**: Device info (optional).
   - **deviceUserAgent**: Browser user agent string (optional).
@@ -144,16 +144,7 @@ Checkout state (selected class, student details) is already written into `stripe
 
 ### 1. Successful Payment
 
-- Stripe redirects to the **successUrl** passed when creating the session. For online classes this is typically the payment confirmation page, e.g.:
-  - `https://www.nsdebatecamp.com/online-classes/payment-confirmation`
-  - Alternatively, some deployments use a member portal URL such as `https://www.nsdebatecamp.com/members/{memberId}`.
-- Post-payment processing is driven by **`stripePaymentListener.py`**, which:
-  - Looks up `stripe_checkout_customer` by `sessionId`.
-  - Calls `updateOnlineClassPaymentDetails(stripeCheckout, status, chargeObj, sessionId, freeCoupon)` for `productType == "online_class"`.
-  - Inserts/updates `online_class_payment_details` and `student_profiles`.
-  - Sends admin email via `sendOnlineClassSuccessEmailToAdmin`.
-
-See [Post-Payment](/technical/post-payment) for full details.
+See [Post-Payment (Online Classes)](/online-class/technical/post-payment) for details.
 
 ### 2. Cancelled Payment
 

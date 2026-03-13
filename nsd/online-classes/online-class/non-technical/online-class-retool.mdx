@@ -4,16 +4,16 @@ title: "Retool (Online Classes)"
 
 This guide focuses on **how to use** the Retool screens for Online Classes—what each page is for and how to complete common tasks. It is written for admins and operators; it does not cover technical implementation (APIs or database details).
 
-Admins manage all **Online Classes** data via Retool. Under the **Online Classes** dropdown you can open: **Class Offerings**, **Class Levels**, **Class Sessions Details**, **Manage Sessions**, **Manage Grades**, **Manage Class Terms**, and **Create Year**. On most screens you can **add, edit, and delete** records (Create Year is add-only; there is no edit or delete for years). Changes here drive what appears on the [Class Overview](/online-classes/class-overview) page and what parents can select and pay for at [Checkout](/online-classes/checkout).
+Admins manage all **Online Classes** data via Retool. Under the **Online Classes** dropdown you open: **Class Offerings**, **Class Levels**, **Class Sessions Details**, **Manage Sessions**, **Manage Grades**, **Manage Class Terms**, and **Create Year**. On most screens admins **add, edit, and delete** records (Create Year is add-only; there is no edit or delete for years). Changes here drive what appears on the [Class Overview](/online-class/class-overview) page and what parents select and pay for at [Checkout Flow](/online-class/non-technical/checkout-flow).
 
 ## Overview: How the data fits together
 
 - **Academic year** — The year (e.g. 2026) that scopes which sessions and pricing are current.
 - **Sessions** — Named periods (e.g. **Fall**, **Summer**) that appear on the class overview.
 - **Terms** — Term types (e.g. **Semester, Minimester 1/2**) with a label and description (e.g. length).
-- **Grades** — Grade labels (e.g. **5th-6th, 7th-8th, 9th+**) used as filters on the class overview; each class can be linked to one or more grades.
+- **Grades** — Grade labels (e.g. **5th-6th, 7th-8th, 9th+**) used as filters on the class overview; each class is linked to one or more grades.
 - **Session details** — A combination of **year + session + term** with **start date**, **end date**, **price**, and whether it’s active. This is what checkout and the website use to show the right schedules and price.
-- **Classes** — The actual course (e.g. Intro to Debate): name, description, prerequisite, and which grades can see it. Shown in the class catalog.
+- **Classes** — The actual course (e.g. Intro to Debate): name, description, prerequisite, and which grades see it. Shown in the class catalog.
 - **Offerings** — **Schedule slots** for a class in a given session detail: day, start/end time, and total spots. Parents pick one of these at checkout when they enroll.
 
 ---
@@ -158,12 +158,12 @@ The page has **two filters** at the top: **Session** (e.g. Fall) and **Year**. *
 
 ## **Class Levels**
 
-**Use** [this Retool page](https://nsdebatecamp.retool.com/apps/3f3343ba-0664-11f1-aa2b-7f3aba44dc57/Online%20Classes/Manage%20Class%20Details) **to:** Add, edit, or delete classes (e.g. Intro to Debate). You set the class name, description, prerequisite, and which grade ranges can see this class. The classes you define here appear in the catalog; the grade(s) you pick control which grade filters on the class overview show this class. If you click **Delete** and then **Yes** in the confirmation dialog, that record is removed from the database.
+**Use** [this Retool page](https://nsdebatecamp.retool.com/apps/3f3343ba-0664-11f1-aa2b-7f3aba44dc57/Online%20Classes/Manage%20Class%20Details) **to:** Add, edit, or delete classes (e.g. Intro to Debate). You set the class name, description, prerequisite, and which grade ranges see this class. The classes you define here appear in the catalog; the grade(s) you pick control which grade filters on the class overview show this class. If you click **Delete** and then **Yes** in the confirmation dialog, that record is removed from the database.
 
 **What you'll see / fill in:**
 
 - **Class name** — Display name (e.g. "Intro to Debate").
-- **Grades** — Which grade ranges can see this class (e.g. 5th-6th). You can select more than one.
+- **Grades** — Which grade ranges see this class (e.g. 5th-6th). Select one or more as needed.
 - **Description** — Full course description (shown in “Learn More” on the catalog).
 - **Prerequisite** — Prerequisite text (e.g. "Required For New 5th & 6th Graders").
 - **Sort order** — Order in which the class appears in the catalog.
@@ -190,9 +190,9 @@ The page has **two filters** at the top: **Session** (e.g. Fall) and **Year**. *
 
 ## **Class Offerings**
 
-**Use** [this Retool page](https://nsdebatecamp.retool.com/apps/94b7a07c-066b-11f1-9648-5bfb851ba768/Online%20Classes/Manage%20Class%20Offerings) **to:** Add, edit, or delete schedule slots (day/time and capacity) for a class in a given session. Each offering is one option parents can choose at checkout (e.g. “Intro to Debate, Fall Semester, Tuesday 10:00–11:30, 12 spots”). What you set here is what appears as available schedules and spots on the site.
+**Use** [this Retool page](https://nsdebatecamp.retool.com/apps/94b7a07c-066b-11f1-9648-5bfb851ba768/Online%20Classes/Manage%20Class%20Offerings) **to:** Add, edit, or delete schedule slots (day/time and capacity) for a class in a given session. Each offering is one option parents choose at checkout (e.g. “Intro to Debate, Fall Semester, Tuesday 10:00–11:30, 12 spots”). What you set here appears as available schedules and spots on the site.
 
-In **Add** and **Edit**, the page shows **session details** (e.g. session name and term name from the session details records) so you can select the correct one. That selection is what sets or updates the **session detail** on the class offering—so the offering is tied to the right year/session/term (and thus the right price and dates) on the website and at checkout.
+In **Add** and **Edit**, the page shows **session details** (e.g. session name and term name from the session details records) so the admin selects the correct one. That selection sets or updates the **session detail** on the class offering—so the offering is tied to the right year/session/term (and thus the right price and dates) on the website and at checkout.
 
 The page has **two filters**: **Session** (e.g. Fall) and **Year**. **Year** is set to the current year (e.g. 2026). Use them to narrow the list before adding or editing.
 

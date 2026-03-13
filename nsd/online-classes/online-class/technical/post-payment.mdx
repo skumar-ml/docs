@@ -40,11 +40,11 @@ Relevant event handling for online classes:
 
 Located in `stripePaymentListener.py`. It is responsible for:
 
-1. **`Ensuring idempotency via payment_intent`**
-2. **`Writing to online_class_payment_details`**
-3. **`Creating/updating student_profiles`**
-4. **`Updating stripe_checkout_customer`**
-5. **`Sending admin email via sendOnlineClassSuccessEmailToAdmin`**
+1. **Ensuring idempotency via `payment_intent`**
+2. **Writing to `online_class_payment_details`**
+3. **Creating/updating `student_profiles`**
+4. **Updating `stripe_checkout_customer`**
+5. **Sending admin email via `sendOnlineClassSuccessEmailToAdmin`**
 
 ### A. Idempotency & Basic Control Flow
 
@@ -76,21 +76,23 @@ When `status != "Failed"` and this is the first time processing the `payment_int
 
 - **Collection:** `online_class_payment_details`
 
-Fields inserted include:
+<Accordion title="Fields in online_class_payment_details">
 
-- `payment_intent` — Stripe payment intent id (idempotency key).
-- `memberId` — Parent member id.
-- `parentEmail` — Parent email.
-- `studentName` — `{ first, last }` from `stripeCheckout`.
-- `studentEmail` — Student email.
-- `grade`, `gender` — Student info.
-- `classOfferingId` — The online class offering the student enrolled in.
-- `myProducts` — Product details; `products[0].productName` is the class label (e.g. “Intro to Debate - Fall”).
-- `amount` — `amount / 100` (converted to dollars).
-- `bankToken` — `balance_transaction` from the Stripe charge.
-- `receipt_url` — Stripe receipt URL (if present).
-- `device`, `deviceUserAgent` — Device info.
-- `createdOn` — Timestamp (`dt.now()`).
+- **`payment_intent`** — Stripe payment intent id (idempotency key).
+- **`memberId`** — Parent member id.
+- **`parentEmail`** — Parent email.
+- **`studentName`** — `{ first, last }` from `stripeCheckout`.
+- **`studentEmail`** — Student email.
+- **`grade`, `gender`** — Student info.
+- **`classOfferingId`** — The online class offering the student enrolled in.
+- **`myProducts`** — Product details; `products[0].productName` is the class label (e.g. “Intro to Debate - Fall”).
+- **`amount`** — `amount / 100` (converted to dollars).
+- **`bankToken`** — `balance_transaction` from the Stripe charge.
+- **`receipt_url`** — Stripe receipt URL (if present).
+- **`device`, `deviceUserAgent`** — Device info.
+- **`createdOn`** — Timestamp (`dt.now()`).
+
+</Accordion>
 
 `online_class_payment_details` is the **authoritative record for online class enrollments** and is used by:
 
@@ -154,7 +156,7 @@ Stripe is responsible for sending the **receipt email**; the system stores `rece
   - `student_profiles` created/updated.
   - Admin success email via `sendOnlineClassSuccessEmailToAdmin`.
   - `receipt_url` stored in `online_class_payment_details` if available.
-- **Processing (typically Bank Transfer still settling)**:
+- **Processing (Bank Transfer still settling)**:
   - `online_class_payment_details` is created similarly (amount recorded, profile created/updated).
   - `stripe_checkout_customer.status` set to **Processing**.
   - Admin email sent (to notify of a processing/ACH payment).
@@ -176,4 +178,4 @@ Stripe is responsible for sending the **receipt email**; the system stores `rece
     - Student details.
     - Current step (Select class and pay).
 
-For a complete view of how checkout sessions are created and how payment methods are exposed, see [Payment](/online-class/technical/payment).
+For a complete view of how checkout sessions are created and how payment methods are exposed, see [Payment (Online Classes)](/online-class/technical/payment).
