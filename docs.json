@@ -208,6 +208,10 @@
             "pages": [
               "nsd/coach-portal/dashboard"
             ]
+          },
+          {
+            "group": "Online Classes",
+            "pages": []
           }
         ]
       },

@@ -19,9 +19,8 @@ If the online-classes checkout page is opened without the required URL parameter
 - The **checkout form is disabled** — the user cannot create an account, enter student details, or proceed to payment until they go to [Class Overview](/online-class/class-overview) and select a class.
 
 <Frame>
-  ![Checkout Error Message](</images/error-message-checkout.png>)
+  ![Checkout Error Message](/images/error-message-checkout.png)
 </Frame>
-
 
 ### Step 1: Login / Sign-up on the Online-Class Checkout Page
 
@@ -88,7 +87,7 @@ On this step (third tab), the parent:
 
 After payment:
 
-- Stripe redirects the parent to the configured **success page** (`successUrl`), which is the [**Online Classes payment confirmation page**](https://www.nsdebatecamp.com/online-classes/payment-confirmation):
+- Stripe redirects the parent to the configured **success page** (`successUrl`), which is the **Online** Classes [payment confirmation page](https://www.nsdebatecamp.com/online-classes/payment-confirmation):
   - At this point, the student is officially enrolled in the selected **online class & schedule**.
 - On the backend:
   - The Stripe webhook (`stripePaymentListener`) processes the payment for `productType: "online_class"`.

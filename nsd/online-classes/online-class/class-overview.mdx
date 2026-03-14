@@ -10,18 +10,8 @@ The [**NSD Online Classes program page**](https://www.nsdebatecamp.com/online-cl
 
 ### **What the user sees**
 
-**Hero + term summary**
-
-- Hero region at the top with a headline such as “Online Debate & Speech Classes. Find the Right Program for Your Child,” a short supporting line, and primary CTAs like **Enroll Now**, **View Classes**, **Free Consult**, or **Try a Free Class**.
-- Immediately **below the hero**, the page shows a **Term summary table** with three columns — **Term**, **Duration & Class Length**, and **Dates** — listing rows like **Semester**, **Minimester 1**, and **Minimester 2** with their weeks, class length, and date ranges.
-
-<Frame>
-  ![Term summary table for Semester and Minimesters](/images/class_catalogue_top.png)
-</Frame>
-
 **Class catalog**
 
-- Section heading like “CLASS CATALOG” with a subtitle such as “Browse our complete class offerings by term.”
 - **Grade buttons/pills** (e.g. `5th–6th`, `7th–8th`, `9th+`) appear below the subtitle. When the parent clicks a grade pill, the catalog is filtered to classes for that grade only.
 - Under the hood, the page still filters by **Session** (e.g. Summer, Fall) — required — and optionally by **Grade** and **Term**. When a **Grade** is selected, the frontend passes the **grade label** as the `grade_id` query parameter; the API returns classes **filtered by that grade label** (lookup is by label, not by ObjectId).
 - **Initial state after picking a grade (Step 1):** The selected grade shows a **collapsed list of terms** (e.g. Semester, Minimester 1, Minimester 2). Each term row shows the term name, short description, date range, and how many classes are available (e.g. “4 Classes”, “1 Class”, “2 Classes”).
@@ -61,10 +51,6 @@ When the user clicks the **Register** link on a **class** card, the frontend bui
 - **class_detail_id** — the class the user clicked (varies per class card).
 
 All of these values are taken from the **class** (and its term/session/grade) the user clicked; they are not static. The checkout page then loads offerings for that context and lets the user pick a **schedule** (class_offering_id) and complete enrollment.
-
-**Other**
-
-- Footer, trust/statistics, and any chat widget are typical; they are not driven by the listing API.
 
 ## **Technical**
 
@@ -132,7 +118,7 @@ All grades are **preloaded** in parallel via `preloadAllGrades(grades)`; results
 **Event handlers:**
 
 <Accordion title="Event handlers (class overview)">
-  - **`document` click on `.oc-register-button`**: `e.stopPropagation()` so the link works and header/toggle does not fire.
+  - **``document click on .oc-register-button``**: `e.stopPropagation()` so the link works and header/toggle does not fire.
   - **`DOMContentLoaded`**: Get all `.w-tab-link` and `.w-tab-pane`; build `gradePaneMap` from tab text (e.g. "7th-8th") to pane. Call `preloadAllGrades(grades)` then for each grade call `renderPane(pane, classesCache[grade])` and `toggleSkeleton(pane, false)`.
 </Accordion>
 
