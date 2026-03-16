@@ -15,8 +15,8 @@ Each step must be completed before proceeding to the next.
 If the online-classes checkout page is opened without the required URL parameters (for example, missing `grade_id`, `session_detail_id`, or `class_detail_id`), the page shows an **error state** instead of the normal flow:
 
 - A prominent **error banner** is displayed with the message: **"ERROR! Please go back to the Class Overview page to select a class."**
-- A **"Go to Class Overview"** button is shown; clicking it takes the user to the [Class Overview](/online-class/class-overview) page to select a class. Only after selecting a class from the overview (which opens checkout with the correct URL parameters) does the user complete enrollment.
-- The **checkout form is disabled** — the user cannot create an account, enter student details, or proceed to payment until they go to [Class Overview](/online-class/class-overview) and select a class.
+- A **"Go to Class Overview"** button is shown; clicking it takes the user to the [Class Overview](/nsd/online-classes/online-class/class-overview) page to select a class. Only after selecting a class from the overview (which opens checkout with the correct URL parameters) does the user complete enrollment.
+- The **checkout form is disabled** — the user cannot create an account, enter student details, or proceed to payment until they go to [Class Overview](/nsd/online-classes/online-class/class-overview) and select a class.
 
 <Frame>
   ![Checkout Error Message](/images/error-message-checkout.png)
@@ -97,6 +97,7 @@ After payment:
     - Device and Stripe receipt information.
   - A **student profile** is created or updated in `student_profiles`.
   - An **admin notification email** is sent via `sendOnlineClassSuccessEmailToAdmin`.
+  - A **parent welcome email** is sent via `sendOnlineClassPostPurchaseWelcomeEmail` (e.g. "Welcome to NSD Classes — Next Steps") with the portal link, class schedule, and what to expect before the first class.
 
 If the parent returns to the checkout page later (e.g. via the same checkout URL or from the portal), completed enrollments are reflected by:
 
@@ -105,6 +106,6 @@ If the parent returns to the checkout page later (e.g. via the same checkout URL
 
 For implementation details (Stripe requests, collections, and webhook handling), see:
 
-- [Pre-Payment (Online Classes)](/online-class/technical/pre-payment)
-- [Payment (Online Classes)](/online-class/technical/payment)
-- [Post-Payment (Online Classes)](/online-class/technical/post-payment)
+- [Pre-Payment (Online Classes)](/nsd/online-classes/online-class/technical/pre-payment)
+- [Payment (Online Classes)](/nsd/online-classes/online-class/technical/payment)
+- [Post-Payment (Online Classes)](/nsd/online-classes/online-class/technical/post-payment)

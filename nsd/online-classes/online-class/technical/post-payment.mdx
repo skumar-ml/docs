@@ -45,6 +45,7 @@ Located in `stripePaymentListener.py`. It is responsible for:
 3. **Creating/updating `student_profiles`**
 4. **Updating `stripe_checkout_customer`**
 5. **Sending admin email via `sendOnlineClassSuccessEmailToAdmin`**
+6. **Sending parent welcome email via `sendOnlineClassPostPurchaseWelcomeEmail`**
 
 ### A. Idempotency & Basic Control Flow
 
@@ -146,6 +147,8 @@ After processing, `updateOnlineClassPaymentDetails` calls:
   - Student name.
 - Sends it to the appropriate admin addresses.
 
+**Parent (welcome email):** **`sendOnlineClassPostPurchaseWelcomeEmail(stripeCheckout)`** when status is **Complete** (same conditions as the admin email). The function looks up the email template in `email_content` with `mail_escalation: "online_class_post_purchase_welcome"`, resolves the member and class offering (day, start/end time in EST, session detail for start date), and sends the email to the parent. The welcome email (e.g. subject "Welcome to NSD Classes") includes: a greeting with parent first name, student name, the [NSD Classes Portal](https://www.nsdebatecamp.com/portal/dashboard) link, class schedule (start date, meeting day, time and time zone), what to expect in class (90-minute live sessions, Zoom link via the portal), and contact info (e.g. classes@nsdebatecamp.com). Parents are encouraged to log in to the portal before the first class.
+
 Stripe is responsible for sending the **receipt email**; the system stores `receipt_url` in `online_class_payment_details` when available.
 
 ## Behaviour by Payment Status (Online Classes)
@@ -155,6 +158,7 @@ Stripe is responsible for sending the **receipt email**; the system stores `rece
   - `stripe_checkout_customer` updated (`status: "Complete"`).
   - `student_profiles` created/updated.
   - Admin success email via `sendOnlineClassSuccessEmailToAdmin`.
+  - Parent welcome email via `sendOnlineClassPostPurchaseWelcomeEmail` (portal link, class schedule, next steps).
   - `receipt_url` stored in `online_class_payment_details` if available.
 - **Processing (Bank Transfer still settling)**:
   - `online_class_payment_details` is created similarly (amount recorded, profile created/updated).
@@ -178,4 +182,4 @@ Stripe is responsible for sending the **receipt email**; the system stores `rece
     - Student details.
     - Current step (Select class and pay).
 
-For a complete view of how checkout sessions are created and how payment methods are exposed, see [Payment (Online Classes)](/online-class/technical/payment).
+For a complete view of how checkout sessions are created and how payment methods are exposed, see [Payment (Online Classes)](/nsd/online-classes/online-class/technical/payment).

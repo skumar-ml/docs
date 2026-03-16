@@ -4,7 +4,7 @@ title: "Class Overview Page"
 
 https://www.nsdebatecamp.com/online-classes/class-overview
 
-The [**NSD Online Classes program page**](https://www.nsdebatecamp.com/online-classes/class-overview) is a marketing and catalog page for online debate classes. It shows classes by session (e.g. Summer, Fall), grade, and term, with schedule options and pricing. This page does not handle checkout—users go to [**Online Classes Checkout**](https://www.nsdebatecamp.com/online-class-checkout) to enroll. The checkout URL is built with query parameters so the checkout page can load the correct offerings (see [Checkout Flow](/online-class/non-technical/checkout-flow)).
+The [**NSD Online Classes program page**](https://www.nsdebatecamp.com/online-classes/class-overview) is a marketing and catalog page for online debate classes. It shows classes by session (e.g. Summer, Fall), grade, and term, with schedule options and pricing. This page does not handle checkout—users go to [**Online Classes Checkout**](https://www.nsdebatecamp.com/online-class-checkout) to enroll. The checkout URL is built with query parameters so the checkout page can load the correct offerings (see [Checkout Flow](/nsd/online-classes/online-class/non-technical/checkout-flow)).
 
 ## **Non-Technical**
 
@@ -61,7 +61,7 @@ This program page uses **only two APIs** to load class data:
 1. **getCurrentClassYear** — Returns the current class year (e.g. for filtering or display). Called first so the frontend uses the correct year context.
 2. **getClassesList** — Main catalog: pass `session_id` (required), optional `grade_id` (value is the **grade label**, e.g. "7th-8th", "4th & 5th"; the API looks up the grade by label and filters results by that grade), and optional `term_id` / `term_name`. Returns a hierarchy: grades → sessions → terms → classes with schedules (each schedule has `class_offering_id`). Used to render the full class catalog. When `grade_id` is passed, the list is shown **on the basis of that grade label** (filtered to that grade).
 
-The checkout page uses different APIs (getClassOfferings / getClassOfferingsBySessionDetailId) to load offerings when the user arrives with URL parameters; see [Checkout Flow](/online-class/non-technical/checkout-flow).
+The checkout page uses different APIs (getClassOfferings / getClassOfferingsBySessionDetailId) to load offerings when the user arrives with URL parameters; see [Checkout Flow](/nsd/online-classes/online-class/non-technical/checkout-flow).
 
 ### **API — get class listing data**
 
