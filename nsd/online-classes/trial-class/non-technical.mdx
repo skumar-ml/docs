@@ -1,155 +1,166 @@
 ---
-title: "Trial Class Management (Retool)"
+title: "Retool (Trial Classes)"
 ---
 
-This section explains how administrators manage **Trial Classes** using Retool and how users interact with the Trial Class registration page.
+This guide explains how admins use the **Trial Classes** Retool app to create trial classes, see who is registered, and reschedule or cancel registrations. It is written for operations staff and does not cover backend implementation details.
 
-Trial classes allow prospective students to attend a session before enrolling. Administrators manage the classes, while users can **view available classes and register for a slot**.
-
----
-
-# Admin Management (Retool)
-
-Administrators manage trial classes through Retool. This includes creating classes, updating class details, deleting classes, rescheduling classes, and tracking user registrations.
+Retool app URL:
+`https://nsdebatecamp.retool.com/apps/115e253e-026f-11f1-96f3-8fa1c0fd6333/trial-classes/manage-trial-classes`
 
 ---
 
-## Creating a Trial Class
+## Overview: How trial-class data fits together
 
-Admins can create a new trial class by entering the following information.
+- **Trial classes** — Individual trial sessions with **start/end time (including date)**, **grade range**, and **number of spots**. These appear on the public Trial Class registration page.
+- **Registrations** — One record per user for a specific trial class (user info, status, attendance).
 
-| Field           | Description                        |
-| --------------- | ---------------------------------- |
-| Date            | Date the trial class will occur    |
-| Start Time      | Time the class begins              |
-| End Time        | Time the class ends                |
-| Start Grade     | Minimum grade allowed              |
-| End Grade       | Maximum grade allowed              |
-| Number of Spots | Maximum number of students allowed |
-
-Once created:
-
-- The class is saved in the system.
-- If the class date is in the future, it becomes available on the **Trial Class registration page**.
+The Trial Classes Retool app lets you manage both layers: the **class offerings** and the **registrations** for those offerings.
 
 ---
 
-## Viewing Trial Classes
+## Manage Trial Classes form
 
-Admins can view all scheduled trial classes in Retool.
+At the top of the app you see the **Manage Trial Classes** form. Use this form to set up a new trial class.
 
-The interface displays:
+You fill in:
 
-- Date
-- Class time
-- Grade range
-- Available spots
+- **Date** — Calendar date when the trial class occurs.
+- **Start Time** — Time the class begins.
+- **End Time** — Time the class ends.
+- **Number of Spots** — Maximum number of students allowed.
+- **Start Grade** — Minimum grade allowed.
+- **End Grade** — Maximum grade allowed.
 
-This allows administrators to monitor upcoming classes and manage availability.
+When you click **Create**, the app saves a new record in the `trial_class_details` collection. If the `start_time` (including date) is in the future, the class appears in the **Class List** table and on the public Trial Class registration form.
 
----
-
-## Updating or Rescheduling Trial Classes
-
-Admins can update or reschedule existing trial classes when needed.
-
-For example:
-
-- Changing the **date**
-- Adjusting the **start or end time**
-- Updating the **number of available spots**
-
-Rescheduling allows administrators to move a class to another available **time slot**.
+<Frame>
+  ![Manage Trial Classes form](/images/trial_class_create.png)
+</Frame>
 
 ---
 
-## Deleting Trial Classes
+## Class List table
 
-Admins can remove a trial class if it should no longer be offered.
+The **Class List** table shows all trial classes stored in `trial_class_details`. All times display in the local timezone (i.e., EST).
 
-Deleting a class:
+For each row you see:
 
-- Removes it from the system
-- Prevents new registrations
+- **Date, Start time, End time** — When the class runs.
+- **Spots** — `registered users / total spots`.
+- **Start grade, End grade** — Grade range allowed for this trial.
+- **Action buttons** — **Add**, **Edit**, **Delete** for each class.
 
----
+If the `start_time` for a class is in the future, the class appears in this table and on the public Trial Class registration form on the frontend.
 
-## Viewing User Registrations
-
-Admins can view all user registrations for a trial class.
-
-Each registration includes the details submitted during registration.
-
-### Student Information
-
-- First name
-- Last name
-- Grade
-
-### Parent Information
-
-- First name
-- Last name
-- Email
-- Phone number
-
-This allows administrators to review who has registered and contact parents if needed.
+<Frame>
+  ![Class List and Students List](/images/student_lsit_show_onclick_class.png)
+</Frame>
 
 ---
 
-## Tracking Attendance
+## Students List panel
 
-After the trial class takes place, administrators can mark whether a student attended.
+On the right side, the **Students List** table shows registrations for the class you selected in **Class List**.
 
-This helps track participation and identify students who completed the trial class.
+For each registration you see:
 
----
+- **Student** — Student name.
+- **Parent** — Parent name.
+- **Student Grade** — Grade stored on the registration.
+- **Parent Email / Parent Phone** — Contact details.
+- **Reschedule / Cancel** buttons — Actions for the selected registration.
 
-# User Registration (Trial Class Page)
-
-Users interact with the **Trial Class page**, where they can view available classes and register for a trial class.
-
-Users **cannot create, edit, delete, or reschedule trial classes**.
-
----
-
-## Viewing Available Classes
-
-When users visit the Trial Class page, they can see upcoming classes including:
-
-- Date, Time, Grade range, Available spots
-
-Only **future trial classes** are displayed.
+When you select a different class in **Class List**, the **Students List** updates to show registrations for that class.
 
 ---
 
-## Registering for a Trial Class
+## Add Registration
 
-Parents can register their student by completing a registration form.
+Use **Add** in the **Class List** row to register a user in that trial class directly from Retool.
 
-### Student Information
+The **Add Registration** modal collects:
 
-- First name
-- Last name
-- Grade
+- **Student Details** — First Name, Last Name, Grade.
+- **Parent Details** — First Name, Last Name, Email Address, Phone Number.
+- **Previous Experience** — Optional description of the student’s prior experience.
 
-### Parent Information
+When you click **Add**:
 
-- First name
-- Last name
-- Email
-- Phone number
+1. Retool creates a new record in `trial_class_registrations` linked to that `trial_class_id`.
+2. The **Spots** column updates to show the new registered count.
+3. The new registration appears in the **Students List** table for that class.
 
-After submission:
-
-- The student is registered for the selected trial class slot.
-- The registration is stored in the system for administrators to review.
+<Frame>
+  ![Add Registration modal](/images/add_registration.png)
+</Frame>
 
 ---
 
-# Summary
+## Edit a trial class
 
-- **Admins (Retool)** can create, update, delete, and reschedule trial classes.
-- **Admins** can view registrations and mark attendance.
-- **Users** can only view available classes and register for a trial class slot.
-- Registration records store complete student and parent details.
+Use **Edit** in the **Class List** row to change the class details.
+
+You update: **Date**, **Start Time**, **End Time**, **Number of Spots**, **Start Grade**, and **End Grade**.
+
+After you click **Update**, the app writes the changes to `trial_class_details`. The row in **Class List** refreshes with the new values, and future registrations use the updated schedule and grade range.
+
+<Frame>
+  ![Edit Trial Class modal](/images/edit_trial_class.png)
+</Frame>
+
+---
+
+## Delete a trial class
+
+Use **Delete** in the **Class List** row to remove a trial class.
+
+When you click **Delete**, a confirmation dialog appears that asks whether you want to delete that trial class. Clicking **Yes** deletes the class from `trial_class_details` but does not delete the existing student records in the `trial_class_registrations` collection. Clicking **No** closes the dialog without changes.
+
+<Frame>
+  ![Delete Trial Class confirmation](/images/delete_trial_class.png)
+</Frame>
+
+---
+
+## Reschedule a registration
+
+From **Students List**, click **Reschedule** for a registration to open the **Reschedule** modal.
+
+The modal shows:
+
+- **Student Name**
+- **Parent Name**
+- A **Select Slots** dropdown listing available future classes.
+
+To move a registration:
+
+1. In the trial class dropdown, review the **upcoming** classes that still have open spots; classes that are full do not appear as options. The class the student is currently registered in is shown as the **default selected** value.
+2. Select the new trial class from the dropdown.
+3. Click **Reschedule**.
+
+Retool updates the registration to point to the new `trial_class_id`, changes its `type` to `"reschedule"`, and updates counts in **Class List** so the **Spots** column reflects the move. A Zapier workflow receives the updated registration data so downstream tools stay in sync.
+
+<Frame>
+  ![Reschedule Registration modal](/images/reschedule_registration.png)
+</Frame>
+
+---
+
+## Cancel a registration
+
+From **Students List**, click **Cancel** to open the **Cancel Registration** confirmation.
+
+The dialog confirms which registration you are cancelling and provides **Yes** and **No** options.
+
+- Clicking **Yes** sets the registration `type` to `"cancel"` in `trial_class_registrations` collection, frees a spot in **Class List**, and hides this registration from future active lists.
+- Clicking **No** closes the dialog with no changes.
+
+<Frame>
+  ![Cancel Registration confirmation](/images/cancel_registration.png)
+</Frame>
+
+---
+
+## Zapier helper query
+
+The Trial Classes Retool app includes a helper query (for example, `getDataForZap`) that reads trial class registrations and class details and sends a payload to the shared Zapier webhook. When a student first registers, Zapier receives a record with `type = "active"` and creates or updates the matching data in Zapier. When a registration is rescheduled, Retool and the APIs send another payload that changes the `type` to `"reschedule"` for that same record so downstream systems stay in sync. Admins use the helper query to re-send or inspect this payload data without touching code. This guide focuses on how to run actions in the UI; the automation details live in the backend and Zapier configuration.
