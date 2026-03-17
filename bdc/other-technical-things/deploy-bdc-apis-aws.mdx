@@ -1,0 +1,185 @@
+---
+title: Deploy BDC APIs to AWS
+description: Deploy BDC APIs to AWS from scratch using AWS IAM credentials, profile configuration, and the provided deployment scripts.
+---
+
+This guide walks through deploying the BDC APIs to AWS from scratch: configuring AWS IAM credentials and a CLI profile, setting the required environment variables, publishing the shared utilities layer, and deploying all microservices.
+
+## Prerequisites
+
+- **AWS account** with IAM credentials (Access Key ID and Secret Access Key) that have permissions to publish Lambda layers and deploy Serverless stacks.
+- **AWS CLI v2** installed. Verify with:
+  ```bash
+  aws --version
+  ```
+  Install on macOS: `brew install awscli`.
+- **Node.js and npm** installed (for Serverless and service dependencies). Verify with:
+  ```bash
+  node --version
+  npm --version
+  ```
+- **Terminal** (e.g. Terminal.app, iTerm, or VS Code integrated terminal).
+
+---
+
+## 1. AWS IAM credentials and profile configuration
+
+Use IAM credentials (Access Key ID and Secret Access Key) provided by your admin or from the AWS IAM console. Configure a named profile so the deployment scripts use these credentials.
+
+### Create a named profile
+
+Run:
+
+```bash
+aws configure --profile bdc
+```
+
+Replace `bdc` with your chosen profile name and use that same name in the steps below.
+
+When prompted, enter:
+
+| Prompt | What to enter |
+|--------|----------------|
+| **AWS Access Key ID** | Your IAM access key (e.g. `AKIA...`). |
+| **AWS Secret Access Key** | Your IAM secret key. |
+| **Default region name** | The target region (e.g. `us-east-1`). |
+| **Default output format** | `json` (or press Enter). |
+
+### Verify the profile
+
+Run:
+
+```bash
+aws sts get-caller-identity --profile bdc
+```
+
+The command returns JSON with `Account`, `UserId`, and `Arn`. If it errors, the profile name is wrong or the credentials are invalid or expired.
+
+---
+
+## 2. Environment setup
+
+The layer deploy script and the microservice deploy script both rely on the AWS profile and region. Set these in the same terminal session where you run the commands below.
+
+**Set the profile and region:**
+
+```bash
+export AWS_PROFILE=bdc
+export AWS_REGION=us-east-1
+```
+
+Use the same profile name you used in `aws configure` and the same region (e.g. `us-east-1`). Set these variables **every time** you open a new terminal before running any deploy commands.
+
+**Verify credentials in the current shell:**
+
+```bash
+aws sts get-caller-identity
+```
+
+---
+
+## 3. Deploy the shared utilities layer
+
+The BDC APIs depend on a shared Lambda layer (`bdc-common-utilities`). Publish a new layer version whenever the shared Python utilities change.
+
+### Run the layer deploy script
+
+From the repository root:
+
+```bash
+cd shared-utilities
+./deploy.sh
+```
+
+This script:
+
+- Zips the `python` folder into `bdc-common-layer.zip`.
+- Publishes a new version of the Lambda layer `bdc-common-utilities` in the region set in `AWS_REGION`.
+
+### Record the new layer version
+
+The script prints JSON. Find the new version in the output, for example:
+
+```json
+"Version": 19,
+"LayerVersionArn": "arn:aws:lambda:us-east-1:654644099288:layer:bdc-common-utilities:19"
+```
+
+**Write down the version number** (e.g. `19`). You will pass it in the next step.
+
+---
+
+## 4. Deploy all microservices
+
+One script updates every `serverless.yml` that references the given layer to the new version, then deploys those services after you confirm.
+
+### Run the deploy script from the repository root
+
+```bash
+cd /path/to/bcdc_aws
+./shared-utilities/deploy_services.sh bdc-common-utilities:19
+```
+
+Replace `19` with the version number from the previous step.
+
+**Optional:** Pass stage and region explicitly:
+
+```bash
+./shared-utilities/deploy_services.sh bdc-common-utilities:19 prod us-east-1
+```
+
+- **First argument:** `bdc-common-utilities:19` — package name and new layer version.
+- **Second (optional):** stage (default: `prod`).
+- **Third (optional):** region (default: `us-east-1`).
+
+### What the script does
+
+1. **Update config** — Finds all `serverless.yml` files under the repo and replaces the old layer version with the new one for the package you specified. It prints a summary of changes (service, file, previous value, updated value).
+2. **Confirmation** — Prompts: `Proceed with deployment of the above services? (y/n)`. Enter `y` to continue.
+3. **Deploy** — Checks AWS credentials, then for each affected service runs `npm install --legacy-peer-deps` (if `package.json` exists) and `npx serverless deploy`. It prints progress per service and a final summary. Deploy logs are written under a temporary directory (path printed at the end).
+
+Only services that reference the specified layer in `serverless.yml` are updated and deployed (e.g. reporting-service, referral-promotion-service, payment-checkout-service, member-service, communication-service, class-service).
+
+---
+
+## Summary of commands
+
+**One-time:**
+
+```bash
+aws configure --profile bdc
+# Enter Access Key, Secret Key, region (e.g. us-east-1)
+```
+
+**Every new terminal (before any deploy):**
+
+```bash
+export AWS_PROFILE=bdc
+export AWS_REGION=us-east-1
+```
+
+**Deploy the shared layer (when shared utilities change):**
+
+```bash
+cd shared-utilities
+./deploy.sh
+# Record the new Version number from the output
+```
+
+**Deploy all microservices:**
+
+```bash
+cd /path/to/bcdc_aws
+./shared-utilities/deploy_services.sh bdc-common-utilities:19
+# Replace 19 with the layer version from the previous step
+# Enter y when prompted to proceed with deployment
+```
+
+---
+
+## Troubleshooting
+
+- **`No AWSAccessKey was presented`** — Set `AWS_PROFILE` and `AWS_REGION` in the current terminal and ensure the profile exists (`aws configure --profile <name>`).
+- **`AWS provider credentials not found`** — Set `export AWS_PROFILE=bdc` and `export AWS_REGION=us-east-1` in the same terminal before running the deploy script; then run `aws sts get-caller-identity` to verify.
+- **`Serverless plugin "serverless-offline" not found`** — The deploy script runs `npm install --legacy-peer-deps` in each service; if you deploy a single service by hand, run that command in the service directory first.
+- **Peer dependency / ERESOLVE errors** — The script uses `npm install --legacy-peer-deps`. Use the same when installing manually in a service directory.
