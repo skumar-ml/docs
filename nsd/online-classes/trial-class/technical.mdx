@@ -58,11 +58,17 @@ When the parent clicks **Submit Registration**, the frontend sends **POST** `cam
 
 </Accordion>
 
+On a successful response, the page hides the form and shows a registration success message banner at the top of the card.
+
+<Frame>
+  ![Trial class registration success message](/images/reg_succ_msg.png)
+</Frame>
+
 Backend validates, creates the registration and token, and sends the **email confirmation** with a unique URL = page URL + **token** (e.g. `?token=...`). It also posts a registration payload to the configured **Zapier webhook** so downstream tools (e.g. CRM, email automation) receive the new trial registration (student + parent info, class time, grade range, previous experience). On success, the form is hidden and a success message is shown in `.tc_form-done`; on error, the message is shown in `.tc_form-fail`.
 
 ## Manage Registration (Token in URL)
 
-When the parent opens the page with **token** in the URL (e.g. `?token=...`), the frontend switches to **manage registration** mode.
+When the parent opens the page with **token** in the URL (e.g. from the **Manage your trial class** link in the email such as `...?token=...`), the frontend switches to **manage registration** mode and shows a screen where they can reschedule or cancel their existing registration.
 
 1. The **registration form** (`.trial_class_form-container`) and the initial **registration card** are hidden.
 2. The frontend calls **GET** `camp/trial-class/registration/manage?token={token}` to load the registration, current class, and available classes.
@@ -70,10 +76,22 @@ When the parent opens the page with **token** in the URL (e.g. `?token=...`), th
    - A **manage screen** is shown (`.tc_registration-card`): the parent sees their registration summary (student name, current class date/time, parent name, student grade, parent email, parent phone) and two choices:
      - **Reschedule** — Change to a different trial class (same form with pre-filled details, current class selected, and all available classes listed).
      - **Cancel** — Cancel the registration.
-4. **Reschedule:** The same registration form is shown with fields pre-filled and current class as default; all available classes are listed. The parent selects a new class and submits; the frontend sends **POST** `camp/trial-class/registration/reschedule` with `{ token, new_trial_class_id }` for the newly selected class. The backend updates the registration and sends a **reschedule payload** to the same Zapier webhook so external systems stay in sync.
+
+<Frame>
+  ![Manage trial class registration details (Reschedule or Cancel)](/images/reschedule_or_cancel.png)
+</Frame>
+4. **Reschedule:** The same registration form is shown with fields pre-filled and current class as default; all available classes are listed. The parent selects a new class and submits; the frontend sends **POST** `camp/trial-class/registration/reschedule` with `{ token, new_trial_class_id }` for the newly selected class. The backend updates the registration and sends a **reschedule payload** to the same Zapier webhook so external systems stay in sync. After a successful reschedule, the page shows a confirmation banner at the top of the card.
+
+<Frame>
+  ![Trial class reschedule success message](/images/reschedule_success_msg.png)
+</Frame>
 5. **Cancel:** The parent clicks **Cancel**. A **confirmation** (Yes/No) is shown. On **Yes**, the frontend sends **POST** `camp/trial-class/registration/cancel` with body `{ token }`. On success, the UI shows the cancelled state (`.tc_registration-cancelled-card`).
 
-If the token is expired or invalid and the manage API returns an error, the frontend shows a message — **"It looks like this link has expired or is invalid."** — with a **Back** button that returns the user to the normal registration form.
+If the token is expired or invalid and the manage API returns an error, the frontend shows a banner message — **"The link is expired or invalid."** — with a **Go Back** button that returns the user to the normal registration form.
+
+<Frame>
+  ![Invalid or expired link message](/images/invalid_token.png)
+</Frame>
 
 ## Frontend (JS & CSS)
 
@@ -90,7 +108,7 @@ The following describes how the trial class page is wired: APIs, CSS classes, an
 **Flow (init):**
 
 - On **DOMContentLoaded**, if there is no `?token=...` in the URL: fetch trial classes and append cards to the grid; fetch grades and fill the dropdown; attach form submit handler.
-- If **token** is present: hide the bare registration form and load **GET** `manage?token=...`. On success, show the **Your trial class registration details** card (`.tc_registration-card`) with student and class details and two buttons: **Reschedule** and **Cancel Registration**. Clicking **Reschedule** opens a registration form pre-filled with the user’s details and current class selected and, after submit, updates the registration to the new class. Clicking **Cancel Registration** first shows a confirmation card, and after the user confirms, the UI shows the **Registration Cancelled** card with a **Register Again** button. On failure or missing data, the frontend shows a message — **"It looks like this link has expired or is invalid."** — with a **Back** button that returns the user to the normal registration form.
+- If **token** is present: hide the bare registration form and load **GET** `manage?token=...`. On success, show the **Your trial class registration details** card (`.tc_registration-card`) with student and class details and two buttons: **Reschedule** and **Cancel Registration**. Clicking **Reschedule** opens a registration form pre-filled with the user’s details and current class selected and, after submit, updates the registration to the new class. Clicking **Cancel Registration** first shows a confirmation card, and after the user confirms, the UI shows the **Registration Cancelled** card with a **Register Again** button. On failure or missing data, the frontend shows the same **\"The link is expired or invalid.\"** banner with a **Go Back** button that returns the user to the normal registration form.
 
 **Form submit:**
 
@@ -103,11 +121,11 @@ The following describes how the trial class page is wired: APIs, CSS classes, an
 - On click of `.tc_cancel-registration-btn`: show the **Cancel Registration** confirmation card and, when the user clicks **Yes, Cancel**, call **POST** `camp/trial-class/registration/cancel` with `{ token }`. On success: hide `.tc_cancel-registration-info-card`, show `.tc_registration-cancelled-card`. On error: handle in console / UI as needed.
 
 <Frame>
-  ![Cancel Registration confirmation](</images/cancel_registration_frontend.png>)
+  ![Cancel Registration confirmation](</images/cancel_confirmation.png>)
 </Frame>
 
 <Frame>
-  ![Registration cancelled confirmation](</images/registration_cancelled_front.png>)
+  ![Registration cancelled confirmation](</images/cancel_msg.png>)
 </Frame>
 
 **Data attributes / helpers:**
