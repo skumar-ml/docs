@@ -208,6 +208,39 @@
             "pages": [
               "nsd/coach-portal/dashboard"
             ]
+          },
+          {
+            "group": "Online Classes",
+            "pages": [
+              {
+                "group": "Online Class",
+                "pages": [
+                  "nsd/online-classes/online-class/class-overview",
+                  {
+                    "group": "Technical",
+                    "pages": [
+                      "nsd/online-classes/online-class/technical/pre-payment",
+                      "nsd/online-classes/online-class/technical/payment",
+                      "nsd/online-classes/online-class/technical/post-payment"
+                    ]
+                  },
+                  {
+                    "group": "Non-Technical",
+                    "pages": [
+                      "nsd/online-classes/online-class/non-technical/checkout-flow",
+                      "nsd/online-classes/online-class/non-technical/online-class-retool"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Trial Class",
+                "pages": [
+                  "nsd/online-classes/trial-class/technical",
+                  "nsd/online-classes/trial-class/non-technical"
+                ]
+              }
+            ]
           }
         ]
       },

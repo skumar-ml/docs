@@ -1,0 +1,185 @@
+---
+title: "Post-Payment (Online Classes)"
+---
+
+This section explains everything that happens **after a payment is made for an online class**: the Stripe webhook, database writes (including `online_class_payment_details`), and user redirection.
+
+## Core Logic Flow (Online Classes)
+
+After a payment is completed (Card or Bank Transfer), Stripe sends a webhook to the NSD backend. The webhook handler is `stripePaymentListener.py` — `lambda_handler`. It:
+
+1. Reads the Stripe event (`payment_intent`, `charge`, or `checkout.session`).
+2. Looks up **`stripe_checkout_customer`** by **`sessionId`**.
+3. Reads **`productType`** from the stored `stripe_checkout_customer` record.
+4. Routes to the appropriate update function. For online classes:
+   - `productType == "online_class"` → **`updateOnlineClassPaymentDetails(stripeCheckout, status, chargeObj, sessionId, freeCoupon)`**
+
+## `stripePaymentListener` (Stripe Webhook)
+
+**Implementation:** `nsdebatecamp/api/stripePaymentListener.py` — `lambda_handler`. Exposed as a **POST** endpoint (`stripePaymentListener`).
+
+Relevant event handling for online classes:
+
+- **`charge events`** (Card or Bank Transfer):
+  - Derives a payment **status**:
+    - `paid == True` → **Complete**
+    - `status == "pending"` → **Processing** (e.g. ACH still settling)
+    - `status == "failed"` → **Failed**
+  - Looks up `stripe_checkout_customer` by `sessionId`.
+  - For `productType == "online_class"` calls:
+    - `updateOnlineClassPaymentDetails(stripeCheckout, status, chargeObj, sessionId, freeCoupon)`
+- **``payment_intent with status == "requires_payment_method"``**:
+  - Treated as **Failed**:
+    - For online classes, any `online_class_payment_details` with that `payment_intent` will be removed if created, and `stripe_checkout_customer.status` is updated accordingly (see below).
+- `checkout.session with payment_status == "paid" and amount_total == 0`:
+  - Zero-amount flow (less common for online classes); handled similarly by generating a synthetic `payment_intent` and going through the same update path.
+
+## `updateOnlineClassPaymentDetails` (Online Classes)
+
+**Function:** `updateOnlineClassPaymentDetails(stripeCheckout, status, chargeObj, sessionId, freeCoupon)`
+
+Located in `stripePaymentListener.py`. It is responsible for:
+
+1. **Ensuring idempotency via `payment_intent`**
+2. **Writing to `online_class_payment_details`**
+3. **Creating/updating `student_profiles`**
+4. **Updating `stripe_checkout_customer`**
+5. **Sending admin email via `sendOnlineClassSuccessEmailToAdmin`**
+6. **Sending parent welcome email via `sendOnlineClassPostPurchaseWelcomeEmail`**
+
+### A. Idempotency & Basic Control Flow
+
+- Reads `payment_intent` from the Stripe charge object:
+  - `payment_intent = chargeObj.get("payment_intent", "")`
+- Looks up existing record:
+  - `payment_data = db.online_class_payment_details.find_one({"payment_intent": payment_intent})`
+
+Two cases:
+
+1. **`Record already exists in online_class_payment_details`**
+   - If `status == "Failed"`:
+     - Deletes the record: `db.online_class_payment_details.delete_one({"payment_intent": payment_intent})`
+   - Updates `stripe_checkout_customer` for this session:
+     - `db.stripe_checkout_customer.update_one({ "sessionId": sessionId }, { "$set": { "payment_intent": payment_intent, "status": status } })`
+2. **No record yet (first time handling this payment intent)**
+   - Computes the amount (in cents) from the charge:
+     - `amount = chargeObj.get("amount", 0) or chargeObj.get("amount_paid", 0)`
+   - Writes `amount` back to `stripeCheckout["amountPaid"]`.
+   - If `status != "Failed"`:
+     - **`Creates a new online_class_payment_details record`** (see below).
+   - Updates `stripe_checkout_customer` for this session.
+   - If `status == "Complete"` and `receipt_url` exists on the charge:
+     - Updates `receipt_url` in `online_class_payment_details`.
+
+### B. `online_class_payment_details` (Core Online-Class Record)
+
+When `status != "Failed"` and this is the first time processing the `payment_intent`, the function creates a `payment_record`:
+
+- **Collection:** `online_class_payment_details`
+
+<Accordion title="Fields in online_class_payment_details">
+
+- **`payment_intent`** — Stripe payment intent id (idempotency key).
+- **`memberId`** — Parent member id.
+- **`parentEmail`** — Parent email.
+- **`studentName`** — `{ first, last }` from `stripeCheckout`.
+- **`studentEmail`** — Student email.
+- **`grade`, `gender`** — Student info.
+- **`classOfferingId`** — The online class offering the student enrolled in.
+- **`myProducts`** — Product details; `products[0].productName` is the class label (e.g. “Intro to Debate - Fall”).
+- **`amount`** — `amount / 100` (converted to dollars).
+- **`bankToken`** — `balance_transaction` from the Stripe charge.
+- **`receipt_url`** — Stripe receipt URL (if present).
+- **`device`, `deviceUserAgent`** — Device info.
+- **`createdOn`** — Timestamp (`dt.now()`).
+
+</Accordion>
+
+`online_class_payment_details` is the **authoritative record for online class enrollments** and is used by:
+
+- `getClassesList.py`, `getClassOfferings.py` to:
+  - Count enrollments per `classOfferingId`.
+  - Compute `enrolled_count` and `available_spots`.
+
+If a later webhook with the same `payment_intent` arrives and `status == "Complete"` and `receipt_url` is present, `updateOnlineClassPaymentDetails` updates `receipt_url` in this collection.
+
+### C. `stripe_checkout_customer` Updates
+
+For every relevant webhook, `stripe_checkout_customer` is updated:
+
+- Filter: `{ "sessionId": sessionId }`
+- `$set`:
+  - `payment_intent`
+  - `status` (**Complete**, **Processing**, or **Failed**)
+
+### D. `student_profiles` (Create/Update)
+
+Online class payments also create or update a **student profile**:
+
+1. Reads `student_email` and `student_name` from `stripeCheckout`.
+2. Looks up `student_profiles` by `studentEmail`.
+3. If a profile exists:
+   - Updates `studentName`, `grade`, `gender`.
+4. If no profile exists:
+   - Inserts a new profile with:
+     - `studentEmail`, `studentName`, `grade`, `gender`, `memberId`, `created_on`.
+
+This mirrors the behavior of camp checkout but scoped to online classes.
+
+### E. Emails Triggered (Online Classes)
+
+After processing, `updateOnlineClassPaymentDetails` calls:
+
+  - **`sendOnlineClassSuccessEmailToAdmin(stripeCheckout, chargeObj)`** when:
+  - Status is **Complete** with a valid card payment,
+  - Status is **Processing** with **Bank Transfer**
+
+`sendOnlineClassSuccessEmailToAdmin`:
+
+- Looks up an email template in `email_content`:
+  - First tries `mail_escalation: "online_class_success_payment"`.
+  - Falls back to `stripe_success_payment` if the first is missing.
+- Finds the member by `memberId` from `members`.
+- Composes an email with:
+  - Parent name & email.
+  - Online class product name (from `myProducts.products[0].productName`).
+  - Amount paid (from `amountPaid` or charge object).
+  - Student name.
+- Sends it to the appropriate admin addresses.
+
+**Parent (welcome email):** **`sendOnlineClassPostPurchaseWelcomeEmail(stripeCheckout)`** when status is **Complete** (same conditions as the admin email). The function looks up the email template in `email_content` with `mail_escalation: "online_class_post_purchase_welcome"`, resolves the member and class offering (day, start/end time in EST, session detail for start date), and sends the email to the parent. The welcome email (e.g. subject "Welcome to NSD Classes") includes: a greeting with parent first name, student name, the [NSD Classes Portal](https://www.nsdebatecamp.com/portal/dashboard) link, class schedule (start date, meeting day, time and time zone), what to expect in class (90-minute live sessions, Zoom link via the portal), and contact info (e.g. classes@nsdebatecamp.com). Parents are encouraged to log in to the portal before the first class.
+
+Stripe is responsible for sending the **receipt email**; the system stores `receipt_url` in `online_class_payment_details` when available.
+
+## Behaviour by Payment Status (Online Classes)
+
+- **Complete (Card or Bank Transfer)**:
+  - New `online_class_payment_details` row created (if not already present).
+  - `stripe_checkout_customer` updated (`status: "Complete"`).
+  - `student_profiles` created/updated.
+  - Admin success email via `sendOnlineClassSuccessEmailToAdmin`.
+  - Parent welcome email via `sendOnlineClassPostPurchaseWelcomeEmail` (portal link, class schedule, next steps).
+  - `receipt_url` stored in `online_class_payment_details` if available.
+- **Processing (Bank Transfer still settling)**:
+  - `online_class_payment_details` is created similarly (amount recorded, profile created/updated).
+  - `stripe_checkout_customer.status` set to **Processing**.
+  - Admin email sent (to notify of a processing/ACH payment).
+  - When final completion event arrives, status is updated and `receipt_url` stored.
+- **Failed**:
+  - Any existing `online_class_payment_details` with this `payment_intent` is deleted.
+  - `stripe_checkout_customer.status` set to **Failed**.
+  - No enrollment and no further processing.
+
+## User Redirection After Payment (Online Classes)
+
+- **Success:**
+  - Stripe redirects the user to the **successUrl** that was passed when creating the checkout session in `createCheckoutUrlForOnlineClass`. This is usually a portal page or an online-classes confirmation page.
+  - After successful payment, the frontend clears any local checkout state (e.g. `localStorage`) so a new online-class checkout starts fresh.
+- **Cancel / Back:**
+  - Stripe redirects to the **cancelUrl** with optional query parameters (e.g. `?returnType=back`).
+  - The online-classes checkout page uses `stripe_checkout_customer` and/or local state to restore:
+    - Selected class & offering.
+    - Student details.
+    - Current step (Select class and pay).
+
+For a complete view of how checkout sessions are created and how payment methods are exposed, see [Payment (Online Classes)](/nsd/online-classes/online-class/technical/payment).

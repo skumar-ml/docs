@@ -1,0 +1,122 @@
+---
+title: "Trial Class (Technical)"
+---
+
+This section explains the **frontend** behavior for the Trial Class flow: how parents enroll a student in a trial class via the registration form, receive an email confirmation with a unique token link, and use that link to **reschedule** or **cancel** the registration. It covers the APIs the frontend calls, the form and manage screens, and the JS/CSS structure.
+
+The frontend supports:
+
+- **Register:** Parent fills the trial class form (student + parent details, one selected class) and submits; the backend creates the registration and sends an email with a **manage URL** (page URL + `?token=...`).
+- **Manage (token in URL):** When the parent opens the link from the email, the page shows their registration summary and options to **reschedule** (same form, pre-filled, with current class and all available classes) or **cancel** (confirmation then cancel request).
+
+## APIs Used by the Frontend
+
+<Accordion title="API summary (trial class frontend)">
+
+- **GET** `{apiBaseURL}camp/trialClassDetail` — Returns available trial classes (future only, sorted by start time). Used to render the class grid. Response: array of objects with `_id`, `start_time` (full datetime), `end_time`, `grade_label`.
+- **GET** `{apiBaseURL}camp/paymentGrades` — Returns grade options for the Student Grade dropdown. Response: array of objects with `grade_name`.
+- **POST** `{apiBaseURL}camp/trialClassRegistration` — Submit new registration. Body: `student` (first_name, last_name, grade), `parent` (first_name, last_name, email, phone), `trial_class_id`, `previous_experience`, `landingURL` (optional). On success, backend creates the registration, stores a token, and sends the confirmation email with the manage link.
+- **GET** `{apiBaseURL}camp/trial-class/registration/manage?token={token}` — Load registration, current class, and available classes for the manage view. Response: `{ registration, current_class, available_classes }`. Used when the page URL contains `?token=...`.
+- **POST** `{apiBaseURL}camp/trial-class/registration/reschedule` — Reschedule a registration to a different trial class. Body: `{ token, trial_class_id }` (token from the URL, new class id from the form).
+- **POST** `{apiBaseURL}camp/trial-class/registration/cancel` — Cancel the registration for the given token. Body: `{ token }`. Used when the parent confirms cancel (Yes).
+
+</Accordion>
+
+## Trial Class Page and Available Classes
+
+The Trial Class page shows the **Register now for your FREE Trial Class** form. On load, the frontend fetches available trial classes and the grade dropdown options.
+
+- **Trial class list:** **GET** `camp/trialClassDetail`. The script uses the response array; for each item it renders a card with date (derived from `item.start_time`), time range (e.g. `utcDateToEasternTime(item.start_time)` – `utcDateToEasternTime(item.end_time)` EST), and **`grade_label`**. Each card has a radio with `value = item._id` and `name = "trial-class"` so the parent selects exactly one class.
+- **Grade dropdown:** **GET** `camp/paymentGrades`. Populates `.trial-form-select-field` with options (`grade_name`) for the **Student Grade** field.
+
+## Registration Form (New Registration)
+
+<Frame>
+  ![Trial class registration form](/images/create_trial_registration.png)
+</Frame>
+
+The form collects:
+
+- **Student:** First name, Last name, Grade (dropdown).
+- **Parent:** First name, Last name, Email, Phone.
+- **Previous experience:** Free text (e.g. “Does your student have prior debate experience? If not, put 'None'.”).
+- **Available classes:** Grid of trial class options (date/time from `start_time` / `end_time`, plus grade range); parent selects **one** via radio.
+
+Required fields are validated (e.g. parent email); the frontend ensures a trial class is selected before submit.
+
+## Submit Registration
+
+When the parent clicks **Submit Registration**, the frontend sends **POST** `camp/trialClassRegistration` with:
+
+<Accordion title="Payload (trial class registration)">
+
+- **`student`** — Object with `first_name`, `last_name`, `grade` (from grade dropdown).
+- **`parent`** — Object with `first_name`, `last_name`, `email`, `phone`.
+- **`trial_class_id`** — Value of the selected radio (`input[name='trial-class']:checked`).
+- **`previous_experience`** — Value from the prior experience text area.
+- **`landingURL`** — From `sessionStorage.getItem("landingURL")` (optional; empty string if not set).
+
+</Accordion>
+
+Backend validates, creates the registration and token, and sends the **email confirmation** with a unique URL = page URL + **token** (e.g. `?token=...`). It also posts a registration payload to the configured **Zapier webhook** so downstream tools (e.g. CRM, email automation) receive the new trial registration (student + parent info, class time, grade range, previous experience). On success, the form is hidden and a success message is shown in `.tc_form-done`; on error, the message is shown in `.tc_form-fail`.
+
+## Manage Registration (Token in URL)
+
+When the parent opens the page with **token** in the URL (e.g. `?token=...`), the frontend switches to **manage registration** mode.
+
+1. The **registration form** (`.trial_class_form-container`) and the initial **registration card** are hidden.
+2. The frontend calls **GET** `camp/trial-class/registration/manage?token={token}` to load the registration, current class, and available classes.
+3. If the response includes **`registration`**, **`current_class`**, and **`available_classes`**:
+   - A **manage screen** is shown (`.tc_registration-card`): the parent sees their registration summary (student name, current class date/time, parent name, student grade, parent email, parent phone) and two choices:
+     - **Reschedule** — Change to a different trial class (same form with pre-filled details, current class selected, and all available classes listed).
+     - **Cancel** — Cancel the registration.
+4. **Reschedule:** The same registration form is shown with fields pre-filled and current class as default; all available classes are listed. The parent selects a new class and submits; the frontend sends **POST** `camp/trial-class/registration/reschedule` with `{ token, new_trial_class_id }` for the newly selected class. The backend updates the registration and sends a **reschedule payload** to the same Zapier webhook so external systems stay in sync.
+5. **Cancel:** The parent clicks **Cancel**. A **confirmation** (Yes/No) is shown. On **Yes**, the frontend sends **POST** `camp/trial-class/registration/cancel` with body `{ token }`. On success, the UI shows the cancelled state (`.tc_registration-cancelled-card`).
+
+If the token is expired or invalid and the manage API returns an error, the frontend shows a message — **"It looks like this link has expired or is invalid."** — with a **Back** button that returns the user to the normal registration form.
+
+## Frontend (JS & CSS)
+
+The following describes how the trial class page is wired: APIs, CSS classes, and event handlers.
+
+**CSS classes (main):**
+
+- **Trial class grid:** `.trial-class_option-wapper` → `.trial-class-grid-container`; template `.tc_option-label` (cloned per class). Each card: `.trial-class_date`, `.trial-class_time-info`, `.trial-class_grade-info`, and `input[type='radio']` with `name="trial-class"`.
+- **Grade dropdown:** `.trial-form-select-field` (populated from `camp/paymentGrades`).
+- **Form:** `#trial-class-form`. Fields: `#student_first_name`, `#student_last_name`, `#parent_first_name`, `#parent_last_name`, `#parent_email`, `#parent_phone`, `#previous_experience`, plus the grade select and trial-class radios.
+- **Success / error:** `.tc_form-done`, `.tc_form-fail` (shown or hidden after submit).
+- **Manage view (token present):** `.tc_registration-card` (registration summary); `.tc_student-info-row`, `.p_tc_student-info-label` / `.tc_student-info-label`, `.p_tc_student-info-value` / `.tc_student-info-value`. Cancel button: `.tc_cancel-registration-btn`; cancelled state: `.tc_registration-cancelled-card`; cancel confirmation: `.tc_cancel-registration-info-card` (Yes/No).
+
+**Flow (init):**
+
+- On **DOMContentLoaded**, if there is no `?token=...` in the URL: fetch trial classes and append cards to the grid; fetch grades and fill the dropdown; attach form submit handler.
+- If **token** is present: hide the bare registration form and load **GET** `manage?token=...`. On success, show the **Your trial class registration details** card (`.tc_registration-card`) with student and class details and two buttons: **Reschedule** and **Cancel Registration**. Clicking **Reschedule** opens a registration form pre-filled with the user’s details and current class selected and, after submit, updates the registration to the new class. Clicking **Cancel Registration** first shows a confirmation card, and after the user confirms, the UI shows the **Registration Cancelled** card with a **Register Again** button. On failure or missing data, the frontend shows a message — **"It looks like this link has expired or is invalid."** — with a **Back** button that returns the user to the normal registration form.
+
+**Form submit:**
+
+- Prevent default; validate that a trial class radio is selected (else alert "Please select a trial class.").
+- Build payload from form fields and `sessionStorage.getItem("landingURL")`.
+- **POST** `camp/trialClassRegistration`. On success: hide form, show `.tc_form-done`, reset form. On error: show error message in `.tc_form-fail`.
+
+**Cancel (manage view):**
+
+- On click of `.tc_cancel-registration-btn`: show the **Cancel Registration** confirmation card and, when the user clicks **Yes, Cancel**, call **POST** `camp/trial-class/registration/cancel` with `{ token }`. On success: hide `.tc_cancel-registration-info-card`, show `.tc_registration-cancelled-card`. On error: handle in console / UI as needed.
+
+<Frame>
+  ![Cancel Registration confirmation](</images/cancel_registration_frontend.png>)
+</Frame>
+
+<Frame>
+  ![Registration cancelled confirmation](</images/registration_cancelled_front.png>)
+</Frame>
+
+**Data attributes / helpers:**
+
+- Each trial class radio has `value = item._id` and `name = "trial-class"`; the label `for` is set to `trial-class-{item._id}`.
+- Date/time display uses a helper (e.g. `utcDateToEasternTime`) to convert UTC to EST for the class cards and for the manage view class description.
+
+## System Behavior Notes
+
+- Only **future** trial classes are returned by **GET** `camp/trialClassDetail`.
+- The email confirmation includes a link with **token**; the token is used for **GET manage** and **POST cancel** (and for reschedule when the parent submits the form again with a new class).
+- Reschedule uses the same form with pre-filled details and current class selected; the parent picks a new class and submits. Cancel requires confirmation (Yes/No) before the frontend calls the cancel endpoint.

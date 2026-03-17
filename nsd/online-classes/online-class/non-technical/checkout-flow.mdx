@@ -1,0 +1,111 @@
+---
+title: "Non-Technical: Online Classes Checkout Flow"
+---
+
+The **online classes checkout** lets parents log in or create a new account, select an online class and schedule, enter student details, choose a payment method, and pay securely via Stripe. The overall flow mirrors the camp checkout, but is scoped to a **single online class** (no camp program, no supplementary camp add-ons, no briefs upsell).
+
+## Multi-Step Flow (Online Classes)
+
+**Login / Sign-up → Student Details → Select Class & Pay → After payment**
+
+Each step must be completed before proceeding to the next.
+
+### When the checkout URL is wrong or incomplete
+
+If the online-classes checkout page is opened without the required URL parameters (for example, missing `grade_id`, `session_detail_id`, or `class_detail_id`), the page shows an **error state** instead of the normal flow:
+
+- A prominent **error banner** is displayed with the message: **"ERROR! Please go back to the Class Overview page to select a class."**
+- A **"Go to Class Overview"** button is shown; clicking it takes the user to the [Class Overview](/nsd/online-classes/online-class/class-overview) page to select a class. Only after selecting a class from the overview (which opens checkout with the correct URL parameters) does the user complete enrollment.
+- The **checkout form is disabled** — the user cannot create an account, enter student details, or proceed to payment until they go to [Class Overview](/nsd/online-classes/online-class/class-overview) and select a class.
+
+<Frame>
+  ![Checkout Error Message](/images/error-message-checkout.png)
+</Frame>
+
+### Step 1: Login / Sign-up on the Online-Class Checkout Page
+
+When a user enters the **online classes checkout** flow (via the class overview page), they should log in or create a **Parent Account** before continuing.
+
+<Note>
+  We do not **force** the user to be logged in to a Parent Account. This is a future improvement we expect to make.
+</Note>
+
+<Frame>
+  ![Image](/images/create_account_class.png)
+</Frame>
+
+- **Existing Parent (Login):**
+  - Sees "Already have an account?" with a **Login** button or login form.
+  - After successful login (Memberstack), they are moved into the **Student Details** step (second tab) for online classes.
+- **New Parent (Create Account):**
+  - Completes the **Create Account** form directly on the online-class checkout page.
+  - Upon successful creation, they are **automatically logged in** and moved to the **Student Details** step.
+
+Behind the scenes, Memberstack controls which sections are visible (login/signup vs. checkout tabs) using attributes `data-ms-content="!members"` and `data-ms-content="members"`, just like camp checkout.
+
+### Step 2: Student Details
+
+<Frame>
+  ![Image](/images/student_details_onlineclass.png)
+</Frame>
+
+On this step (second tab), the parent enters **only Student Details**; class selection happens on the next tab.
+
+- Arrives with a **specific class context** from the class overview page (via the URL), but offerings are not yet selected here.
+- Enters **Student Details**:
+  - Student Name (First, Last), Student Email (optional but recommended), Grade, Gender
+
+Parents reuse or prefill student info based on existing student profiles, similar to camp checkout (where available).
+
+Clicking **Next** moves the parent to the **Select Class & Pay** step (third tab).
+
+### Step 3: Select Class and Pay (Payment)
+
+<Frame>
+  ![Image](/images/select_pay_online_class.png)
+</Frame>
+
+On this step (third tab), the parent:
+
+- Sees a summary of:
+  - Selected **class** and **term** (from the checkout URL context).
+  - Available **schedules/offerings** (day/time) loaded from the offerings API.
+  - Total price for the online class.
+- **Selects one schedule/offering** (e.g. Wed 3:30–5:00pm) for the selected class.
+- After a schedule is selected, chooses a **payment method**:
+  - **ACH / Bank Transfer**
+  - **Credit / Debit Card**
+- Only after a payment method is chosen does the **Pay Now** button in the **Order Details** section become active:
+  - Clicking **Pay Now** calls the backend (`createCheckoutUrlForOnlineClass`), then sends the parent to the secure **Stripe payment page** for the chosen method.
+  - Stripe shows the selected class and price (no camp programs or briefs).
+
+<Warning>
+  **Already enrolled:** If a parent tries to enroll a student in a class that student is already enrolled in, an alert is shown with the message **"This student is already enrolled in this class."** The enrollment is blocked and the user must choose a different class or schedule.
+</Warning>
+
+### Step 4: After Payment
+
+After payment:
+
+- Stripe redirects the parent to the configured **success page** (`successUrl`), which is the **Online** Classes [payment confirmation page](https://www.nsdebatecamp.com/online-classes/payment-confirmation):
+  - At this point, the student is officially enrolled in the selected **online class & schedule**.
+- On the backend:
+  - The Stripe webhook (`stripePaymentListener`) processes the payment for `productType: "online_class"`.
+  - A record is written to **`online_class_payment_details`** with:
+    - Parent and student information.
+    - Class offering id and amount paid.
+    - Device and Stripe receipt information.
+  - A **student profile** is created or updated in `student_profiles`.
+  - An **admin notification email** is sent via `sendOnlineClassSuccessEmailToAdmin`.
+  - A **parent welcome email** is sent via `sendOnlineClassPostPurchaseWelcomeEmail` (e.g. "Welcome to NSD Classes — Next Steps") with the portal link, class schedule, and what to expect before the first class.
+
+If the parent returns to the checkout page later (e.g. via the same checkout URL or from the portal), completed enrollments are reflected by:
+
+- Enrollment counts and available spots on the class overview and offerings pages (driven by `online_class_payment_details`).
+- Pre-filled student details from `student_profiles`.
+
+For implementation details (Stripe requests, collections, and webhook handling), see:
+
+- [Pre-Payment (Online Classes)](/nsd/online-classes/online-class/technical/pre-payment)
+- [Payment (Online Classes)](/nsd/online-classes/online-class/technical/payment)
+- [Post-Payment (Online Classes)](/nsd/online-classes/online-class/technical/post-payment)
