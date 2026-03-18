@@ -13,7 +13,7 @@ This guide walks through deploying the BDC APIs to AWS from scratch: configuring
   aws --version
   ```
   Install on macOS: `brew install awscli`.
-- **Node.js and npm** installed (for Serverless and service dependencies). Verify with:
+- **Node.js and npm** installed (for Serverless and service dependencies). Use the version required by your project or CI (e.g. Node 18 or 20 LTS); if a service or Serverless framework expects a different version, use that (e.g. via `nvm` or your team’s standard). Verify with:
   ```bash
   node --version
   npm --version
@@ -129,7 +129,7 @@ Replace `19` with the version number from the previous step.
 ```
 
 - **First argument:** `bdc-common-utilities:19` — package name and new layer version.
-- **Second (optional):** stage (default: `prod`).
+- **Second (optional):** **stage** — Serverless deployment stage (default: `prod`). Production is the default today; you do not need to pass it for prod. The parameter exists so that if you add **staging** or **dev** later, you can deploy to those environments by passing the stage (e.g. `staging` or `dev`) without changing the script. Serverless uses the stage to namespace resources (e.g. Lambda names, API Gateway stage).
 - **Third (optional):** region (default: `us-east-1`).
 
 ### What the script does
