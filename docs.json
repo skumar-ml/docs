@@ -151,7 +151,7 @@
             "group": "Other Technical Things",
             "pages": [
               "bdc/other-technical-things/abandoned-cart",
-              "bdc/deploy-bdc-apis-aws"
+              "bdc/other-technical-things/deploy-bdc-apis-aws"
             ]
           }
         ]
