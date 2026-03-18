@@ -64,7 +64,14 @@ On a successful response, the page hides the form and shows a registration succe
   ![Trial class registration success message](/images/reg_succ_msg.png)
 </Frame>
 
-Backend validates, creates the registration and token, and sends the **email confirmation** with a unique URL = page URL + **token** (e.g. `?token=...`). It also posts a registration payload to the configured **Zapier webhook** so downstream tools (e.g. CRM, email automation) receive the new trial registration (student + parent info, class time, grade range, previous experience). On success, the form is hidden and a success message is shown in `.tc_form-done`; on error, the message is shown in `.tc_form-fail`.
+Backend validates and creates the registration and token, then posts a payload to the configured **Zapier webhook** (student + parent info, class time, grade range, previous experience). Zapier handles post-registration automations, including the trial class email sequence:
+
+1. **After registration** — confirmation email with the manage link (token URL).
+2. **24 hours before class start** — reminder email.
+3. **1 hour before class start** — reminder email.
+4. **After class attended** — follow-up email.
+
+On success, the form is hidden and a success message is shown in `.tc_form-done`; on error, the message is shown in `.tc_form-fail`.
 
 ## Manage Registration (Token in URL)
 
@@ -80,12 +87,12 @@ When the parent opens the page with **token** in the URL (e.g. from the **Manage
 <Frame>
   ![Manage trial class registration details (Reschedule or Cancel)](/images/reschedule_or_cancel.png)
 </Frame>
-4. **Reschedule:** The same registration form is shown with fields pre-filled and current class as default; all available classes are listed. The parent selects a new class and submits; the frontend sends **POST** `camp/trial-class/registration/reschedule` with `{ token, new_trial_class_id }` for the newly selected class. The backend updates the registration and sends a **reschedule payload** to the same Zapier webhook so external systems stay in sync. After a successful reschedule, the page shows a confirmation banner at the top of the card.
+4. **Reschedule:** Clicking **Reschedule** starts the reschedule flow: the form opens pre‑filled with existing details and the current class selected, and the existing details are locked (editing is disabled) for that registration. After the parent picks a new class and submits, the frontend sends **POST** `camp/trial-class/registration/reschedule` with `{ token, new_trial_class_id }`. The API does **not** create a new registration row; it finds the existing record by `token`, updates `trial_class_id` to the new class, and sets `type = "reschedule"`. The backend then sends a **reschedule payload** to the same Zapier webhook so external systems stay in sync. After a successful reschedule, the page shows a confirmation banner at the top of the card.
 
 <Frame>
   ![Trial class reschedule success message](/images/reschedule_success_msg.png)
 </Frame>
-5. **Cancel:** The parent clicks **Cancel**. A **confirmation** (Yes/No) is shown. On **Yes**, the frontend sends **POST** `camp/trial-class/registration/cancel` with body `{ token }`. On success, the UI shows the cancelled state (`.tc_registration-cancelled-card`).
+5. **Cancel:** The parent clicks **Cancel**. A **confirmation** (Yes/No) is shown. On **Yes**, the frontend sends **POST** `camp/trial-class/registration/cancel` with body `{ token }`. The API looks up the registration by `token` and updates the record in `trial_class_registrations` to `type = "cancel"` (it does not delete the row). On success, the UI shows the cancelled state (`.tc_registration-cancelled-card`).
 
 If the token is expired or invalid and the manage API returns an error, the frontend shows a banner message — **"The link is expired or invalid."** — with a **Go Back** button that returns the user to the normal registration form.
 
