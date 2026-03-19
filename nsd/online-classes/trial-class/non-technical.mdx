@@ -1,11 +1,10 @@
 ---
-title: "Retool (Trial Classes)"
+title: "Non-Technical (Retool)"
 ---
 
 This guide explains how admins use the **Trial Classes** Retool app to create trial classes, see who is registered, and reschedule or cancel registrations. It is written for operations staff and does not cover backend implementation details.
 
-Retool app URL:
-`https://nsdebatecamp.retool.com/apps/115e253e-026f-11f1-96f3-8fa1c0fd6333/trial-classes/manage-trial-classes`
+Retool app URL: `https://nsdebatecamp.retool.com/apps/115e253e-026f-11f1-96f3-8fa1c0fd6333/trial-classes/manage-trial-classes`
 
 ---
 
@@ -24,11 +23,14 @@ At the top of the app you see the **Manage Trial Classes** form. Use this form t
 
 You fill in:
 
-- **Date, Start Time, End Time**
-- **Number of Spots**
-- **Start Grade, End Grade**
+- **Date** — Calendar date when the trial class occurs.
+- **Start Time** — Time the class begins.
+- **End Time** — Time the class ends.
+- **Number of Spots** — Maximum number of students allowed.
+- **Start Grade** — Minimum grade allowed.
+- **End Grade** — Maximum grade allowed.
 
-When you click **Create**, the app saves a new record in the `trial_class_details` collection and it appears in the **Class List** table (past and upcoming). Only classes with a future `start_time` (including date) appear on the public Trial Class registration form.
+When you click **Create**, the app saves a new record in the `trial_class_details` collection. If the `start_time` (including date) is in the future, the class appears in the **Class List** table and on the public Trial Class registration form.
 
 <Frame>
   ![Manage Trial Classes form](/images/trial_class_create.png)
@@ -47,7 +49,7 @@ For each row you see:
 - **Start grade, End grade** — Grade range allowed for this trial.
 - **Action buttons** — **Add**, **Edit**, **Delete** for each class.
 
-The **Class List** table shows both **past and upcoming** trial classes. Only classes with a future `start_time` appear on the public Trial Class registration form on the frontend.
+If the `start_time` for a class is in the future, the class appears in this table and on the public Trial Class registration form on the frontend.
 
 <Frame>
   ![Class List and Students List](/images/student_lsit_show_onclick_class.png)
@@ -61,8 +63,11 @@ On the right side, the **Students List** table shows registrations for the class
 
 For each registration you see:
 
-- **Student/Parent details**
-- **Reschedule / Cancel** buttons
+- **Student** — Student name.
+- **Parent** — Parent name.
+- **Student Grade** — Grade stored on the registration.
+- **Parent Email / Parent Phone** — Contact details.
+- **Reschedule / Cancel** buttons — Actions for the selected registration.
 
 When you select a different class in **Class List**, the **Students List** updates to show registrations for that class.
 
@@ -122,9 +127,7 @@ From **Students List**, click **Reschedule** for a registration to open the **Re
 
 The modal shows:
 
-- **Student Name**
-- **Parent Name**
-- A **Select Slots** dropdown listing available future classes.
+- **Student Name**,** Parent Name, **and a **Select Slots** dropdown listing available future classes.
 
 To move a registration:
 
@@ -157,4 +160,4 @@ The dialog confirms which registration you are cancelling and provides **Yes** a
 
 ## Zapier helper query
 
-The Trial Classes Retool app includes a helper query (for example, `getDataForZap`) that reads trial class registrations and class details and sends a payload to the shared Zapier webhook. When a student first registers, Zapier receives a record with `type = "active"` and creates or updates the matching data in Zapier. When a registration is rescheduled, Retool and the APIs send another payload that changes the `type` to `"reschedule"` for that same record so downstream systems stay in sync. Admins use the helper query to re-send or inspect this payload data without touching code. This guide focuses on how to run actions in the UI; the automation details live in the backend and Zapier configuration.
+The Trial Classes Retool app includes a helper query (for example, `getDataForZap`) that reads trial class registrations and class details and sends a payload to the shared Zapier webhook. When a student first registers, Zapier receives a record with `type = "active"` and creates or updates the matching data in Zapier. When a registration is rescheduled, Retool and the APIs send another payload that changes the `type` to `"reschedule"` for that same record so downstream systems stay in sync. The automation details live in the backend and Zapier configuration.
