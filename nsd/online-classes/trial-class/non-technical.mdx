@@ -1,11 +1,10 @@
 ---
-title: "Retool (Trial Classes)"
+title: "Non-Technical (Retool)"
 ---
 
 This guide explains how admins use the **Trial Classes** Retool app to create trial classes, see who is registered, and reschedule or cancel registrations. It is written for operations staff and does not cover backend implementation details.
 
-Retool app URL:
-`https://nsdebatecamp.retool.com/apps/115e253e-026f-11f1-96f3-8fa1c0fd6333/trial-classes/manage-trial-classes`
+Retool app URL: `https://nsdebatecamp.retool.com/apps/115e253e-026f-11f1-96f3-8fa1c0fd6333/trial-classes/manage-trial-classes`
 
 ---
 
@@ -69,8 +68,22 @@ For each registration you see:
 - **Student Grade** — Grade stored on the registration.
 - **Parent Email / Parent Phone** — Contact details.
 - **Reschedule / Cancel** buttons — Actions for the selected registration.
+- **Attended** — Attendance status button for the selected registration.
 
 When you select a different class in **Class List**, the **Students List** updates to show registrations for that class.
+
+### Mark attendance from Students List
+
+The **Attended** column uses a status button to mark whether the student attended the trial class:
+
+- By default, each registration is created with `attended = false` in `trial_class_registrations`.
+- When `attended` is `false`, the table shows a **green** **Mark** button.
+- Clicking **Mark** updates that registration to `attended = true` in `trial_class_registrations`.
+- After update, the button switches to a **red** **Unmarked** state to indicate attendance has been recorded.
+
+<Frame>
+  ![Attendance button in Students List](/images/trial_class_attendance.png)
+</Frame>
 
 ---
 
@@ -128,9 +141,7 @@ From **Students List**, click **Reschedule** for a registration to open the **Re
 
 The modal shows:
 
-- **Student Name**
-- **Parent Name**
-- A **Select Slots** dropdown listing available future classes.
+- **Student Name**,** Parent Name, **and a **Select Slots** dropdown listing available future classes.
 
 To move a registration:
 
@@ -163,4 +174,4 @@ The dialog confirms which registration you are cancelling and provides **Yes** a
 
 ## Zapier helper query
 
-The Trial Classes Retool app includes a helper query (for example, `getDataForZap`) that reads trial class registrations and class details and sends a payload to the shared Zapier webhook. When a student first registers, Zapier receives a record with `type = "active"` and creates or updates the matching data in Zapier. When a registration is rescheduled, Retool and the APIs send another payload that changes the `type` to `"reschedule"` for that same record so downstream systems stay in sync. Admins use the helper query to re-send or inspect this payload data without touching code. This guide focuses on how to run actions in the UI; the automation details live in the backend and Zapier configuration.
+The Trial Classes Retool app includes a helper query (for example, `getDataForZap`) that reads trial class registrations and class details and sends a payload to the shared Zapier webhook. When a student first registers, Zapier receives a record with `type = "active"` and creates or updates the matching data in Zapier. When a registration is rescheduled, Retool and the APIs send another payload that changes the `type` to `"reschedule"` for that same record so downstream systems stay in sync. When a registration is cancelled, Retool and the APIs send/update the webhook payload with `type = "cancel"` so external tools reflect the cancelled status. After Zapier processes the webhook event, a Slack notification is also triggered. The automation details live in the backend and Zapier configuration.
