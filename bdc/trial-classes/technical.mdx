@@ -35,7 +35,8 @@ When a parent completes a trial class booking on the [free class page](https://w
 
 ## Database
 
-### **trial_class_details**
+<AccordionGroup>
+  <Accordion title="trial_class_details">
 
 One document per trial class booking. Written by Acuity webhook; read by coach portal, Retool, and email automation.
 
@@ -57,7 +58,9 @@ One document per trial class booking. Written by Acuity webhook; read by coach p
 | **createdOn**       | When record was created.                                                   |
 | **email_sent**      | Count of automated emails sent.                                            |
 
-### **trial_class_email_content**
+  </Accordion>
+
+  <Accordion title="trial_class_email_content">
 
 Config for automated emails. Managed via Retool; read by scheduler Lambdas.
 
@@ -70,7 +73,9 @@ Config for automated emails. Managed via Retool; read by scheduler Lambdas.
 | **content**             | Email body. Placeholders: `firstName`, `couponCode` (Attended). |
 | **active**              | Boolean. Only active steps are scheduled.                       |
 
-### **trial_class_email_log**
+  </Accordion>
+
+  <Accordion title="trial_class_email_log">
 
 Audit log of sent emails.
 
@@ -82,6 +87,9 @@ Audit log of sent emails.
 | **content**      | Sent body.                           |
 | **stage**        | Stage number.                        |
 | **sentAt**       | When sent.                           |
+
+  </Accordion>
+</AccordionGroup>
 
 ---
 
