@@ -2,32 +2,131 @@
 title: "Overview"
 ---
 
-On the [trial class](https://www.bergendebate.com/free-class) page, parents first **select the student’s grade range and preferred location (or online)**.
+This guide walks through how parents **schedule a free trial class** on the Bergen Debate website using **Acuity Scheduling** (embedded on the public page). For how bookings are saved in the database and processed by the Acuity webhook, see [Technical](/bdc/trial-classes/technical).
 
-![Image](/images/image-126.png)
+Public page: [https://www.bergendebate.com/free-class](https://www.bergendebate.com/free-class)
 
-\
-Based on this selection, available trial classes are shown. Once a trial class is selected, the parent can **register for the trial class**. After successful registration, a **confirmation email is sent** with the class details.
+---
 
-## Acuity Management
+## Select grade, location, and class
 
-TODO: Shubham will fill this out
+On the **Free Class** page, parents choose the **grade range** their student is in and a **location** (Glen Rock, Fort Lee, Livingston, White Plains, or Online). An embedded **Acuity Scheduling** widget lists upcoming trial classes that match those filters.
 
-## Retool
+Each listing shows the **class title**, **date and time**, **duration**, **description** (in-person classes include the address), and how many **spots** remain. The parent clicks **BOOK** for the selected slot.
+
+<Frame>
+  ![Select a trial class by grade and location — Acuity class list](/images/bdc_trial_class_select_class.png)
+</Frame>
+
+---
+
+## Registration form (“Your Information”)
+
+After clicking **BOOK**, the parent sees the **Your Information** step. A summary of the selected class appears at the top (title, duration, date/time, description). The **SELECT CLASS** back link returns to the class list. The **X** on the summary card clears the selected class.
+
+The form collects:
+
+- **First name** and **Last name** (parent)
+- **Phone** (with country code)
+- **Email** — multiple addresses allowed (comma or enter to add)
+- **Student’s Full Name**
+- **Student Grade in the Upcoming Semester** (dropdown)
+- **Previous experience (PF debate)** — free text per the on-page question
+- **Parent’s Primary Email** and **Parent’s Primary Phone Number**
+- **Desired Location Offering for Upcoming Semester** — Fort Lee, Glen Rock, Livingston, or Online
+
+All marked fields are required. The parent submits with **BOOK CLASS**.
+
+<Frame>
+  ![Your Information — trial class registration form](/images/bdc_trial_class_registration_form.png)
+</Frame>
+
+---
+
+## Appointment confirmation
+
+After the booking succeeds, Acuity shows a **confirmation** screen with **What**, **When**, and **Where** (in-person trials show the full address). The screen offers:
+
+- **Change/Cancel Appointment** — opens Acuity’s reschedule or cancel flow
+- **Add to iCal/Outlook Calendar** and **Add to Google Calendar**
+
+<Frame>
+  ![Appointment confirmation — change, cancel, or add to calendar](/images/bdc_trial_class_appointment_confirmation.png)
+</Frame>
+
+On the backend, the Acuity **`scheduled`** webhook creates the **`trial_class_details`** record with **`status`** set to **`scheduled`** (see [Technical](/bdc/trial-classes/technical)).
+
+---
+
+## Email confirmation
+
+Acuity also sends an **appointment confirmation email** with Acuity links to **reschedule** and **cancel** the same way as on the confirmation screen.
+
+---
+
+## Reschedule a trial class
+
+From the **appointment confirmation** screen or the **confirmation email**, the parent opens **reschedule**. Acuity shows the **current appointment** and **available time slots** grouped by date (labels such as **NEXT WEEK** / **IN 3 WEEKS**) with spots remaining. The parent selects a **new slot**.
+
+<Frame>
+  ![Reschedule flow — choose a new date and time slot](/images/bdc_trial_class_reschedule_pick_slot.png)
+</Frame>
+
+After the parent **selects a time slot**, Acuity shows a **Class Rescheduled** confirmation (modal, full page, or both) with the **old** and **new** date and time. The **Appointment Confirmed** view updates to the new schedule. **RESCHEDULE**, **CANCEL**, and **add to calendar** stay on the page for additional changes to the same booking.
+
+<Frame>
+  ![Reschedule confirmed — modal and updated appointment details](/images/bdc_trial_class_reschedule_confirmed.png)
+</Frame>
+
+Acuity also sends an **appointment rescheduled** email with **What**, **Old Time**, **New Time**, **Where**, and the same **Change/Cancel Appointment** and calendar options.
+
+<Frame>
+  ![Appointment rescheduled — email-style confirmation](/images/bdc_trial_class_reschedule_confirmation_email.png)
+</Frame>
+
+On the backend, when Acuity processes the reschedule it sends a webhook to **`/camp/trialClassMemberData`** with **`action=rescheduled`** (see [Technical](/bdc/trial-classes/technical)); the Lambda updates the existing **`trial_class_details`** record (matched by **`appointmentId`**) with the **new class date and time** from Acuity, and sets **`status`** to **`rescheduled`**.
+
+---
+
+## Cancel a trial class
+
+From the **appointment confirmation** page or Acuity links in the appointment email, the parent selects **CANCEL**, or **Change/Cancel Appointment** followed by cancel. Acuity opens a **Cancel Class** dialog with the class name and date and prompts for confirmation.
+
+<Frame>
+  ![Cancel class — confirmation before canceling](/images/bdc_trial_class_cancel_confirm.png)
+</Frame>
+
+After the parent clicks **CANCEL APPOINTMENT**, a **Class Canceled** modal confirms the cancellation. The page shows a **Canceled** badge on the class card.
+
+<Frame>
+  ![Class canceled — confirmation modal and canceled state](/images/bdc_trial_class_canceled_modal.png)
+</Frame>
+
+Acuity also sends an **appointment cancelled** email with the class, time, location, and text stating the appointment was cancelled.
+
+<Frame>
+  ![Appointment cancelled — confirmation](/images/bdc_trial_class_cancellation_page.png)
+</Frame>
+
+When Acuity completes the cancellation it sends a webhook with **`action=cancelled`** to **`/camp/trialClassMemberData`** (see [Technical](/bdc/trial-classes/technical)); the API updates **`trial_class_details`** so **`status`** is **`canceled`** for that **`appointmentId`**.
+
+---
+
+## Admin: Retool
 
 ### Trial Class Details
 
-The [trial class details](https://bergendebate.retool.com/editor/41fed58a-42df-11f0-bba5-fbecf1466f1d/2025%20Phase%20B/trial_class_details/page1) page shows a complete list of all **trial class bookings**. You can **search and filter** records by parent, date, attendance, and status.
+The [trial class details](https://bergendebate.retool.com/editor/41fed58a-42df-11f0-bba5-fbecf1466f1d/2025%20Phase%20B/trial_class_details/page1) page lists all **trial class bookings**. **Search** and **filter** apply by parent, date, attendance, and status.
 
 ![Image](/images/image-125.png)
 
-For each trial class, it displays **parent and student details**, **class type**, **scheduled date & time**, and whether emails were sent. You can also **view email logs, add notes**, and **mark a trial as purchased or unpurchased**.
+For each trial class, the page shows **parent and student details**, **class type**, **scheduled date & time**, and whether emails were sent. **Email logs** are viewable, **notes** are editable, and each trial is **marked purchased or unpurchased** as needed.
 
 ### Trial Class Email Automation
 
 [This](https://bergendebate.retool.com/apps/a9f49b14-7e96-11f0-b537-dfd369c571eb/2025%20Phase%20B/Trial%20Class%20Email%20Automation/page1) page is used to manage **Trial Class automation**. Based on the trial class status (Attended or Non-Attended), different **email steps and follow-ups** are configured.
 
-Each step allows you to set the time delay, email subject, content, and Active/Inactive status so that parents receive the right communication at the right time.
+Each step has fields for time delay, email subject, content, and Active/Inactive status so follow-ups align with the trial timeline.
 
 **Attended**
 
