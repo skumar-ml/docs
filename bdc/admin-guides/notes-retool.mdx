@@ -1,23 +1,16 @@
 ---
-title: 'Retool (Notes)'
+title: "Retool (Notes)"
 ---
 
-This guide explains **how to use** the Retool **Notes** screen under **Student Consolidation**—what it is for and how to add, edit, delete, and jump to registration details. The Retool walkthrough is written for admins and operators. **[Database](#database-notes-collection)** documents the MongoDB `notes` collection and fields used when Retool **adds**, **updates**, or **deletes** a note.
+This guide explains **how to use** the **Notes** system in BDC's Retool.
 
-**Use** [this Retool page](https://bergendebate.retool.com/apps/46bfd4ba-22b4-11f1-a722-bb8cd36a97be/Student%20Consolidation/Manage%20Notes%20-%20SC%20Consolidate) **to:** View and manage free-form notes for **parents** and **students**. Row actions (**Add +**, **Edit**, **Delete**, **View**) are described in the sections below.
+**Use** [this Retool page](https://bergendebate.retool.com/apps/46bfd4ba-22b4-11f1-a722-bb8cd36a97be/Student%20Consolidation/Manage%20Notes%20-%20SC%20Consolidate) **to:** View and manage free-form notes for **parents** and **students**. Row actions (**Add \+**, **Edit**, **Delete**, **View**) are described in the sections below.
 
 ---
 
 ## **View and Edit Notes (main screen)**
 
-**On this screen** **to:** See all notes in a table, narrow the list with **Parent Email** and **Student Email** filters, and use row actions to add (via **Add +**), edit, delete, or open registration details (**View**). **Clear All** resets the filters.
-
-**What you'll see:**
-
-- **Parent Email** / **Student Email** — Searchable dropdowns at the top; use either or both to filter rows.
-- **Clear All** — Clears the active filter selections.
-- **Add +** — Opens the **Add Note** modal (see below).
-- **Table columns** — **Parent Name**, **Parent Email**, **Student Name**, **Student Email**, note text, **Created At**, and action columns **Edit**, **Delete**, and **View**. **Student Email** is empty when the member record has no student email.
+**On this screen** **to:** See all notes in a table, narrow the list with **Parent Email** and **Student Email** filters, and use row actions to add (via **Add \+**), edit, delete, or open registration details (**View**).
 
 <Frame>
   ![View and Edit Notes table and filters in Retool](/images/bdc_notes_retool_overview.png)
@@ -27,7 +20,7 @@ This guide explains **how to use** the Retool **Notes** screen under **Student C
 
 ## **Add Note**
 
-**Use** **Add +** on the **View and Edit Notes** screen to create a new note for a selected student directly from Retool.
+**Use** **Add \+** on the **View and Edit Notes** screen to create a new note for a selected student directly from Retool.
 
 The **Add Note** modal collects:
 
@@ -35,7 +28,7 @@ The **Add Note** modal collects:
 - **Student** — **Student** (required). The member record this note is tied to.
 - **Note** — **Note** (required). The full note body.
 
-When you click **Add Note**:
+(Technical) When you click **Add Note**:
 
 - Retool inserts a new document into the **`notes`** collection with **`notes`** (the text you entered), **`student_id`** (that student’s **`members._id`**), **`family_id`** (that student’s **`members.familyId`**), and **`created_on`**.
 - The modal closes and the new note appears in the notes table. Active **Parent Email** / **Student Email** filters hide rows that do not match—clear or change filters to see the new row.
@@ -55,7 +48,7 @@ The **Edit Note** modal shows:
 - **Student Name** — Read-only context for which student owns the note.
 - **Note** — **Note** (required). The updated note body.
 
-When you click **Update Note**:
+(Technical) When you click **Update Note**:
 
 - Retool updates the **`notes`** field on that document in the **`notes`** collection. **`student_id`**, **`family_id`**, and **`created_on`** do not change on edit.
 - The modal closes and the table reflects the new text.
