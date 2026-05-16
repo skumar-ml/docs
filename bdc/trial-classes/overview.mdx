@@ -22,20 +22,7 @@ Each listing shows the **class title**, **date and time**, **duration**, **descr
 
 ## Registration form (“Your Information”)
 
-After clicking **BOOK**, the parent sees the **Your Information** step. A summary of the selected class appears at the top (title, duration, date/time, description). The **SELECT CLASS** back link returns to the class list. The **X** on the summary card clears the selected class.
-
-The form collects:
-
-- **First name** and **Last name** (parent)
-- **Phone** (with country code)
-- **Email** — multiple addresses allowed (comma or enter to add)
-- **Student’s Full Name**
-- **Student Grade in the Upcoming Semester** (dropdown)
-- **Previous experience (PF debate)** — free text per the on-page question
-- **Parent’s Primary Email** and **Parent’s Primary Phone Number**
-- **Desired Location Offering for Upcoming Semester** — Fort Lee, Glen Rock, Livingston, or Online
-
-All marked fields are required. The parent submits with **BOOK CLASS**.
+After clicking **BOOK**, the parent completes an onboarding form (via Acuity). All marked fields are required. The parent submits with **BOOK CLASS**.
 
 <Frame>
   ![Your Information — trial class registration form](/images/bdc_trial_class_registration_form.png)
@@ -43,72 +30,13 @@ All marked fields are required. The parent submits with **BOOK CLASS**.
 
 ---
 
-## Appointment confirmation
+## After booking
 
-After the booking succeeds, Acuity shows a **confirmation** screen with **What**, **When**, and **Where** (in-person trials show the full address). The screen offers:
-
-- **Change/Cancel Appointment** — opens Acuity’s reschedule or cancel flow
-- **Add to iCal/Outlook Calendar** and **Add to Google Calendar**
+After **BOOK CLASS** succeeds, **Acuity** owns the appointment: confirmation and follow-up emails, calendar links, rescheduling, and cancellation all happen in Acuity’s UI and emails. Trial appointments are **managed in Acuity**; our records stay in sync when Acuity sends webhooks (see [Technical](/bdc/trial-classes/technical)).
 
 <Frame>
-  ![Appointment confirmation — change, cancel, or add to calendar](/images/bdc_trial_class_appointment_confirmation.png)
+  ![Appointment confirmation — details and change or cancel options](/images/bdc_trial_class_appointment_confirmation.png)
 </Frame>
-
-On the backend, the Acuity **`scheduled`** webhook creates the **`trial_class_details`** record with **`status`** set to **`scheduled`** (see [Technical](/bdc/trial-classes/technical)).
-
----
-
-## Email confirmation
-
-Acuity also sends an **appointment confirmation email** with Acuity links to **reschedule** and **cancel** the same way as on the confirmation screen.
-
----
-
-## Reschedule a trial class
-
-From the **appointment confirmation** screen or the **confirmation email**, the parent opens **reschedule**. Acuity shows the **current appointment** and **available time slots** grouped by date (labels such as **NEXT WEEK** / **IN 3 WEEKS**) with spots remaining. The parent selects a **new slot**.
-
-<Frame>
-  ![Reschedule flow — choose a new date and time slot](/images/bdc_trial_class_reschedule_pick_slot.png)
-</Frame>
-
-After the parent **selects a time slot**, Acuity shows a **Class Rescheduled** confirmation (modal, full page, or both) with the **old** and **new** date and time. The **Appointment Confirmed** view updates to the new schedule. **RESCHEDULE**, **CANCEL**, and **add to calendar** stay on the page for additional changes to the same booking.
-
-<Frame>
-  ![Reschedule confirmed — modal and updated appointment details](/images/bdc_trial_class_reschedule_confirmed.png)
-</Frame>
-
-Acuity also sends an **appointment rescheduled** email with **What**, **Old Time**, **New Time**, **Where**, and the same **Change/Cancel Appointment** and calendar options.
-
-<Frame>
-  ![Appointment rescheduled — email-style confirmation](/images/bdc_trial_class_reschedule_confirmation_email.png)
-</Frame>
-
-On the backend, when Acuity processes the reschedule it sends a webhook to **`/camp/trialClassMemberData`** with **`action=rescheduled`** (see [Technical](/bdc/trial-classes/technical)); the Lambda updates the existing **`trial_class_details`** record (matched by **`appointmentId`**) with the **new class date and time** from Acuity, and sets **`status`** to **`rescheduled`**.
-
----
-
-## Cancel a trial class
-
-From the **appointment confirmation** page or Acuity links in the appointment email, the parent selects **CANCEL**, or **Change/Cancel Appointment** followed by cancel. Acuity opens a **Cancel Class** dialog with the class name and date and prompts for confirmation.
-
-<Frame>
-  ![Cancel class — confirmation before canceling](/images/bdc_trial_class_cancel_confirm.png)
-</Frame>
-
-After the parent clicks **CANCEL APPOINTMENT**, a **Class Canceled** modal confirms the cancellation. The page shows a **Canceled** badge on the class card.
-
-<Frame>
-  ![Class canceled — confirmation modal and canceled state](/images/bdc_trial_class_canceled_modal.png)
-</Frame>
-
-Acuity also sends an **appointment cancelled** email with the class, time, location, and text stating the appointment was cancelled.
-
-<Frame>
-  ![Appointment cancelled — confirmation](/images/bdc_trial_class_cancellation_page.png)
-</Frame>
-
-When Acuity completes the cancellation it sends a webhook with **`action=cancelled`** to **`/camp/trialClassMemberData`** (see [Technical](/bdc/trial-classes/technical)); the API updates **`trial_class_details`** so **`status`** is **`canceled`** for that **`appointmentId`**.
 
 ---
 
