@@ -2,13 +2,47 @@
 title: "Retool"
 ---
 
-Admin can control the following via Retool:
+Admins use Retool for **semester** classes: add offerings and manage the list (filters, roster, edit, delete). For collection-level detail see [MongoDB](/bdc/checkout-systems/semester/mongo-db). In **Student Consolidation**, open **Classes**, then **Create Class** or **Manage Class**.
 
-- [**Create a New Class**](https://bergendebate.retool.com/apps/5db11d48-e164-11ee-9a53-6f7bdd96bc91/BCDC%20Phase%205B/Create_Class_No_Instructor): Give level, location, day of week, start time, and the number of spots available.
-- [Edit or Delete a Class](https://bergendebate.retool.com/apps/a05a5c6a-b64a-11f0-85e9-afb8c41aac47/Student%20Consolidation/Manage_Class%20-%20SC): Edit any of the above details in a class, or delete it entirely.
-- TODO: Give some more details on what happens when you delete a class. What happens to existing students? Is class actually deleted from the DB
+---
 
-**Comment: It will delete the class from the database. We don't have any restrictions. We are not deleting existing students.**
+## Create Class
+
+Use [Create Class (no instructor)](https://bergendebate.retool.com/apps/5db11d48-e164-11ee-9a53-6f7bdd96bc91/BCDC%20Phase%205B/Create_Class_No_Instructor) to add a class row for the chosen session and year. Complete the form and submit with **Add**.
+
+<Frame>
+  ![Create Class form in Retool](/images/bdc_semester_retool_create_class.png)
+</Frame>
+
+---
+
+## Manage Class
+
+Use [Manage Class — SC](https://bergendebate.retool.com/apps/90c1a074-37d2-11f1-817c-ab132e0e05e7/Student%20Consolidation/Manage_Class%20-%20SC) to filter classes, pick a row to see enrollments and **Class Id**, and use row actions to edit or delete. **View** on a student opens **Student Registration Details** for that student only (the link is per student, not one shared URL).
+
+<Frame>
+  ![Manage Class filters, class table, and student list in Retool](/images/bdc_semester_retool_manage_class.png)
+</Frame>
+
+### Edit class
+
+Open **Edit Class Details** with the row **pencil**. Save with **Update**; **Cancel** or **X** closes without saving.
+
+<Frame>
+  ![Edit Class Details modal in Retool](/images/bdc_semester_retool_edit_class_modal.png)
+</Frame>
+
+### Delete
+
+Start delete with the row **trash** icon; Retool shows **Delete Confirmation** before any data changes.
+
+<Frame>
+  ![Delete class confirmation in Retool](/images/bdc_semester_retool_delete_class_confirmation.png)
+</Frame>
+
+<Info>
+  Choosing **Yes** does **not** remove the class document. Retool sets `isDeleted` to `true` on that `class_details` row (soft delete), and marks all `payment_details` for that `classId` as **refunded**. Choosing **No** or closing with **X** leaves everything unchanged.
+</Info>
 
 <Warning>
   TODO: What does Grade Range on the "Create Class" page control??

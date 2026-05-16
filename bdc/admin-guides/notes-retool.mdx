@@ -1,0 +1,100 @@
+---
+title: "Retool (Notes)"
+---
+
+This guide explains **how to use** the **Notes** system in BDC's Retool.
+
+**Use** [this Retool page](https://bergendebate.retool.com/apps/46bfd4ba-22b4-11f1-a722-bb8cd36a97be/Student%20Consolidation/Manage%20Notes%20-%20SC%20Consolidate) **to:** View and manage free-form notes for **parents** and **students**. Row actions (**Add \+**, **Edit**, **Delete**, **View**) are described in the sections below.
+
+---
+
+## **View and Edit Notes (main screen)**
+
+**On this screen** **to:** See all notes in a table, narrow the list with **Parent Email** and **Student Email** filters, and use row actions to add (via **Add \+**), edit, delete, or open registration details (**View**).
+
+<Frame>
+  ![View and Edit Notes table and filters in Retool](/images/bdc_notes_retool_overview.png)
+</Frame>
+
+---
+
+## **Add Note**
+
+**Use** **Add \+** on the **View and Edit Notes** screen to create a new note for a selected student directly from Retool.
+
+The **Add Note** modal collects:
+
+- **Parent selection** — **Parent Name** (searchable dropdown). Pick the parent first so the **Student** list loads the right children.
+- **Student** — **Student** (required). The member record this note is tied to.
+- **Note** — **Note** (required). The full note body.
+
+(Technical) When you click **Add Note**:
+
+- Retool inserts a new document into the **`notes`** collection with **`notes`** (the text you entered), **`student_id`** (that student’s **`members._id`**), **`family_id`** (that student’s **`members.familyId`**), and **`created_on`**.
+- The modal closes and the new note appears in the notes table. Active **Parent Email** / **Student Email** filters hide rows that do not match—clear or change filters to see the new row.
+
+<Frame>
+  ![Add Note modal in Retool](/images/bdc_notes_retool_add_note_modal.png)
+</Frame>
+
+---
+
+## **Edit Note**
+
+**Use** the **pencil** icon in a note row to change the text for that note.
+
+The **Edit Note** modal shows:
+
+- **Student Name** — Read-only context for which student owns the note.
+- **Note** — **Note** (required). The updated note body.
+
+(Technical) When you click **Update Note**:
+
+- Retool updates the **`notes`** field on that document in the **`notes`** collection. **`student_id`**, **`family_id`**, and **`created_on`** do not change on edit.
+- The modal closes and the table reflects the new text.
+
+<Frame>
+  ![Edit Note modal in Retool](/images/bdc_notes_retool_edit_note_modal.png)
+</Frame>
+
+---
+
+## **Delete Note**
+
+**Use** the **trash** icon in a note row to remove that note. Retool opens a confirmation because deletion is permanent.
+
+The **Delete Note Confirmation** dialog shows the note you are about to delete and asks you to confirm.
+
+When you click **Yes**:
+
+- Retool deletes that document from the **`notes`** collection.
+- The dialog closes and the table updates so the row is gone.
+
+When you click **No** (or close the dialog), the note is **not** deleted.
+
+<Frame>
+  ![Delete Note confirmation in Retool](/images/bdc_notes_retool_delete_confirmation.png)
+</Frame>
+
+---
+
+## **View (open student registration)**
+
+**Use** the **eye** icon in a row **to:** Open **Student Registration Details** (SpeedUp) under **Student Consolidation** for **that** student. Each row gets its own URL: Retool adds **query parameters** and other URL fields so the registration screen loads the correct record. The app path is fixed; the id segment at the end of the URL changes per student. Bookmarks and static doc links do not replace **View**.
+
+---
+
+## Database (notes collection)
+
+Retool **add**, **edit**, and **delete** operations read and write documents in the **`notes`** collection. Each document ties a note to a student and their family, using the **`members`** collection for identity.
+
+| Field | Description |
+| --- | --- |
+| **`notes`** | Note body (free-form text). **Edit** updates this field; **add** sets it on insert. |
+| **`student_id`** | References **`members._id`** for the student the note belongs to. **Add** sets this from the selected student. |
+| **`family_id`** | References the **`members.familyId`** of that student (the family the note is scoped under). **Add** sets this from the student’s member record. |
+| **`created_on`** | When the note was created. Set on **add**; left unchanged on **edit**. |
+
+**Delete** removes the matching document from **`notes`**. **`members`** is not modified by these operations—only referenced by `student_id` and `family_id`.
+
+---

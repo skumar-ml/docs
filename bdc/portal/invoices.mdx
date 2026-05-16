@@ -32,6 +32,10 @@ The [Payment History](#) page allows parents to view students, track outstanding
   - A historical view of completed enrollments by year
   - Downloadable **PDF receipts** for each enrollment
 
+  <Frame>
+    ![Sample PDF receipt from Completed Enrollments](/images/bdc_portal_receipt_sample.png)
+  </Frame>
+
 **TODO: SK insert hyperlink to Retool page once finalized**
 
 ## Technical
@@ -452,6 +456,14 @@ This Lambda generates an **official PDF receipt** for a Bergen Debate Club purch
 7. **Stores and returns the receipt**
    - Uploads the PDF to S3, returning the public URL to the frontend
    - Frontend displays or downloads the receipt
+
+##### **Planned PDF receipt fields (Lambda)**
+
+The portal’s **Download Receipt** flow calls `generateItemizedInvoice` (see [Non-Technical](#non-technical) sample). Backlog for the PDF generator:
+
+- **Services rendered** — Add a line: **semester** purchases → `Semester debate class`; **summer** purchases → `Summer debate camp`.
+- **Dates of service** — Add a line with the program start and end dates from the DB-backed session or enrollment record used when resolving the purchase (step 3 above).
+- **Deposit in total** — Add the paid **deposit** to the receipt **Total**, not only as a footnote. **Line items and totals match the portal Invoice Breakdown.**
 
 ##### **Portal sidebar display**
 

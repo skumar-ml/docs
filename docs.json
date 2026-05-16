@@ -144,7 +144,8 @@
           {
             "group": "Admin Guides",
             "pages": [
-              "bdc/admin-guides/academic-semester-checklist"
+              "bdc/admin-guides/academic-semester-checklist",
+              "bdc/admin-guides/notes-retool"
             ]
           },
           {

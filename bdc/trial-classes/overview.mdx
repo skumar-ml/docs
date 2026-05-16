@@ -2,32 +2,59 @@
 title: "Overview"
 ---
 
-On the [trial class](https://www.bergendebate.com/free-class) page, parents first **select the student’s grade range and preferred location (or online)**.
+This guide walks through how parents **schedule a free trial class** on the Bergen Debate website using **Acuity Scheduling** (embedded on the public page). For how bookings are saved in the database and processed by the Acuity webhook, see [Technical](/bdc/trial-classes/technical).
 
-![Image](/images/image-126.png)
+Public page: [https://www.bergendebate.com/free-class](https://www.bergendebate.com/free-class)
 
-\
-Based on this selection, available trial classes are shown. Once a trial class is selected, the parent can **register for the trial class**. After successful registration, a **confirmation email is sent** with the class details.
+---
 
-## Acuity Management
+## Select grade, location, and class
 
-TODO: Shubham will fill this out
+On the **Free Class** page, parents choose the **grade range** their student is in and a **location** (Glen Rock, Fort Lee, Livingston, White Plains, or Online). An embedded **Acuity Scheduling** widget lists upcoming trial classes that match those filters.
 
-## Retool
+Each listing shows the **class title**, **date and time**, **duration**, **description** (in-person classes include the address), and how many **spots** remain. The parent clicks **BOOK** for the selected slot.
+
+<Frame>
+  ![Select a trial class by grade and location — Acuity class list](/images/bdc_trial_class_select_class.png)
+</Frame>
+
+---
+
+## Registration form (“Your Information”)
+
+After clicking **BOOK**, the parent completes an onboarding form (via Acuity). All marked fields are required. The parent submits with **BOOK CLASS**.
+
+<Frame>
+  ![Your Information — trial class registration form](/images/bdc_trial_class_registration_form.png)
+</Frame>
+
+---
+
+## After booking
+
+After **BOOK CLASS** succeeds, **Acuity** owns the appointment: confirmation and follow-up emails, calendar links, rescheduling, and cancellation all happen in Acuity’s UI and emails. Trial appointments are **managed in Acuity**; our records stay in sync when Acuity sends webhooks (see [Technical](/bdc/trial-classes/technical)).
+
+<Frame>
+  ![Appointment confirmation — details and change or cancel options](/images/bdc_trial_class_appointment_confirmation.png)
+</Frame>
+
+---
+
+## Admin: Retool
 
 ### Trial Class Details
 
-The [trial class details](https://bergendebate.retool.com/editor/41fed58a-42df-11f0-bba5-fbecf1466f1d/2025%20Phase%20B/trial_class_details/page1) page shows a complete list of all **trial class bookings**. You can **search and filter** records by parent, date, attendance, and status.
+The [trial class details](https://bergendebate.retool.com/editor/41fed58a-42df-11f0-bba5-fbecf1466f1d/2025%20Phase%20B/trial_class_details/page1) page lists all **trial class bookings**. **Search** and **filter** apply by parent, date, attendance, and status.
 
 ![Image](/images/image-125.png)
 
-For each trial class, it displays **parent and student details**, **class type**, **scheduled date & time**, and whether emails were sent. You can also **view email logs, add notes**, and **mark a trial as purchased or unpurchased**.
+For each trial class, the page shows **parent and student details**, **class type**, **scheduled date & time**, and whether emails were sent. **Email logs** are viewable, **notes** are editable, and each trial is **marked purchased or unpurchased** as needed.
 
 ### Trial Class Email Automation
 
 [This](https://bergendebate.retool.com/apps/a9f49b14-7e96-11f0-b537-dfd369c571eb/2025%20Phase%20B/Trial%20Class%20Email%20Automation/page1) page is used to manage **Trial Class automation**. Based on the trial class status (Attended or Non-Attended), different **email steps and follow-ups** are configured.
 
-Each step allows you to set the time delay, email subject, content, and Active/Inactive status so that parents receive the right communication at the right time.
+Each step has fields for time delay, email subject, content, and Active/Inactive status so follow-ups align with the trial timeline.
 
 **Attended**
 
