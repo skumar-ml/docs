@@ -40,7 +40,9 @@ Start delete with the row **trash** icon; Retool shows **Delete Confirmation** b
   ![Delete class confirmation in Retool](/images/bdc_semester_retool_delete_class_confirmation.png)
 </Frame>
 
-Choosing **Yes** does **not** remove the class document. Retool sets **`isDeleted`** to **`true`** on that **`class_details`** row (soft delete), and marks all **`payment_details`** for that **`classId`** as **refunded**. Choosing **No** or closing with **X** leaves everything unchanged.
+<Info>
+  Choosing **Yes** does **not** remove the class document. Retool sets `isDeleted` to `true` on that `class_details` row (soft delete), and marks all `payment_details` for that `classId` as **refunded**. Choosing **No** or closing with **X** leaves everything unchanged.
+</Info>
 
 <Warning>
   TODO: What does Grade Range on the "Create Class" page control??
