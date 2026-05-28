@@ -91,6 +91,18 @@ Creates or updates the user account record in MongoDB, based on if `student` or 
   - If record is a `student`, then link to the `parent` record (which is also created, if does not exist)
   - `familyId` is updated as [described in this doc.](/bdc/members/introduction)
 
+### CRM usage of `createAccount`
+
+The CRM lead flow also uses `createAccount` while creating student and parent/member records.
+
+**Flow:**
+
+- CRM creates a lead from `child`, `parent`, and `tag` input.
+- The flow resolves or creates the parent/member, assigns `familyId`, then links or provisions the student.
+- New students are created through external `createAccount` (`settings.CREATE_ACCOUNT_API_URL`) using form-urlencoded `POST` requests.
+- After student provisioning, the student is looked up in `members`.
+- Once the lead document is inserted, parent accounts are synced via the same `createAccount` API.
+
 ## MongoDB Account Schema
 
 ### Account Document (Common Structure)
