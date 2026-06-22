@@ -1,0 +1,52 @@
+---
+title: CRM Migration to AWS
+description: Summary of moving the CRM website and backend from current hosting onto Amazon Web Services (AWS).
+---
+
+This document summarizes the CRM migration to AWS: what we are changing, how the rollout works step by step, why it improves performance and security, and what stays the same for users and data.
+
+## What we are doing
+
+Moving the entire CRM system — the website and the server that powers it — from its current hosting onto Amazon Web Services (AWS). After this, everything runs on AWS under one account.
+
+---
+
+## How it works — step by step
+
+1. **Set up a private network (VPC) on AWS** — This is the foundation. All our services will sit inside this private network so they talk to each other directly, without going through the public internet.
+
+2. **Connect the database privately** — We link our AWS private network to MongoDB Atlas (where all the data lives) using VPC Peering, so database traffic never touches the open internet.
+
+3. **Deploy the CRM server to AWS (EC2)** — The FastAPI backend gets installed on an EC2 virtual server inside the private network. It runs with Uvicorn (Python server) behind Nginx (handles HTTPS). Auto-restarts if anything crashes.
+
+4. **Move Lambda functions into the private network** — The existing BDC services (class, payment, member, scheduler, etc.) get configured to run inside the same private network. They now call the CRM server and the database internally — no public internet hop.
+
+5. **Move the CRM website from Netlify to AWS (S3 + CloudFront)** — The React website files get uploaded to S3 (storage) and served through CloudFront (fast global delivery + HTTPS). Netlify is retired.
+
+6. **Update DNS and URLs** — Point the domain to the new AWS setup. Update internal service config so Lambda services use the private address to reach the CRM server.
+
+7. **Test and verify everything** — Confirm all services work, internal traffic stays private, HTTPS is active, and monitoring/logging is in place.
+
+---
+
+## Why this is better
+
+- **Faster** — Internal calls drop from ~30–100 ms to ~1–2 ms. Database queries drop from ~15–50 ms to ~2–5 ms. The website loads from 200+ global edge locations.
+
+- **More secure** — The CRM server and database are no longer reachable from the public internet. Only authorized internal services can access them.
+
+- **Simpler and cheaper** — Everything on one AWS account instead of three separate platforms (Netlify + external server + AWS). One bill, one monitoring dashboard.
+
+- **More reliable** — Auto-restart on crashes, built-in redundancy, and centralized logging for quick troubleshooting.
+
+---
+
+## What is NOT changing
+
+<Note>
+  **Database stays where it is.** No data is being moved or migrated. MongoDB Atlas remains the same — we are only connecting to it privately instead of publicly.
+
+  **All features stay the same.** Nothing changes in how the CRM works. Users will not notice any difference except faster load times.
+
+  **Rollback is safe.** We keep the current Netlify site running during the transition. If anything goes wrong, we switch back with no data loss.
+</Note>
