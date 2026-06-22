@@ -152,6 +152,7 @@
             "group": "Other Technical Things",
             "pages": [
               "bdc/other-technical-things/abandoned-cart",
+              "bdc/other-technical-things/crm-aws-migration",
               "bdc/other-technical-things/deploy-bdc-apis-aws"
             ]
           }
