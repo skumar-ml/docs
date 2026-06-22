@@ -1,0 +1,219 @@
+---
+title: CRM Staging Environment
+description: Add a staging environment for the BDC CRM alongside production — dedicated URLs, backend APIs, frontend builds, and test_bcdc database isolated from live users.
+---
+
+This guide explains how to add a **staging environment** for the BDC CRM alongside the existing production AWS setup. Staging provides a dedicated URL, dev/staging backend APIs, and dev/staging frontend builds — isolated from live users and live data.
+
+No Docker is used. MongoDB stays on the same Atlas cluster as BDC Lambda; staging uses the `test_bcdc` database instead of production `bcdc`.
+
+---
+
+## 1. Production vs staging setup
+
+| Part | Production (live) | Staging (test) |
+|------|-------------------|----------------|
+| CRM Frontend (React) | `https://crm.bergendebate.com` — S3 + CloudFront | `https://staging.crm.bergendebate.com` — separate S3 + CloudFront |
+| CRM Backend (FastAPI) | EC2 `crm-backend` — Nginx + Uvicorn | EC2 `crm-backend-staging` — same stack, separate instance |
+| Public API URL (browser) | `https://api.crm.bergendebate.com` | `https://api.staging.crm.bergendebate.com` |
+| Internal URL (Lambda → CRM) | Prod EC2 private IP (e.g. `http://10.0.2.84:8000`) | N/A — Lambdas always use production CRM |
+| BDC Lambda APIs | `--stage prod` → database `bcdc` | Unchanged (production only) |
+| MongoDB database | `bcdc` (Lambda: `database.py` → `client.bcdc`) | `test_bcdc` (CRM `DATABASE_NAME` in `.env`) |
+| MongoDB connection URI | SSM `/prod/mongoDB/credential` (same Atlas cluster) | **Same URI** — only database name changes |
+| `APP_ENV` (CRM backend) | `production` | `staging` |
+| `CRM_URL` in `statics.py` | Production EC2 private IP | Unchanged (production only) |
+| Refresh `test_bcdc` | N/A | Lambda script + cron |
+
+---
+
+## 2. Deployment strategy
+
+### Staging CRM frontend (React) → separate S3 + CloudFront
+
+- Build React with `REACT_APP_API_URL=https://api.staging.crm.bergendebate.com`.
+- Upload `build/` to bucket `crm-frontend-staging-bergendebate`.
+- New CloudFront distribution with CNAME `staging.crm.bergendebate.com`.
+- ACM certificate includes staging hostnames (can extend existing CRM cert).
+- Production frontend bucket and distribution are not modified.
+
+### Staging CRM backend (FastAPI) → second EC2 in same VPC
+
+- Launch `crm-backend-staging` in `bdc-crm-vpc` (public subnet, same pattern as prod).
+- Allocate a **separate Elastic IP** for staging API DNS.
+- Clone CRM backend repo; `.env` sets `DATABASE_NAME=test_bcdc` and `APP_ENV=staging`.
+- Same `MONGODB_URI` as production (from SSM or prod EC2).
+- Uvicorn + Nginx + Certbot for `api.staging.crm.bergendebate.com`.
+- systemd service `crm-backend-staging` for auto-restart.
+
+### Database
+
+Production uses `bcdc`; staging CRM uses `test_bcdc` (same Atlas cluster and URI). One Lambda script copies live `bcdc` into `test_bcdc` on a cron job so staging stays up to date.
+
+<Note>
+  **No new VPC required.** Reuse `bdc-crm-vpc`, `crm-ec2-sg`, NAT, and Atlas peering.
+
+  **Production stays live** during staging setup — parallel stack, not a migration.
+</Note>
+
+---
+
+## 3. AWS services used (staging additions)
+
+| Purpose | AWS Service / Resource |
+|---------|--------------------------|
+| Staging frontend hosting | S3 `crm-frontend-staging-bergendebate` + new CloudFront distribution |
+| Staging backend API | EC2 `crm-backend-staging` + Elastic IP (same VPC as prod) |
+| Database | MongoDB Atlas `test_bcdc`; refreshed by Lambda script + cron |
+| Networking | Existing VPC, security groups, NAT Gateway, Atlas VPC peering |
+| TLS (staging frontend) | ACM (staging CNAME on CloudFront) |
+| TLS (staging backend) | Certbot on staging EC2 for `api.staging.crm.bergendebate.com` |
+| Secrets / config | Staging `.env` on EC2; same SSM Mongo URI as prod |
+| DNS | `staging.crm` → CloudFront; `api.staging.crm` → staging Elastic IP |
+| Logs / monitoring | CloudWatch (staging EC2) |
+
+---
+
+## 4. Staging URLs after setup
+
+**Production (unchanged):**
+
+- Frontend: `https://crm.bergendebate.com`
+- Public API: `https://api.crm.bergendebate.com`
+- Internal (Lambda): prod EC2 private IP, e.g. `http://10.0.2.84:8000`
+
+<Warning>
+  **Staging URLs (new):**
+
+  1. **Staging URL (users / QA):** `https://staging.crm.bergendebate.com` — React app on CloudFront. Built with `REACT_APP_API_URL=https://api.staging.crm.bergendebate.com`.
+  2. **Staging public API (browser):** `https://api.staging.crm.bergendebate.com` — Nginx on staging EC2. Health check: `GET /health` returns `"env": "staging"`.
+</Warning>
+
+### Staging backend `.env` (key fields)
+
+```bash
+MONGODB_URI=<same as prod — from /prod/mongoDB/credential>
+DATABASE_NAME=test_bcdc
+APP_ENV=staging
+FRONTEND_BASE_URL=https://staging.crm.bergendebate.com
+JWT_SECRET_KEY=<staging-only secret — not prod>
+```
+
+---
+
+## 5. Step-by-step deployment
+
+### Step 1 — Launch staging EC2 (reuse production VPC)
+
+1. In existing `bdc-crm-vpc`, launch EC2 `crm-backend-staging` (Ubuntu 22.04, `t3.small`).
+2. Public subnet, auto-assign public IP, security group `crm-ec2-sg`.
+3. Allocate and associate a **new Elastic IP** for staging.
+4. Note **public IP** (DNS) for Certbot and SSH.
+
+### Step 2 — Install and configure staging backend
+
+1. SSH to staging EC2; install Python, pip, venv, git, nginx (same as production).
+2. Clone CRM backend to e.g. `/home/ubuntu/crm-backend-staging`.
+3. Create `.env`:
+
+```bash
+MONGODB_URI=<same URI as production>
+DATABASE_NAME=test_bcdc
+APP_ENV=staging
+FRONTEND_BASE_URL=https://staging.crm.bergendebate.com
+JWT_SECRET_KEY=<staging-only>
+```
+
+4. `pip install -r requirements.txt`
+5. `python app/scripts/create_indexes.py`
+6. `python app/scripts/create_user.py` — staging admin user in `test_bcdc`
+7. systemd unit `crm-backend-staging.service` → `uvicorn app.main:app --host 0.0.0.0 --port 8000`
+
+### Step 3 — Nginx + HTTPS on staging EC2
+
+1. Nginx `server_name api.staging.crm.bergendebate.com` → proxy `127.0.0.1:8000`.
+2. After DNS (Step 5), run Certbot:
+
+```bash
+sudo certbot --nginx -d api.staging.crm.bergendebate.com
+```
+
+### Step 4 — Staging frontend (S3 + CloudFront)
+
+1. Create S3 bucket `crm-frontend-staging-bergendebate` (block public access).
+2. Build React:
+
+```bash
+REACT_APP_API_URL=https://api.staging.crm.bergendebate.com
+npm install && npm run build
+```
+
+3. Upload:
+
+```bash
+aws s3 sync build/ s3://crm-frontend-staging-bergendebate --delete
+```
+
+4. Create CloudFront distribution → staging S3 origin, OAC, CNAME `staging.crm.bergendebate.com`.
+5. Custom errors 403/404 → `/index.html` (React Router).
+
+### Step 5 — ACM + DNS for staging hostnames
+
+1. Add to ACM certificate (us-east-1): `staging.crm.bergendebate.com`, `api.staging.crm.bergendebate.com`.
+2. DNS records:
+   - `staging.crm` → CNAME → staging CloudFront domain
+   - `api.staging.crm` → A → staging Elastic IP
+
+### Step 6 — Lambda script + cron
+
+1. Add one Lambda script that copies `bcdc` → `test_bcdc`.
+2. Schedule it with a cron job (EventBridge).
+
+### Step 7 — Ongoing deploy workflow
+
+**Backend:**
+
+```bash
+ssh ubuntu@<staging-elastic-ip>
+cd crm-backend-staging && git pull
+source venv/bin/activate && pip install -r requirements.txt
+sudo systemctl restart crm-backend-staging
+```
+
+**Frontend:**
+
+```bash
+npm run build   # with staging REACT_APP_API_URL
+aws s3 sync build/ s3://crm-frontend-staging-bergendebate --delete
+aws cloudfront create-invalidation --distribution-id <STAGING-ID> --paths "/*"
+```
+
+---
+
+## 6. Post-deployment checklist
+
+1. `https://staging.crm.bergendebate.com` loads staging React app.
+2. Browser network tab — API calls go to `api.staging.crm.bergendebate.com`, not production.
+3. `GET https://api.staging.crm.bergendebate.com/health` → `"env":"staging"`.
+4. MongoDB Atlas — CRM data under `test_bcdc`, not `bcdc`.
+5. Login on staging — changes do not appear on production CRM.
+6. Production `https://crm.bergendebate.com` still works unchanged.
+7. Staging EC2: `systemctl status crm-backend-staging` and nginx — active.
+8. Integrations on staging use test keys or are disabled — no live Mailchimp/SalesMessage/Stripe.
+9. Lambda copy cron is running — `test_bcdc` is updated from live.
+
+<Warning>
+  **Rollback:** Staging is additive. To disable, stop staging EC2 and remove DNS records. Production is unaffected. Never point staging `.env` at `DATABASE_NAME=bcdc` for routine testing.
+</Warning>
+
+---
+
+## 7. End result
+
+After these steps:
+
+- **Staging URL** — `https://staging.crm.bergendebate.com` serves dev/staging frontend.
+- **Dev/staging backend APIs** — `https://api.staging.crm.bergendebate.com` runs FastAPI on dedicated EC2.
+- **Dev/staging frontend code** — built and deployed to staging S3 + CloudFront, pointing only at staging API.
+- **Database** — `test_bcdc` kept in sync from live `bcdc` via Lambda script + cron.
+- **Production CRM** — unchanged URLs, EC2, and `bcdc` database.
+- Team can test end-to-end before promoting builds to production.
